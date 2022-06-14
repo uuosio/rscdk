@@ -1,0 +1,15 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/eosio-chain",
+    "crates/eosio-chain/macro",
+    "crates/eosio-chain/codegen",
+]
+exclude = [
+    "examples/",
+    "tests/",
+]
+
+[profile.release]
+panic = "abort"
+lto = true
