@@ -348,7 +348,7 @@ impl Contract {
             let item = &action.item;
             let span = item.span();
             let ident = &item.sig.ident;
-            let struct_name = "_".to_string() + &ident.to_string(); 
+            let struct_name = action.action_name.str();
             let struct_name_ident = proc_macro2::Ident::new(&struct_name, proc_macro2::Span::call_site());
 
             let fields = item.sig.inputs.iter().filter(|arg| {
@@ -435,7 +435,9 @@ impl Contract {
                     }
                 }
             );
+
             quote! {
+                #[cfg_attr(feature = "std", derive(eosio_scale_info::TypeInfo))]
                 #[derive(Default)]
                 struct #struct_name_ident {
                     # ( #fields ), *
@@ -805,9 +807,8 @@ impl Contract {
         let action_structs_code = actions.map(|action|{
             let item = &action.item;
             let ident = &item.sig.ident;
-            let struct_name = "_".to_string() + &ident.to_string(); 
+            let struct_name = action.action_name.str();
             let struct_name_ident = proc_macro2::Ident::new(&struct_name, proc_macro2::Span::call_site());
-
             let action_name_n = proc_macro2::Literal::u64_suffixed(s2n(&action.action_name.str()));
 
             let args = item.sig.inputs.iter().filter(|arg|{
@@ -842,6 +843,75 @@ impl Contract {
         });
         quote! {
             #( #action_structs_code ) *
+        }
+    }
+
+    fn gather_scale_info(&self) -> TokenStream2 {
+        let packer_scale_info_code = self.packers
+            .iter()
+            .map(|packer| {
+                let ident = &packer.ident;
+                quote!{
+                    info.structs.push(#ident::type_info());
+                }
+            });
+        
+        let packer_scale_info_code2 = self.actions
+            .iter()
+            .map(|action| {
+                let struct_name_ident = proc_macro2::Ident::new(&action.action_name.str(), proc_macro2::Span::call_site());
+                quote!{
+                    info.structs.push(#struct_name_ident::type_info());
+                }
+            });
+
+        let table_scale_info_code = self.tables
+            .iter()
+            .map(|table| {
+                let ident = &table.item.ident;
+                let table_name_lit = proc_macro2::Literal::string(&table.table_name.str());
+                quote!{
+                    info.tables.push(
+                        ::eosio_chain::abi::TableInfo {
+                            name: String::from(#table_name_lit),
+                            info: #ident::type_info(),
+                        });
+                }
+            });
+
+        let action_scale_info_code = self.actions
+            .iter()
+            .map(|action| {
+                let ident = &action.item.sig.ident;
+                let struct_name = action.action_name.str();
+                let action_name_lit = proc_macro2::Literal::string(&action.action_name.str());
+
+                let struct_name_ident = proc_macro2::Ident::new(&struct_name, proc_macro2::Span::call_site());
+                quote!{
+                    info.actions.push(
+                        ::eosio_chain::abi::ActionInfo {
+                            name: String::from(#action_name_lit),
+                            info: #struct_name_ident::type_info(),
+                        });
+                }
+            });
+        return quote!{
+            #[cfg(feature = "std")]
+            const _: () = {
+                #[no_mangle]
+                pub fn __eosio_generate_abi() -> String {
+                    let mut info = ::eosio_chain::abi::ABIInfo {
+                        actions: Vec::new(),
+                        tables: Vec::new(),
+                        structs: Vec::new(),
+                    };
+                    #( #packer_scale_info_code ) *
+                    #( #packer_scale_info_code2 ) *
+                    #( #action_scale_info_code ) *
+                    #( #table_scale_info_code ) *
+                    return ::eosio_chain::abi::parse_abi_info(&info);
+                }
+            };
         }
     }
 
@@ -883,6 +953,8 @@ impl Contract {
         let tables_code = self.generate_tables_code();
         let apply_code = self.generate_apply_code();
         let packers_code = self.generate_code_for_packers();
+        let scale_info = self.gather_scale_info();
+
         let items = self.items.iter().map(|item|{
             match item {
                 syn::Item::Struct(x) => {
@@ -959,6 +1031,8 @@ impl Contract {
                 string::String,
             };
 
+            use eosio_scale_info::TypeInfo;
+
             #( #attrs )*
             #vis mod #ident {
                 use super::*;
@@ -967,6 +1041,7 @@ impl Contract {
                 #action_structs_code
                 #tables_code
                 #apply_code
+                #scale_info
             }
         }
     }

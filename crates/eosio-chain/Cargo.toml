@@ -18,10 +18,13 @@ include = ["Cargo.toml", "src/**/*.rs", "README.md", "LICENSE"]
 eosio_macro = { version = "0.1.0", path = "../macro", default-features = false }
 eosio-scale-info = { git="https://github.com/learnforpractice/eosio-scale-info", branch = "master", default-features = false, features = ["derive"], optional = true }
 cfg-if = "1.0"
+serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
+serde_json = {version = "1.0.32", features = ["preserve_order"]}
 
 [features]
 default = ["std"]
 std = [
+    "serde/std",
     "eosio-scale-info",
     "eosio-scale-info/std",
 ]
