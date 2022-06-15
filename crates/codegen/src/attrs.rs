@@ -83,6 +83,7 @@ pub enum AttributeArgKind {
     Packer,
     Variant,
     Table,
+    Singleton,
     Primary,
     Secondary,
     Idx64,
@@ -97,6 +98,7 @@ impl core::fmt::Display for AttributeArgKind {
         match self {
             Self::MainStruct => write!(f, "main"),
             Self::Table => write!(f, "table"),
+            Self::Singleton => write!(f, "singleton"),
             Self::Packer => write!(f, "packer"),
             Self::Variant => write!(f, "variant"),
             Self::Primary => write!(f, "primary"),
@@ -120,6 +122,7 @@ pub enum AttributeArg {
     Packer,
     Variant,
     Table(FixedString),
+    Singleton,
     Primary,
     Secondary,
     Idx64(FixedString),
@@ -139,6 +142,7 @@ impl AttributeArg {
             Self::Packer => AttributeArgKind::Packer,
             Self::Variant => AttributeArgKind::Variant,
             Self::Table(_) => AttributeArgKind::Table,
+            Self::Singleton => AttributeArgKind::Singleton,
             Self::Primary => AttributeArgKind::Primary,
             Self::Secondary => AttributeArgKind::Secondary,
             Self::Idx64(_) => AttributeArgKind::Idx64,
@@ -266,6 +270,7 @@ impl TryFrom<syn::NestedMeta> for AttributeFrag {
                             .ok_or_else(|| format_err_spanned!(meta, "unknown chain attribute (path)"))
                             .and_then(|ident| match ident.as_str() {
                                 "main" => Ok(AttributeArg::MainStruct),
+                                "singleton" => Ok(AttributeArg::Singleton),
                                 "packer" => Ok(AttributeArg::Packer),
                                 "variant" => Ok(AttributeArg::Variant),
                                 "primary" => Ok(AttributeArg::Primary),
@@ -525,12 +530,27 @@ impl ChainAttribute {
     }
 
     pub fn table_name(&self) -> Option<FixedString> {
-        self.args().find_map(|arg| {
-            if let AttributeArg::Table(x) = arg.kind() {
-                return Some(x.clone())
-            }
-            None
-        })
+        if self.args().len() == 0 {
+            return None;
+        }
+        if let AttributeArg::Table(x) = self.args[0].kind() {
+            return Some(x.clone());
+        }
+        return None;
+    }
+
+    pub fn is_singleton(&self) -> bool {
+        if self.args().len() < 2 {
+            return false;
+        }
+
+        if let AttributeArg::Table(_) = self.args[0].kind() {
+            if let AttributeArg::Singleton = self.args[1].kind() {
+                return true;
+            }    
+        }
+
+        return true;
     }
 
     pub fn action_name(&self) -> Option<FixedString> {

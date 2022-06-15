@@ -5,6 +5,7 @@ mod fixedstring;
 mod name;
 
 mod action;
+mod table;
 mod attrs;
 mod contract;
 

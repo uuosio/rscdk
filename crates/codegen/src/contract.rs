@@ -17,6 +17,7 @@ use proc_macro2::{
 
 use crate::{
     action::Action,
+    table::Table,
     attrs,
     // FixedString,
     name::s2n,
@@ -37,6 +38,7 @@ pub struct Contract {
     actions: Vec<Action>,
     structs: Vec<syn::ItemStruct>,
     packers: Vec<syn::ItemStruct>,
+    tables: Vec<Table>,
     others: Vec<syn::Item>,
 }
 
@@ -67,6 +69,7 @@ impl TryFrom<syn::ItemMod> for Contract {
             actions: Vec::new(),
             structs: Vec::new(),
             packers: Vec::new(),
+            tables: Vec::new(),
             others: Vec::new(),
         };
         contract.analyze_items();
@@ -104,46 +107,67 @@ impl Contract {
             match item {
                 syn::Item::Struct(x) => {
                     let (chain_attrs, other_attrs) = attrs::partition_attributes(x.attrs.clone()).unwrap();
-                    for attr in &chain_attrs {
-                        if attr.args().len() != 1 {
-                            panic!("more that one chain attribute specified in {}", x.ident);
-                        }
-                        match attr.args().last().unwrap().arg {
-                            attrs::AttributeArg::MainStruct => {
-                                self.main_struct = Some(x.clone())
-                            }
-                            attrs::AttributeArg::Packer | attrs::AttributeArg::Table(_) => {
-                                self.packers.push(x.clone());
-                                x.fields.iter().for_each(|field|{
-                                    if let syn::Type::Path(type_path) = &field.ty {
-                                        let path_seg = type_path.path.segments.last().unwrap();
-                                        let name = path_seg.ident.to_string();
-                                        if name == "Option" {
-                                            if let syn::PathArguments::AngleBracketed(x) = &type_path.path.segments.last().unwrap().arguments {
-                                                if let syn::GenericArgument::Type(tp) = &x.args.last().unwrap() {
-                                                    if let syn::Type::Path(type_path) = tp {
-                                                        let name = type_path.path.segments.last().unwrap().ident.to_string();
-                                                        arg_types.insert(name.clone(), name);
-                                                    }
-                                                }
-                                            }
-                                        } else {
-                                            arg_types.insert(name.clone(), name);
-                                        }
-                                    }
-                                });
-                            }
-                            _ => {
-                                panic!("only packer or table attribute is supported by struct {}", x.ident);
-                            }
-                        }
-                    }
+                    let x_backup = x.clone();
                     x.attrs = other_attrs;
                     x.fields.iter_mut().for_each(|field| {
                         let (_, other_attrs) = attrs::partition_attributes(field.attrs.clone()).unwrap();
                         field.attrs = other_attrs;
                     });
                     self.structs.push(x.clone());
+
+                    if chain_attrs.len() == 0 {
+                        return;
+                    }
+                    debug_assert!(chain_attrs.len() <= 1, "more than one chain attribute specified to struct {}", x.ident);
+                    let attr = &chain_attrs[0];
+                    if attr.args().len() < 1 {
+                        panic!("wrong chain attribute in {}", x.ident);
+                    }
+                    let arg = &attr.args().next().unwrap().arg;
+                    match arg {
+                        attrs::AttributeArg::MainStruct => {
+                            self.main_struct = Some(x.clone())
+                        }
+                        attrs::AttributeArg::Packer | attrs::AttributeArg::Table(_) => {
+                            self.packers.push(x.clone());
+                            x.fields.iter().for_each(|field|{
+                                if let syn::Type::Path(type_path) = &field.ty {
+                                    let path_seg = type_path.path.segments.last().unwrap();
+                                    let name = path_seg.ident.to_string();
+                                    if name == "Option" {
+                                        if let syn::PathArguments::AngleBracketed(x) = &type_path.path.segments.last().unwrap().arguments {
+                                            if let syn::GenericArgument::Type(tp) = &x.args.last().unwrap() {
+                                                if let syn::Type::Path(type_path) = tp {
+                                                    let name = type_path.path.segments.last().unwrap().ident.to_string();
+                                                    arg_types.insert(name.clone(), name);
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        arg_types.insert(name.clone(), name);
+                                    }
+                                }
+                            });
+                        }
+                        _ => {
+                            panic!("only packer or table attribute is supported by struct {}", x.ident);
+                        }
+                    }
+
+                    match &arg {
+                        attrs::AttributeArg::Table(_) => {
+                            if let Some(name) = attr.table_name() {
+                                self.tables.push(
+                                    Table {
+                                        item: x_backup,
+                                        table_name: name,
+                                        singleton: attr.is_singleton(),
+                                    }
+                                )
+                            }
+                        }
+                        _ => {}
+                    }
                 }
                 syn::Item::Impl(x) => {
                     for impl_item in &mut x.items {
@@ -424,6 +448,345 @@ impl Contract {
         }
     }
 
+    fn generate_tables_code(&self) -> TokenStream2 {
+        let action_structs_code = self.tables.iter().map(|table|{
+            let item = &table.item;
+            let span = item.span();
+            let table_ident = &item.ident;
+            let mut primary_impl: Option<TokenStream2> = None;
+
+            item.fields.iter().for_each(|field| {
+                let (chain_attrs, _) = attrs::partition_attributes(field.attrs.clone()).unwrap();
+                if chain_attrs.len() == 0 {
+                    return;
+                }
+                let field_ident = field.ident.as_ref().expect(&format!("invalid field in {}", table_ident).to_string());
+                let attr = &chain_attrs[0];
+                debug_assert!(attr.args().len() >= 1, "no chain attribute specified for {}", field.ident.as_ref().unwrap());
+                let first_attr = attr.args().next().unwrap();
+                match first_attr.arg {
+                    attrs::AttributeArg::Primary => {
+                        debug_assert!(primary_impl.is_none(), "more than one primary field specified in {}", item.ident);
+                        primary_impl = Some(quote_spanned!(span =>
+                            fn get_primary(&self) -> u64 {
+                                return self.#field_ident.to_primary_value();
+                            }
+                        ))
+                    }
+                    _ => {}
+                }
+            });
+
+            if table.singleton {
+                if primary_impl.is_some() {
+                    panic!("singelton table does not need a primary attribute in struct {}", item.ident);
+                }
+            } else {
+                if primary_impl.is_none() {
+                    panic!("primary index does not specified in struct {}", item.ident);
+                }
+            }
+
+            let mut secondary_fields: Vec<(attrs::AttributeArg, syn::Field)> = Vec::new();
+
+            item.fields.iter().for_each(|field|{
+                let (chain_attrs, _) = attrs::partition_attributes(field.attrs.clone()).unwrap();
+                if chain_attrs.len() == 0 {
+                    return;
+                }
+                let attr = &chain_attrs[0];
+                debug_assert!(attr.args().len() >= 1, "no chain attribute specified for {}", field.ident.as_ref().unwrap());
+                let first_attr = attr.args().next().unwrap();
+                match first_attr.arg {
+                    attrs::AttributeArg::Idx64(_) |
+                    attrs::AttributeArg::Idx128(_) |
+                    attrs::AttributeArg::Idx256(_) |
+                    attrs::AttributeArg::IdxF64(_) |
+                    attrs::AttributeArg::IdxF128(_) => {
+                        secondary_fields.push((first_attr.arg.clone(), field.clone()));
+                    }
+                    _ => {}
+                }
+            });
+
+            let secondary_getter_impls = secondary_fields.iter()
+            .enumerate()
+            .map(|(index, (attr_arg, field))|{
+                let field_ident = field.ident.as_ref().unwrap();
+                let error_msg: proc_macro2::Literal;
+                let idx_ident: proc_macro2::Ident;
+
+                match attr_arg {
+                    attrs::AttributeArg::Idx64(_) => {
+                        idx_ident = proc_macro2::Ident::new("Idx64", proc_macro2::Span::call_site());
+                        error_msg = proc_macro2::Literal::string("Invalid Idx64 value!");
+                    }
+                    attrs::AttributeArg::Idx128(_) => {
+                        idx_ident = proc_macro2::Ident::new("Idx128", proc_macro2::Span::call_site());
+                        error_msg = proc_macro2::Literal::string("Invalid Idx128 value!");
+                    }
+                    attrs::AttributeArg::Idx256(_) => {
+                        idx_ident = proc_macro2::Ident::new("Idx256", proc_macro2::Span::call_site());
+                        error_msg = proc_macro2::Literal::string("Invalid Idx256 value!");
+                    }
+                    attrs::AttributeArg::IdxF64(_) => {
+                        idx_ident = proc_macro2::Ident::new("IdxF64", proc_macro2::Span::call_site());
+                        error_msg = proc_macro2::Literal::string("Invalid IdxF64 value!");
+                    }
+                    attrs::AttributeArg::IdxF128(_) => {
+                        idx_ident = proc_macro2::Ident::new("IdxF128", proc_macro2::Span::call_site());
+                        error_msg = proc_macro2::Literal::string("Invalid IdxF128 value!");
+                    }
+                    _ => {
+                        idx_ident = proc_macro2::Ident::new("", proc_macro2::Span::call_site());
+                        error_msg = proc_macro2::Literal::string("Invalid value!");
+                    }
+                }
+                return quote! {
+                    if i == #index {
+                        let ret = self.#field_ident.to_secondary_value(eosio_chain::db::SecondaryType::#idx_ident);
+                        match ret {
+                            SecondaryValue::#idx_ident(_) => {
+                                return ret;
+                            }
+                            _ => {
+                                ::eosio_chain::vmapi::eosio::eosio_assert(false, #error_msg);
+                            }
+                        }
+                        return ret;
+                    }
+                }
+            });
+
+            let secondary_setter_impls = secondary_fields.iter()
+            .enumerate()
+            .map(|(index, (_attr_arg, field))|{
+                let field_ident = field.ident.as_ref().unwrap();
+                let ty = &field.ty;
+                return quote!{
+                    if i == #index {
+                        self.#field_ident = #ty::from_secondary_value(value);
+                    }
+                }
+            });
+
+            let secondary_impls = quote_spanned!(span =>    
+                #[allow(unused_variables, unused_mut)]
+                fn get_secondary_value(&self, i: usize) -> SecondaryValue {
+                    #( #secondary_getter_impls )*
+                    return SecondaryValue::None;
+                }
+
+                #[allow(unused_variables, unused_mut)]
+                fn set_secondary_value(&mut self, i: usize, value: SecondaryValue) {
+                    #( #secondary_setter_impls )*
+                }
+            );
+
+            let mi_impls = self.generate_mi_impls(table, &secondary_fields);
+
+            if !table.singleton {
+                let primary_impl_code = primary_impl.unwrap();
+                quote_spanned!(span =>
+                    impl ::eosio_chain::db::DBInterface for #table_ident {
+                        #primary_impl_code
+                        #secondary_impls
+                    }
+                    #mi_impls
+                )
+            } else {
+                let table_name = proc_macro2::Literal::string(&table.table_name.str());
+                return quote_spanned!(span =>
+                    impl ::eosio_chain::db::DBInterface for #table_ident {
+                        fn get_primary(&self) -> u64 {
+                            return Name::new(#table_name);
+                        }
+                        #secondary_impls
+                    }
+                    #mi_impls
+                );
+            }
+        });
+
+        return quote!{
+            #( #action_structs_code ) *
+        }
+    }
+
+    fn generate_mi_impls(&self, table: &Table, secondary_fields: &Vec<(attrs::AttributeArg, syn::Field)>) -> TokenStream2 {
+        let table_name = table.table_name.str();
+
+        let span = table.item.span();
+        let table_ident = &table.item.ident;
+
+
+        let len_secondary = secondary_fields.len();
+
+        let secondary_types = secondary_fields
+            .iter()
+            .enumerate()
+            .map(|(_n, (arg, _))| {
+                match arg {
+                    attrs::AttributeArg::Idx64(_) => {
+                        return quote! {
+                            SecondaryType::Idx64
+                        }
+                    }
+                    attrs::AttributeArg::Idx128(_) => {
+                        return quote! {
+                            SecondaryType::Idx128
+                        }
+                    }
+                    attrs::AttributeArg::Idx256(_) => {
+                        return quote! {
+                            SecondaryType::Idx256
+                        }
+                    }
+                    attrs::AttributeArg::IdxF64(_) => {
+                        return quote! {
+                            SecondaryType::IdxF64
+                        }
+                    }
+                    attrs::AttributeArg::IdxF128(_) => {
+                        return quote! {
+                            SecondaryType::IdxF128
+                        }
+                    }
+                    _ => {
+                        quote!{}
+                    }
+                }
+            });
+
+            let get_idx_db_funcs = secondary_fields
+                .iter()
+                .enumerate()
+                .map(|(i, (idx, field))| {
+                    match idx {
+                        attrs::AttributeArg::Idx64(_) |
+                        attrs::AttributeArg::Idx128(_) |
+                        attrs::AttributeArg::Idx256(_) |
+                        attrs::AttributeArg::IdxF64(_) |
+                        attrs::AttributeArg::IdxF128(_)
+                         => {
+                            let span = field.span();
+                            let ty = &field.ty;
+                            let method_name = String::from("get_idx_by_") + &field.ident.as_ref().unwrap().to_string();
+                            let method_ident = syn::Ident::new(&method_name, span);
+                            return quote_spanned!(span =>
+                                #[allow(dead_code)]
+                                fn #method_ident(&self) -> ::eosio_chain::db::IndexDBProxy<#ty, 0> {
+                                    return ::eosio_chain::db::IndexDBProxy::<#ty, 0>::new(self.mi.idxdbs[#i].as_ref());
+                                }
+                            )
+                        }
+                        _ => return quote!(),
+                    };
+                });
+
+            let mi_name = table_ident.to_string() + "MultiIndex";
+            let mi_ident = syn::Ident::new(&mi_name, span);
+    
+            return quote_spanned!(span =>
+
+                pub struct #mi_ident {
+                    mi: ::eosio_chain::mi::MultiIndex<#table_ident>
+                }
+            
+                #[allow(dead_code)]
+                impl #mi_ident {
+                    ///
+                    pub fn new(code: Name, scope: Name, table: Name, indexes: &[SecondaryType], unpacker: fn(&[u8]) -> Box<#table_ident>) -> Self {
+                        Self {
+                            mi: ::eosio_chain::mi::MultiIndex::<#table_ident>::new(code, scope, table, indexes, unpacker),
+                        }
+                    }
+            
+                    ///
+                    pub fn store(&self, value: &#table_ident, payer: Name) -> ::eosio_chain::db::Iterator {
+                        return self.mi.store(value, payer);
+                    }
+                
+                    ///
+                    pub fn update(&self, iterator: ::eosio_chain::db::Iterator, value: &#table_ident, payer: Name) {
+                        return self.mi.update(iterator, value, payer);
+                    }
+                
+                    ///
+                    pub fn remove(&self, iterator: ::eosio_chain::db::Iterator) {
+                        return self.mi.remove(iterator);
+                    }
+                
+                    ///
+                    pub fn get(&self, iterator: ::eosio_chain::db::Iterator) -> Option<Box<#table_ident>> {
+                        return self.mi.get(iterator)
+                    }
+                
+                    ///
+                    pub fn get_by_primary(&self, primary: u64) -> Option<Box<#table_ident>> {
+                        return self.mi.get_by_primary(primary);
+                    }
+
+                    ///
+                    pub fn next(&self, iterator: ::eosio_chain::db::Iterator) -> (::eosio_chain::db::Iterator, u64) {
+                        return self.mi.db.next(iterator);
+                    }
+
+                    ///
+                    pub fn previous(&self, iterator: ::eosio_chain::db::Iterator) -> (::eosio_chain::db::Iterator, u64) {
+                        return self.mi.db.previous(iterator);
+                    }
+
+                    ///
+                    pub fn find(&self, id: u64) -> ::eosio_chain::db::Iterator {
+                        return self.mi.db.find(id);
+                    }
+                
+                    ///
+                    pub fn lowerbound(&self, id: u64) -> ::eosio_chain::db::Iterator {
+                        return self.mi.db.lowerbound(id);
+                    }
+                
+                    ///
+                    pub fn upperbound(&self, id: u64) -> ::eosio_chain::db::Iterator {
+                        return self.mi.db.upperbound(id);
+                    }
+                
+                    ///
+                    pub fn end(&self) -> ::eosio_chain::db::Iterator {
+                        return self.mi.db.end();
+                    }
+                
+                    ///
+                    pub fn get_idx_db(&self, i: usize) -> &dyn ::eosio_chain::db::IndexDB {
+                        return self.mi.idxdbs[i].as_ref();
+                    }
+                
+                    ///
+                    pub fn idx_update(&self, it: ::eosio_chain::db::SecondaryIterator, value: ::eosio_chain::db::SecondaryValue, payer: Name) {
+                        self.mi.idx_update(it, value, payer);
+                    }
+
+                    #( #get_idx_db_funcs )*
+                }
+
+                impl #table_ident {
+                    #[allow(dead_code)]
+                    fn new_mi(code: Name, scope: Name) -> Box<#mi_ident> {
+                        let indexes: [SecondaryType; #len_secondary] = [#( #secondary_types ),*];
+                        #[allow(dead_code)]
+                        fn unpacker(data: &[u8]) -> Box<#table_ident> {
+                            let mydata = #table_ident::default();
+                            let mut ret = Box::new(mydata);// as Box<dyn MultiIndexValue>;
+                            ret.unpack(data);
+                            return ret;
+                        }
+                        return Box::new(#mi_ident::new(code, scope, Name::new(#table_name), &indexes, unpacker));
+                    }
+                }
+            );
+    }
+
     fn generate_action_handle_code(&self, notify: bool) -> TokenStream2 {
         let actions = self.actions.iter().filter(|action|{
             if notify {
@@ -517,6 +880,7 @@ impl Contract {
 
     pub fn generate_code(&self) -> TokenStream2 {
         let action_structs_code = self.generate_action_structs();
+        let tables_code = self.generate_tables_code();
         let apply_code = self.generate_apply_code();
         let packers_code = self.generate_code_for_packers();
         let items = self.items.iter().map(|item|{
@@ -601,6 +965,7 @@ impl Contract {
                 #( #items ) *
                 #packers_code
                 #action_structs_code
+                #tables_code
                 #apply_code
             }
         }

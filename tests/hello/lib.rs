@@ -16,7 +16,9 @@ mod hello {
     #[chain(table="mydata")]
     pub struct MyData {
         #[chain(primary)]
-        count: u64,
+        a1: u64,
+        #[chain(Idx64)]
+        a2: u64,
         mydata: MyData2,
     }
 

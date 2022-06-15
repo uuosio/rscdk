@@ -11,6 +11,10 @@ use crate::{
     vec::Vec,
 };
 
+use crate::{
+    serializer::Packer,
+};
+
 use crate::boxed::Box;
 ///
 pub struct MultiIndex<T> {
@@ -28,7 +32,10 @@ pub struct MultiIndex<T> {
     pub unpacker: fn(&[u8]) -> Box<T>,
 }
 
-impl<T: MultiIndexValue> MultiIndex<T> {
+impl<T> MultiIndex<T>
+where 
+    T: DBInterface + Packer
+{
     ///
     pub fn new<'a>(code: Name, scope: Name, table: Name, indexes: &[SecondaryType], unpacker: fn(&[u8]) -> Box<T>) -> Self {
         let mut idxdbs: Vec<Box<dyn IndexDB>> = Vec::new();

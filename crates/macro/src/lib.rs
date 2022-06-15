@@ -14,6 +14,6 @@ pub fn contract(attr: TokenStream, item: TokenStream) -> TokenStream {
 }
 
 // #[proc_macro_attribute]
-// pub fn chain(attr: TokenStream, item: TokenStream) -> TokenStream {
+// pub fn chain(_attr: TokenStream, item: TokenStream) -> TokenStream {
 //     item
 // }
