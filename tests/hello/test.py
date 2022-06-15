@@ -63,17 +63,19 @@ class NewChain():
 
 @chain_test
 def test_hello():
-    with open('../target/wasm32-wasi/release/hello.wasm', 'rb') as f:
+    with open('./target/wasm32-wasi/release/hello.wasm', 'rb') as f:
         code = f.read()
-    # with open('./target/hello.abi', 'rb') as f:
-    #     abi = f.read()
-    abi = b''
-    chain.deploy_contract('hello', code, abi, 0)
+    with open('./target/hello.abi', 'rb') as f:
+        abi = f.read()
+    chain.deploy_contract('hello', code, abi)
 
-    r = chain.push_action('hello', 'sayhello', {}, {'hello': 'active'})
+    args = {
+        'name': 'rust'
+    }
+    r = chain.push_action('hello', 'sayhello', args, {'hello': 'active'})
     logger.info('++++++elapsed: %s', r['elapsed'])
     chain.produce_block()
 
-    r = chain.push_action('hello', 'sayhello', {}, {'hello': 'active'})
+    r = chain.push_action('hello', 'sayhello', args, {'hello': 'active'})
     logger.info('++++++elapsed: %s', r['elapsed'])
     chain.produce_block()

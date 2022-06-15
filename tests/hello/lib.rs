@@ -40,9 +40,9 @@ mod hello {
         }
 
         #[chain(action="sayhello")]
-        pub fn say_hello(&self) {
+        pub fn say_hello(&self, name: String) {
             let mut v = vec![1, 2, 3, 4];
-            eosio_println!("hello", v);
+            eosio_println!("++++hello:", name, v);
         }
 
         #[chain(action="test")]

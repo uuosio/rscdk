@@ -117,7 +117,7 @@ fn native_type_to_abi_type(tp: &str) -> &str {
 
 pub fn parse_abi_info(info: &ABIInfo) -> String {
     let mut abi = ABI {
-        version: String::from(""),
+        version: String::from("eosio::abi/1.1"),
         types: Vec::new(),
         structs: Vec::new(),
         actions: Vec::new(),
@@ -137,11 +137,17 @@ pub fn parse_abi_info(info: &ABIInfo) -> String {
                 fields: Vec::new(),
             };
 			x.fields().iter().for_each(|field|{
-                let ty = native_type_to_abi_type(*field.type_name().unwrap());
+                let mut ty: String;
+                let rust_type = *field.type_name().unwrap();
+                if let Some(pos) = rust_type.find("Option<") {
+                    ty = String::from(native_type_to_abi_type(&rust_type["Option<".len()..rust_type.len() -1])) + "?";
+                } else {
+                    ty = String::from(native_type_to_abi_type(rust_type));
+                }
                 s.fields.push(
                     ABIType{
                         name: String::from(*field.name().unwrap()),
-                        ty: String::from(ty),
+                        ty,
                     }
                 )
 			});

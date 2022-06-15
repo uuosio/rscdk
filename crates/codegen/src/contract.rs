@@ -1031,7 +1031,8 @@ impl Contract {
                 string::String,
             };
 
-            use eosio_scale_info::TypeInfo;
+            #[cfg(feature = "std")]
+            use eosio_scale_info::TypeInfo as _;
 
             #( #attrs )*
             #vis mod #ident {
