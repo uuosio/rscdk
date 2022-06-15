@@ -11,9 +11,6 @@ name = "abi-gen"
 path = "main.rs"
 
 [dependencies]
-serde = "1.0"
-serde_json = "1.0"
-eosio_chain = { version = "0.1.0", path = "../../../crates/eosio-chain", default-features = false }
 
 [dependencies.contract]
 package = "hello"
@@ -22,5 +19,4 @@ path = ".."
 [features]
 default = ["std"]
 std = [
-    "eosio_chain/std"
 ]

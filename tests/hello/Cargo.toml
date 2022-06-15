@@ -17,7 +17,6 @@ crate-type = ["cdylib", "rlib"]
 default = ["std"]
 std = [
     "eosio_chain/std",
-    "eosio-scale-info",
     "eosio-scale-info/std"
 ]
 
