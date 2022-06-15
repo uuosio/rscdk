@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use core::convert::TryFrom;
+use itertools::Itertools;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 use quote::quote_spanned;
@@ -72,7 +73,7 @@ impl TryFrom<syn::ItemMod> for Contract {
             tables: Vec::new(),
             others: Vec::new(),
         };
-        contract.analyze_items();
+        contract.analyze_items()?;
         return Ok(contract);
     }
 }
@@ -101,11 +102,11 @@ impl Contract {
         return true;
     }
 
-    pub fn analyze_items(&mut self) {
+    pub fn analyze_items(&mut self) -> Result<(), syn::Error> {
         let mut arg_types: HashMap<String, String> = HashMap::new();
-        self.items.iter_mut().for_each(|item|{
+        for item in &mut self.items {
             match item {
-                syn::Item::Struct(x) => {
+                syn::Item::Struct(ref mut x) => {
                     let (chain_attrs, other_attrs) = attrs::partition_attributes(x.attrs.clone()).unwrap();
                     let x_backup = x.clone();
                     x.attrs = other_attrs;
@@ -116,13 +117,24 @@ impl Contract {
                     self.structs.push(x.clone());
 
                     if chain_attrs.len() == 0 {
-                        return;
+                        continue;
                     }
-                    debug_assert!(chain_attrs.len() <= 1, "more than one chain attribute specified to struct {}", x.ident);
+
+                    if chain_attrs.len() > 1 {
+                        return Err(format_err_spanned!(
+                            x,
+                            "more than one chain attribute specified to struct {}", x.ident
+                        ));
+                    }
+
                     let attr = &chain_attrs[0];
                     if attr.args().len() < 1 {
-                        panic!("wrong chain attribute in {}", x.ident);
+                        return Err(format_err_spanned!(
+                            x,
+                            "wrong chain attribute in {}", x.ident
+                        ));
                     }
+
                     let arg = &attr.args().next().unwrap().arg;
                     match arg {
                         attrs::AttributeArg::MainStruct => {
@@ -150,7 +162,10 @@ impl Contract {
                             });
                         }
                         _ => {
-                            panic!("only packer or table attribute is supported by struct {}", x.ident);
+                            return Err(format_err_spanned!(
+                                x,
+                                "only packer or table attribute is supported by struct {}", x.ident
+                            ));
                         }
                     }
 
@@ -228,12 +243,13 @@ impl Contract {
                 }
                 _ => {}
             }
-        });
+        };
 
         for (ty, _) in arg_types {
             println!("++++++++ty: {}", ty);
             self.add_packer(&ty);
         }
+        return Ok(())
         
     }
     
@@ -450,25 +466,38 @@ impl Contract {
         }
     }
 
-    fn generate_tables_code(&self) -> TokenStream2 {
-        let action_structs_code = self.tables.iter().map(|table|{
+    fn generate_tables_code(&self) -> Result<TokenStream2, syn::Error> {
+        let mut action_structs_code: Vec<TokenStream2> = Vec::new();
+        for table in &self.tables {
             let item = &table.item;
             let span = item.span();
             let table_ident = &item.ident;
             let mut primary_impl: Option<TokenStream2> = None;
 
-            item.fields.iter().for_each(|field| {
+            for field in &item.fields {
                 let (chain_attrs, _) = attrs::partition_attributes(field.attrs.clone()).unwrap();
                 if chain_attrs.len() == 0 {
-                    return;
+                    continue;
                 }
                 let field_ident = field.ident.as_ref().expect(&format!("invalid field in {}", table_ident).to_string());
                 let attr = &chain_attrs[0];
-                debug_assert!(attr.args().len() >= 1, "no chain attribute specified for {}", field.ident.as_ref().unwrap());
+                
+                if attr.args().len() == 0 {
+                    return Err(format_err_spanned!(
+                        field,
+                        "no chain attribute specified for {}", field.ident.as_ref().unwrap(),
+                    ));
+                }
+
                 let first_attr = attr.args().next().unwrap();
                 match first_attr.arg {
                     attrs::AttributeArg::Primary => {
-                        debug_assert!(primary_impl.is_none(), "more than one primary field specified in {}", item.ident);
+                        if primary_impl.is_some() {
+                            return Err(format_err_spanned!(
+                                field,
+                                "more than one primary field specified in {}", item.ident
+                            ));
+                        }
                         primary_impl = Some(quote_spanned!(span =>
                             fn get_primary(&self) -> u64 {
                                 return self.#field_ident.to_primary_value();
@@ -477,29 +506,43 @@ impl Contract {
                     }
                     _ => {}
                 }
-            });
+            };
 
             if table.singleton {
                 if primary_impl.is_some() {
-                    panic!("singelton table does not need a primary attribute in struct {}", item.ident);
+                    return Err(format_err_spanned!(
+                        item,
+                        "singelton table does not need a primary attribute in struct {}", item.ident
+                    ));
                 }
             } else {
                 if primary_impl.is_none() {
-                    panic!("primary index does not specified in struct {}", item.ident);
+                    return Err(format_err_spanned!(
+                        item,
+                        "primary index does not specified in struct {}", item.ident
+                    ));
                 }
             }
 
             let mut secondary_fields: Vec<(attrs::AttributeArg, syn::Field)> = Vec::new();
 
-            item.fields.iter().for_each(|field|{
+            for field in &item.fields {
                 let (chain_attrs, _) = attrs::partition_attributes(field.attrs.clone()).unwrap();
                 if chain_attrs.len() == 0 {
-                    return;
+                    continue;
                 }
+
                 let attr = &chain_attrs[0];
-                debug_assert!(attr.args().len() >= 1, "no chain attribute specified for {}", field.ident.as_ref().unwrap());
+                if attr.args().len() == 0 {
+                    return Err(format_err_spanned!(
+                        field,
+                        "no chain attribute specified",
+                    ));
+                }
+
                 let first_attr = attr.args().next().unwrap();
                 match first_attr.arg {
+                    attrs::AttributeArg::Primary => {},
                     attrs::AttributeArg::Idx64(_) |
                     attrs::AttributeArg::Idx128(_) |
                     attrs::AttributeArg::Idx256(_) |
@@ -507,9 +550,14 @@ impl Contract {
                     attrs::AttributeArg::IdxF128(_) => {
                         secondary_fields.push((first_attr.arg.clone(), field.clone()));
                     }
-                    _ => {}
+                    _ => {
+                        return Err(format_err_spanned!(
+                            field,
+                            "invalid attribute"
+                        ));
+                    }
                 }
-            });
+            };
 
             let secondary_getter_impls = secondary_fields.iter()
             .enumerate()
@@ -589,16 +637,16 @@ impl Contract {
 
             if !table.singleton {
                 let primary_impl_code = primary_impl.unwrap();
-                quote_spanned!(span =>
+                action_structs_code.push(quote_spanned!(span =>
                     impl ::eosio_chain::db::DBInterface for #table_ident {
                         #primary_impl_code
                         #secondary_impls
                     }
                     #mi_impls
-                )
+                ));
             } else {
                 let table_name = proc_macro2::Literal::string(&table.table_name.str());
-                return quote_spanned!(span =>
+                action_structs_code.push(quote_spanned!(span =>
                     impl ::eosio_chain::db::DBInterface for #table_ident {
                         fn get_primary(&self) -> u64 {
                             return Name::new(#table_name);
@@ -606,13 +654,13 @@ impl Contract {
                         #secondary_impls
                     }
                     #mi_impls
-                );
+                ));
             }
-        });
+        };
 
-        return quote!{
+        return Ok(quote!{
             #( #action_structs_code ) *
-        }
+        });
     }
 
     fn generate_mi_impls(&self, table: &Table, secondary_fields: &Vec<(attrs::AttributeArg, syn::Field)>) -> TokenStream2 {
@@ -948,9 +996,9 @@ impl Contract {
         }
     }
 
-    pub fn generate_code(&self) -> TokenStream2 {
+    pub fn generate_code(&self) -> Result<TokenStream2, syn::Error> {
         let action_structs_code = self.generate_action_structs();
-        let tables_code = self.generate_tables_code();
+        let tables_code = self.generate_tables_code()?;
         let apply_code = self.generate_apply_code();
         let packers_code = self.generate_code_for_packers();
         let scale_info = self.gather_scale_info();
@@ -989,7 +1037,7 @@ impl Contract {
         let ident = &self.ident;
         let attrs = self.attrs();
         let vis = self.vis();
-        quote! {
+        Ok(quote! {
             use eosio_chain::{
                 serializer::Packer,
                 db::SecondaryType,
@@ -1044,7 +1092,7 @@ impl Contract {
                 #apply_code
                 #scale_info
             }
-        }
+        })
     }
 
     pub fn get_items(self) -> Vec<syn::Item> {
