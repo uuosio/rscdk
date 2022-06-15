@@ -2,6 +2,7 @@
 mod error;
 
 mod fixedstring;
+mod name;
 
 mod action;
 mod attrs;

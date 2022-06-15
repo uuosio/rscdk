@@ -4,23 +4,32 @@ use eosio_chain as chain;
 
 #[chain::contract]
 mod hello {
+    pub struct MyData3 {
+        count: u64
+    }
+
+    pub struct MyData2 {
+        count: u64,
+        mydata: MyData3,
+    }
 
     #[chain(table="mydata")]
     pub struct MyData {
         #[chain(primary)]
-        count: u64
+        count: u64,
+        mydata: MyData2,
     }
 
     #[chain(main)]
     pub struct Hello {
-        receiver: u64,
-        first_receiver: u64,
-        action: u64,
+        receiver: Name,
+        first_receiver: Name,
+        action: Name,
     }
 
     impl Hello {
 
-        pub fn new(receiver: u64, first_receiver: u64, action: u64) -> Self {
+        pub fn new(receiver: Name, first_receiver: Name, action: Name) -> Self {
             Self {
                 receiver: receiver,
                 first_receiver: first_receiver,
@@ -32,6 +41,10 @@ mod hello {
         pub fn say_hello(&self) {
             let mut v = vec![1, 2, 3, 4];
             eosio_println!("hello", v);
+        }
+
+        #[chain(action="test")]
+        pub fn test(&self, a1: String, a2: Option<u8>) {
         }
     }
 }

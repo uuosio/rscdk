@@ -1,11 +1,12 @@
 [package]
 name = "hello"
-version = "3.0.0-rc8"
+version = "0.1.0"
 authors = [""]
 edition = "2021"
 
 [dependencies]
 eosio_chain = { version = "0.1.0", path = "../../crates/eosio-chain", default-features = false }
+eosio-scale-info = { git="https://github.com/learnforpractice/eosio-scale-info", branch = "master", default-features = false, features = ["derive"], optional = true }
 
 [lib]
 name = "hello"
@@ -16,6 +17,7 @@ crate-type = ["cdylib", "rlib"]
 default = ["std"]
 std = [
     "eosio_chain/std",
+    "eosio-scale-info/std"
 ]
 
 # [workspace]

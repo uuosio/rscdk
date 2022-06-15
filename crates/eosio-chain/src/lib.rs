@@ -16,6 +16,9 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
     core::arch::wasm32::unreachable();
 }
 
+#[cfg(feature = "std")]
+pub use eosio_scale_info;
+
 #[cfg(not(feature = "std"))]
 extern crate alloc;
 
@@ -108,5 +111,5 @@ pub mod varint;
 
 pub use eosio_macro::{
     contract,
-    chain,
+    // chain,
 };

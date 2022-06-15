@@ -3,9 +3,9 @@ use crate::name::{
     Name,
 };
 
-use crate::{
-    check,
-};
+// use crate::{
+//     check,
+// };
 
 use crate::{
     vec::Vec,
@@ -41,7 +41,7 @@ impl<T: MultiIndexValue> MultiIndex<T> {
                 SecondaryType::Idx256 => idxdbs.push(Box::new(Idx256DB::new(i, code.n, scope.n, idx_table + i as u64))),
                 SecondaryType::IdxF64 => idxdbs.push(Box::new(IdxF64DB::new(i, code.n, scope.n, idx_table + i as u64))),
                 SecondaryType::IdxF128 => idxdbs.push(Box::new(IdxF128DB::new(i, code.n, scope.n, idx_table + i as u64))),
-                _ => check(false, "unsupported secondary index type"),
+                // _ => check(false, "unsupported secondary index type"),
             }
             i += 1;
         }

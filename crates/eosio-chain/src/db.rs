@@ -785,7 +785,7 @@ impl IndexDB for Idx128DB {
     }
 
     fn find(&self, secondary: SecondaryValue) -> SecondaryIterator {
-        if let SecondaryValue::Idx128(mut value) = secondary {
+        if let SecondaryValue::Idx128(value) = secondary {
             let mut primary = 0;
             let mut _secondary = Uint128{lo: (value & 0xffffffffffffffff) as u64, hi: (value >> 64) as u64};
             let ret = db_idx128_find_secondary(self.code, self.scope, self.table, &mut _secondary, &mut primary);

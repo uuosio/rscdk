@@ -1,4 +1,4 @@
-use quote::quote;
+// use quote::quote;
 
 extern crate proc_macro;
 
@@ -13,7 +13,7 @@ pub fn contract(attr: TokenStream, item: TokenStream) -> TokenStream {
     contract::generate(attr.into(), item.into()).into()
 }
 
-#[proc_macro_attribute]
-pub fn chain(attr: TokenStream, item: TokenStream) -> TokenStream {
-    item
-}
+// #[proc_macro_attribute]
+// pub fn chain(attr: TokenStream, item: TokenStream) -> TokenStream {
+//     item
+// }
