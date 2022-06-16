@@ -115,6 +115,28 @@ fn native_type_to_abi_type(tp: &str) -> &str {
     }
 }
 
+fn is_intrinsic_abi_type(segments: &[&str]) -> bool {
+    if segments.len() != 3 {
+        return false;
+    }
+
+    if segments[0] != "eosio_chain" {
+        return false;
+    }
+
+    match segments[2] {
+        "Varint32" | "VarUint32" | "Float128" | "TimePoint" | "TimePointSec" |
+        "BlockTimeStampType" | "Name" | "Checksum160" | "Checksum256" | "Uint256" |
+        "Checksum512" | "PublicKey" | "Signature" | "Symbol" | "SymbolCode" | "Asset" |
+        "ExtendedAsset"  => {
+            return true;
+        }
+        _=> {
+            return false;
+        }
+    }
+}
+
 pub fn parse_abi_info(info: &ABIInfo) -> String {
     let mut abi = ABI {
         version: String::from("eosio::abi/1.1"),
@@ -129,30 +151,53 @@ pub fn parse_abi_info(info: &ABIInfo) -> String {
     };
 
     info.structs.iter().for_each(|item|{
-		if let ::eosio_scale_info::TypeDef::Composite(x) = item.type_def() {
-			let name = item.path().segments().last().unwrap();
-            let mut s = ABIStruct{
-                name: String::from(*name),
-                base: String::from(""),
-                fields: Vec::new(),
-            };
-			x.fields().iter().for_each(|field|{
-                let mut ty: String;
-                let rust_type = *field.type_name().unwrap();
-                if let Some(pos) = rust_type.find("Option<") {
-                    ty = String::from(native_type_to_abi_type(&rust_type["Option<".len()..rust_type.len() -1])) + "?";
-                } else {
-                    ty = String::from(native_type_to_abi_type(rust_type));
+        // println!("+++++++++++++item: {:?}", item);
+        match item.type_def() {
+            ::eosio_scale_info::TypeDef::Composite(x) => {
+                if is_intrinsic_abi_type(item.path().segments()) {
+                    return;
                 }
-                s.fields.push(
-                    ABIType{
-                        name: String::from(*field.name().unwrap()),
-                        ty,
+
+                let name = item.path().segments().last().unwrap();
+                let mut s = ABIStruct{
+                    name: String::from(*name),
+                    base: String::from(""),
+                    fields: Vec::new(),
+                };
+                x.fields().iter().for_each(|field|{
+                    let mut ty: String;
+                    let rust_type = *field.type_name().unwrap();
+                    if let Some(pos) = rust_type.find("Option<") {
+                        ty = String::from(native_type_to_abi_type(&rust_type["Option<".len()..rust_type.len() -1])) + "?";
+                    } else {
+                        ty = String::from(native_type_to_abi_type(rust_type));
                     }
-                )
-			});
-            abi.structs.push(s);
-		}
+                    s.fields.push(
+                        ABIType{
+                            name: String::from(*field.name().unwrap()),
+                            ty,
+                        }
+                    )
+                });
+                abi.structs.push(s);
+            }
+            ::eosio_scale_info::TypeDef::Variant(x) => {
+                let name = item.path().segments().last().unwrap();
+                let mut abi_variant = ABIVariant{
+                    name: String::from(*name),
+                    types: Vec::new(),
+                };
+                x.variants().iter().for_each(|v|{
+                    let rust_type = v.fields()[0].type_name().unwrap();
+                    abi_variant.types.push(String::from(String::from(native_type_to_abi_type(rust_type))));
+                });
+                abi.variants.push(abi_variant);    
+            }
+            _ => {
+                println!("+++unknown abi type: {:?}", item);
+                // panic!("unknown abi type {:?}", item);
+            }
+        }
     });
 
     info.tables.iter().for_each(|table|{
@@ -179,20 +224,6 @@ pub fn parse_abi_info(info: &ABIInfo) -> String {
         }
     });
 
-    info.variants.iter().for_each(|variant|{
-		if let ::eosio_scale_info::TypeDef::Variant(x) = variant.type_def() {
-			let name = variant.path().segments().last().unwrap();
-            let mut abi_variant = ABIVariant{
-                name: String::from(*name),
-                types: Vec::new(),
-            };
-            x.variants().iter().for_each(|v|{
-                let rust_type = v.fields()[0].type_name().unwrap();
-                abi_variant.types.push(String::from(String::from(native_type_to_abi_type(rust_type))));
-            });
-            abi.variants.push(abi_variant);
-        }
-    });
 
     if let Ok(contents) = serde_json::to_string_pretty(&abi) {
         return contents;

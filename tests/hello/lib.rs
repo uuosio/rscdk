@@ -15,6 +15,7 @@ mod hello {
 
     pub struct MyData3 {
         count: u64,
+        asset: Asset,
         myvariant: MyVariant1,
     }
 

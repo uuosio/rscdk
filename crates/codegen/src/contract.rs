@@ -297,12 +297,20 @@ impl Contract {
         
     }
     
-    pub fn add_packer(&mut self, name: &str) -> Result<(), syn::Error> {
+    fn is_primitive_type(name: &str) -> bool {
         match name {
             "String" | "Name" | "i8" | "u8" | "i16" | "u16" | "i32" | "u32" | "i64" | "u64" | "i128" | "u128" => {
-                return Ok(());
+                return true;
             }
-            _ => {}
+            _ => {
+                return false;
+            }
+        }
+    }
+
+    pub fn add_packer(&mut self, name: &str) -> Result<(), syn::Error> {
+        if Self::is_primitive_type(name) {
+            return Ok(());
         }
 
         let mut names: Vec<String> = Vec::new();
@@ -941,23 +949,175 @@ impl Contract {
         }
     }
 
-    fn gather_scale_info(&self) -> TokenStream2 {
-        let packer_scale_info_code = self.packers
-            .iter()
-            .map(|packer| {
-                let ident = &packer.ident;
-                quote!{
-                    info.structs.push(#ident::type_info());
+    fn is_option_type(ty: &syn::Type) -> bool {
+        if let syn::Type::Path(type_path) = ty {
+            if type_path.path.segments.len() != 1 {
+                return false;
+            }
+
+            let path_seg = &type_path.path.segments[0];
+            let name = path_seg.ident.to_string();
+            if name == "Option" {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    fn extract_type(ty: &syn::Type) -> Result<(String, &syn::Type), syn::Error> {
+        if let syn::Type::Path(type_path) = ty {
+            if type_path.path.segments.len() != 1 {
+                return Err(format_err_spanned!(
+                    ty,
+                    "can not parse type with multiple segments",
+                ))
+            }
+
+            let path_seg = &type_path.path.segments[0];
+            let name = path_seg.ident.to_string();
+            if name == "Option" {
+                if let syn::PathArguments::AngleBracketed(x) = &path_seg.arguments {
+                    if x.args.len() != 1 {
+                        return Err(format_err_spanned!(
+                            x,
+                            "can not parse option type with multiple arguments",
+                        ))      
+                    }
+
+                    let arg = &x.args[0];
+                    if let syn::GenericArgument::Type(ty) = arg {
+                        if let syn::Type::Path(type_path) = ty {
+                            if type_path.path.segments.len() != 1 {
+                                return Err(format_err_spanned!(
+                                    type_path,
+                                    "can not parse type in option with multiple segments",
+                                ))
+                            }
+                            let name = type_path.path.segments.last().unwrap().ident.to_string();
+                            return Ok((name, ty));
+                        }
+                    }
                 }
-            });
-        
-        let packer_scale_info_code2 = self.actions
+            } else {
+                return Ok((name, ty));
+            }
+        }
+
+        Err(format_err_spanned!(
+            ty,
+            "unsupported type",
+        ))
+    }
+
+    //TODO: parse Option type
+    fn get_type_name_from_field(field: &syn::Field) -> Result<String, syn::Error> {
+        if let syn::Type::Path(type_path) = &field.ty {
+            return Ok(type_path.path.segments.last().unwrap().ident.to_string());
+        }
+ 
+        Err(format_err_spanned!(
+            field,
+            "unsupported field type",
+        ))
+    }
+
+    fn add_abi_type<'a>(&'a self, tp_name: &str, abi_types: &mut HashMap<String, &'a syn::Type>) -> Result<(), syn::Error> {
+        if Self::is_primitive_type(tp_name) {
+            return Ok(());
+        }
+
+        let mut ty_names: Vec<String> = Vec::new();
+        for item in &self.items {
+            match item {
+                syn::Item::Struct(x) => {
+                    if x.ident.to_string() != tp_name {
+                        continue;
+                    }
+                    for field in &x.fields {
+                        let type_name = Self::get_type_name_from_field(field)?;
+                        if abi_types.insert(type_name.clone(), &field.ty).is_none() {
+                            ty_names.push(type_name);
+                        }
+                    }
+                    break;
+                }
+                syn::Item::Enum(x) => {
+                    if x.ident.to_string() != tp_name {
+                        continue;
+                    }
+
+                    for field in &x.variants {
+                        let field_ident = &field.ident;
+                        if let syn::Fields::Unnamed(unnamed_fields) = &field.fields {
+                            let unnamed_field = unnamed_fields.unnamed.last().unwrap();
+                            let type_name = Self::get_type_name_from_field(unnamed_field)?;
+                            if abi_types.insert(type_name.clone(), &unnamed_field.ty).is_none() {
+                                ty_names.push(type_name);
+                            }
+                        }
+                        //DODO: return error
+                    };
+                    break;
+                }
+                _ => {}
+            }
+        }
+
+        for name in &ty_names {
+            self.add_abi_type(name, abi_types)?;
+        }
+        Ok(())
+    }
+
+    fn gather_scale_info(&self) -> Result<TokenStream2, syn::Error> {
+        let mut abi_types: HashMap<String, &syn::Type> = HashMap::new();
+
+        for action in &self.actions {
+            let item = &action.item;
+            let span = item.span();
+            for arg in item.sig.inputs.iter() {
+                if let syn::FnArg::Typed(pat_type) = arg {
+                    let (type_name, ty) = Self::extract_type(&pat_type.ty)?;
+                    if Self::is_primitive_type(&type_name) {
+                        continue;
+                    }
+                    abi_types.insert(type_name.clone(), ty);
+                    self.add_abi_type(&type_name, &mut abi_types)?;
+                }
+            }
+        }
+
+        for table in &self.tables {
+            for field in &table.item.fields {
+                let (type_name, tp) = Self::extract_type(&field.ty)?;
+                if Self::is_primitive_type(&type_name) {
+                    continue;
+                }
+                abi_types.insert(type_name.clone(), tp);
+                self.add_abi_type(&type_name, &mut abi_types)?;
+            }
+        }
+
+        let mut structs_code: Vec<TokenStream2> = Vec::new();
+        for (_, tp) in abi_types {
+            structs_code.push(
+                quote!{
+                    info.structs.push(#tp::type_info());
+                }
+            );
+        }
+
+        self.actions
             .iter()
-            .map(|action| {
+            .for_each(|action| {
                 let struct_name_ident = proc_macro2::Ident::new(&action.action_name.str(), proc_macro2::Span::call_site());
-                quote!{
-                    info.structs.push(#struct_name_ident::type_info());
-                }
+                structs_code.push(
+                    quote!{
+                        info.structs.push(#struct_name_ident::type_info());
+                    }
+                );
             });
 
         let table_scale_info_code = self.tables
@@ -991,16 +1151,8 @@ impl Contract {
                 }
             });
 
-        let variants_scale_info_code = self.variants
-            .iter()
-            .map(|variant| {
-                let ident = &variant.ident;
-                quote!{
-                    info.variants.push(#ident::type_info());
-                }
-            });
 
-        return quote!{
+        return Ok(quote!{
             #[cfg(feature = "std")]
             const _: () = {
                 #[no_mangle]
@@ -1011,15 +1163,13 @@ impl Contract {
                         structs: Vec::new(),
                         variants: Vec::new(),
                     };
-                    #( #packer_scale_info_code ) *
-                    #( #packer_scale_info_code2 ) *
+                    #( #structs_code ) *
                     #( #action_scale_info_code ) *
                     #( #table_scale_info_code ) *
-                    #( #variants_scale_info_code ) *
                     return ::eosio_chain::abi::parse_abi_info(&info);
                 }
             };
-        }
+        });
     }
 
     fn generate_apply_code(&self) -> TokenStream2 {
@@ -1171,7 +1321,7 @@ impl Contract {
         let apply_code = self.generate_apply_code();
         let packers_code = self.generate_code_for_packers();
         let variants_code = self.generate_variants_code()?;
-        let scale_info = self.gather_scale_info();
+        let scale_info = self.gather_scale_info()?;
 
         let items = self.items.iter().map(|item|{
             match item {
