@@ -403,9 +403,6 @@ impl Contract {
                 }
             );
             quote_spanned!(span =>
-                // #( #other_attrs )*
-                // #[cfg_attr(feature = "std", derive(eosio_scale_info::TypeInfo))]
-                // #[derive(Default)]
                 #packed
             )
         });
@@ -508,7 +505,8 @@ impl Contract {
             );
 
             quote! {
-                #[cfg_attr(feature = "std", derive(eosio_scale_info::TypeInfo))]
+                #[cfg_attr(feature = "std", derive(::eosio_chain::eosio_scale_info::TypeInfo))]
+                #[cfg_attr(feature = "std", scale_info(crate = ::eosio_chain::eosio_scale_info))]
                 #[derive(Default)]
                 struct #struct_name_ident {
                     # ( #fields ), *
@@ -1330,7 +1328,8 @@ impl Contract {
                         packer.ident == x.ident
                     }) {
                         quote!{
-                            #[cfg_attr(feature = "std", derive(eosio_scale_info::TypeInfo))]
+                            #[cfg_attr(feature = "std", derive(eosio_chain::eosio_scale_info::TypeInfo))]
+                            #[cfg_attr(feature = "std", scale_info(crate = ::eosio_chain::eosio_scale_info))]
                             #[derive(Default)]
                             #item
                         }
@@ -1345,10 +1344,10 @@ impl Contract {
                         variant.ident == x.ident
                     }) {
                         quote!{
-                            #[cfg_attr(feature = "std", derive(eosio_scale_info::TypeInfo))]
-                            // #[derive(Default)]
+                            #[cfg_attr(feature = "std", derive(eosio_chain::eosio_scale_info::TypeInfo))]
+                            #[cfg_attr(feature = "std", scale_info(crate = ::eosio_chain::eosio_scale_info))]
                             #item
-                        }    
+                        }
                     } else {
                         quote!{
                             #item
@@ -1408,7 +1407,10 @@ impl Contract {
             };
 
             #[cfg(feature = "std")]
-            use eosio_scale_info::TypeInfo as _;
+            use eosio_chain::eosio_scale_info::TypeInfo as _;
+
+            #[cfg(feature = "std")]
+            use eosio_chain::eosio_scale_info;
 
             #( #attrs )*
             #vis mod #ident {

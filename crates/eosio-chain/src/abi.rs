@@ -151,7 +151,6 @@ pub fn parse_abi_info(info: &ABIInfo) -> String {
     };
 
     info.structs.iter().for_each(|item|{
-        // println!("+++++++++++++item: {:?}", item);
         match item.type_def() {
             ::eosio_scale_info::TypeDef::Composite(x) => {
                 if is_intrinsic_abi_type(item.path().segments()) {

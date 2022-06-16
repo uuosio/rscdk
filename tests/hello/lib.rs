@@ -4,6 +4,14 @@ use eosio_chain as chain;
 
 #[chain::contract]
 mod hello {
+
+    #[cfg_attr(feature = "std", derive(eosio_chain::eosio_scale_info::TypeInfo))]
+    #[cfg_attr(feature = "std", scale_info(crate = ::eosio_chain::eosio_scale_info))]
+    #[derive(Default)]
+    struct AA {
+        aa: u64,
+    }
+
     pub enum MyVariant1 {
         Var1(u64)
     }
