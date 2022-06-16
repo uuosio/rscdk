@@ -21,8 +21,8 @@ pub struct ABIInfo {
     pub actions: Vec<ActionInfo>,
     pub tables: Vec<TableInfo>,
     pub structs: Vec<Type>,
+    pub variants: Vec<Type>,
 }
-
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ABIType {
@@ -176,6 +176,21 @@ pub fn parse_abi_info(info: &ABIInfo) -> String {
                 ty: String::from(*name),
                 ricardian_contract: String::from(""),
             });
+        }
+    });
+
+    info.variants.iter().for_each(|variant|{
+		if let ::eosio_scale_info::TypeDef::Variant(x) = variant.type_def() {
+			let name = variant.path().segments().last().unwrap();
+            let mut abi_variant = ABIVariant{
+                name: String::from(*name),
+                types: Vec::new(),
+            };
+            x.variants().iter().for_each(|v|{
+                let rust_type = v.fields()[0].type_name().unwrap();
+                abi_variant.types.push(String::from(String::from(native_type_to_abi_type(rust_type))));
+            });
+            abi.variants.push(abi_variant);
         }
     });
 

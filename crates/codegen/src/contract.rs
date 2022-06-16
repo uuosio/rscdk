@@ -102,6 +102,21 @@ impl Contract {
         return true;
     }
 
+    fn verify_variant(item: &syn::ItemEnum) -> Result<(), syn::Error> {
+        for v in &item.variants {
+            match v.fields {
+                syn::Fields::Unnamed(_) => {}
+                _ => {
+                    return Err(format_err_spanned!(
+                        v.fields,
+                        "invalid variant field"
+                    ));
+                }
+            }
+        }
+        Ok(())
+    }
+
     pub fn analyze_items(&mut self) -> Result<(), syn::Error> {
         let mut arg_types: HashMap<String, String> = HashMap::new();
         for item in &mut self.items {
@@ -237,36 +252,65 @@ impl Contract {
                         }
                     }
                 }
-                //TODO: parse field in enum
+
                 syn::Item::Enum(x) => {
-                    self.variants.push(x.clone());
+                    let (chain_attrs, other_attrs) = attrs::partition_attributes(x.attrs.clone())?;
+                    if chain_attrs.len() == 0 {
+                        continue;
+                    }
+
+                    if chain_attrs.len() > 1 {
+                        return Err(format_err_spanned!(
+                            x,
+                            "more than one chain attribute specified to struct {}", x.ident
+                        ));
+                    }
+
+                    let attr = &chain_attrs[0];
+                    if attr.args().len() < 1 {
+                        return Err(format_err_spanned!(
+                            x,
+                            "wrong chain attribute in {}", x.ident
+                        ));
+                    }
+
+                    x.attrs = other_attrs;
+                    let arg = &attr.args().next().unwrap().arg;
+                    if attrs::AttributeArg::Variant == *arg {
+                        Self::verify_variant(x)?;
+                        self.variants.push(x.clone());
+                    } else {
+                        return Err(format_err_spanned!(
+                            x,
+                            "only variant attribute supported for enum {}", x.ident
+                        ));
+                    }
                 }
                 _ => {}
             }
         };
 
         for (ty, _) in arg_types {
-            println!("++++++++ty: {}", ty);
-            self.add_packer(&ty);
+            self.add_packer(&ty)?;
         }
         return Ok(())
         
     }
     
-    pub fn add_packer(&mut self, name: &str) {
+    pub fn add_packer(&mut self, name: &str) -> Result<(), syn::Error> {
         match name {
             "String" | "Name" | "i8" | "u8" | "i16" | "u16" | "i32" | "u32" | "i64" | "u64" | "i128" | "u128" => {
-                return;
+                return Ok(());
             }
             _ => {}
         }
 
         let mut names: Vec<String> = Vec::new();
-        self.items.iter().any(|item|{
+        for item in &self.items {
             match item {
                 syn::Item::Struct(x) => {
                     if x.ident.to_string() != name {
-                        return false;
+                        continue;
                     }
                     self.packers.push(x.clone());
                     for field in &x.fields {
@@ -277,21 +321,24 @@ impl Contract {
                             names.push(name);
                         }
                     }
-                    return true;
+                    break;
                 }
-                syn::Item::Enum(_x) => {
-                    return false;
+                syn::Item::Enum(x) => {
+                    if x.ident.to_string() != name {
+                        continue;
+                    }
+                    Self::verify_variant(x)?;
+                    self.variants.push(x.clone());
+                    break;
                 }
-                _ => {
-                    return false;
-                }
+                _ => {}
             }
-        });
+        }
 
         for name in &names {
-            self.add_packer(name);
+            self.add_packer(name)?;
         }
-        return;
+        Ok(())
     }
 
     fn generate_code_for_packers(&self) -> TokenStream2 {
@@ -943,6 +990,16 @@ impl Contract {
                         });
                 }
             });
+
+        let variants_scale_info_code = self.variants
+            .iter()
+            .map(|variant| {
+                let ident = &variant.ident;
+                quote!{
+                    info.variants.push(#ident::type_info());
+                }
+            });
+
         return quote!{
             #[cfg(feature = "std")]
             const _: () = {
@@ -952,11 +1009,13 @@ impl Contract {
                         actions: Vec::new(),
                         tables: Vec::new(),
                         structs: Vec::new(),
+                        variants: Vec::new(),
                     };
                     #( #packer_scale_info_code ) *
                     #( #packer_scale_info_code2 ) *
                     #( #action_scale_info_code ) *
                     #( #table_scale_info_code ) *
+                    #( #variants_scale_info_code ) *
                     return ::eosio_chain::abi::parse_abi_info(&info);
                 }
             };
@@ -996,11 +1055,122 @@ impl Contract {
         }
     }
 
+    fn generate_variants_code(&self) -> Result<TokenStream2, syn::Error> {
+        //
+        let variants_code = self.variants.iter().map(|item| {
+            let first_field = &item.variants.iter().next().unwrap().ident;
+            let span = item.span();
+            let variant_ident = &item.ident;
+            let pack_code = item.variants
+                .iter()
+                .enumerate()
+                .map(|(i, field)| {
+                    let field_ident = &field.ident;
+        
+                    let index = syn::LitInt::new(&i.to_string(), proc_macro2::Span::call_site());
+                    if let syn::Fields::Unnamed(_) = &field.fields {
+                        // let ty = &x.unnamed.last().unwrap().ty;
+                        return quote!{
+                            #variant_ident::#field_ident(x) => {
+                                let mut i: u8 = #index as u8;
+                                enc.pack(&i);
+                                enc.pack(x);
+                            }
+                        }
+                    } else {
+                        quote!{}
+                    }
+            });
+
+            let unpack_code = item.variants
+                .iter()
+                .enumerate()
+                .map(|(i,field)| {
+                    let field_ident = &field.ident;
+                    let index = syn::LitInt::new(&i.to_string(), proc_macro2::Span::call_site());
+                    if let syn::Fields::Unnamed(x) = &field.fields {
+                        let ty = &x.unnamed.last().unwrap().ty;
+                        quote!{
+                            #index => {
+                                let mut v: #ty = Default::default();
+                                dec.unpack(&mut v);
+                                *self = #variant_ident::#field_ident(v);
+                            }
+                        }
+                    } else {
+                        quote!{}
+                    }
+            });
+
+            let getsize_code = item.variants
+                .iter()
+                .enumerate()
+                .map(|(i,field)| {
+                    let field_ident = &field.ident;
+                    let index = syn::LitInt::new(&i.to_string(), proc_macro2::Span::call_site());
+                    quote!{
+                        #variant_ident::#field_ident(x) => {
+                            _size = 1 + x.size();
+                        }
+                    }
+            });
+
+            quote_spanned!(span =>
+                impl Default for #variant_ident {
+                    ///
+                    #[inline]
+                    fn default() -> Self {
+                        #variant_ident::#first_field(Default::default())
+                    }
+                }
+
+                impl ::eosio_chain::serializer::Packer for #variant_ident {
+                    fn size(&self) -> usize {
+                        let mut _size: usize = 0;
+                        match self {
+                            #( #getsize_code )*
+                            _=> {}
+                        }
+                        return _size;
+                    }
+                
+                    fn pack(&self) -> Vec<u8> {
+                        let mut enc = ::eosio_chain::serializer::Encoder::new(self.size());
+                        match self {
+                            #( #pack_code )*
+                            _=> {}
+                        }
+                        return enc.get_bytes();
+                    }
+                
+                    fn unpack<'a>(&mut self, data: &'a [u8]) -> usize {
+                        let mut dec = ::eosio_chain::serializer::Decoder::new(data);
+                        let mut variant_type_index: u8 = 0;
+                        dec.unpack(&mut variant_type_index);
+                        match variant_type_index {
+                            #( #unpack_code )*
+                            _ => {
+                                ::eosio_chain::vmapi::eosio::eosio_assert(false, "bad variant index!");
+                            }
+                        }
+                        return dec.get_pos();
+                    }
+                }
+            )
+        });
+        Ok(
+            quote!{
+                #( #variants_code ) *
+            }
+        )
+    }
+
     pub fn generate_code(&self) -> Result<TokenStream2, syn::Error> {
         let action_structs_code = self.generate_action_structs();
         let tables_code = self.generate_tables_code()?;
         let apply_code = self.generate_apply_code();
         let packers_code = self.generate_code_for_packers();
+        let variants_code = self.generate_variants_code()?;
         let scale_info = self.gather_scale_info();
 
         let items = self.items.iter().map(|item|{
@@ -1020,11 +1190,19 @@ impl Contract {
                         }
                     }
                 }
-                syn::Item::Enum(_) => {
-                    quote!{
-                        #[cfg_attr(feature = "std", derive(eosio_scale_info::TypeInfo))]
-                        #[derive(Default)]
-                        #item
+                syn::Item::Enum(x) => {
+                    if self.variants.iter().any(|variant|{
+                        variant.ident == x.ident
+                    }) {
+                        quote!{
+                            #[cfg_attr(feature = "std", derive(eosio_scale_info::TypeInfo))]
+                            // #[derive(Default)]
+                            #item
+                        }    
+                    } else {
+                        quote!{
+                            #item
+                        }
                     }
                 }
                 _ => {
@@ -1087,6 +1265,7 @@ impl Contract {
                 use super::*;
                 #( #items ) *
                 #packers_code
+                #variants_code
                 #action_structs_code
                 #tables_code
                 #apply_code

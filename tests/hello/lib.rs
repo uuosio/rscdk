@@ -4,8 +4,18 @@ use eosio_chain as chain;
 
 #[chain::contract]
 mod hello {
+    pub enum MyVariant1 {
+        Var1(u64)
+    }
+
+    #[chain(variant)]
+    pub enum MyVariant2 {
+        Var2(u64)
+    }
+
     pub struct MyData3 {
-        count: u64
+        count: u64,
+        myvariant: MyVariant1,
     }
 
     pub struct MyData2 {
