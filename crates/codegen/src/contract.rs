@@ -1035,6 +1035,9 @@ impl Contract {
                     }
                     for field in &x.fields {
                         let type_name = Self::get_type_name_from_field(field)?;
+                        if Self::is_primitive_type(&type_name) {
+                            continue;
+                        }
                         if abi_types.insert(type_name.clone(), &field.ty).is_none() {
                             ty_names.push(type_name);
                         }
@@ -1051,6 +1054,9 @@ impl Contract {
                         if let syn::Fields::Unnamed(unnamed_fields) = &field.fields {
                             let unnamed_field = unnamed_fields.unnamed.last().unwrap();
                             let type_name = Self::get_type_name_from_field(unnamed_field)?;
+                            if Self::is_primitive_type(&type_name) {
+                                continue;
+                            }
                             if abi_types.insert(type_name.clone(), &unnamed_field.ty).is_none() {
                                 ty_names.push(type_name);
                             }
