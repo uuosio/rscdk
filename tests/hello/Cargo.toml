@@ -12,6 +12,10 @@ name = "hello"
 path = "lib.rs"
 crate-type = ["cdylib", "rlib"]
 
+[profile.release]
+panic = "abort"
+lto = true
+
 [features]
 default = ["std"]
 std = [

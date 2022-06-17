@@ -1,15 +1,26 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+mod mymod;
 use eosio_chain as chain;
 
 #[chain::contract]
 mod hello {
+    use super::*;
 
+    use mymod::hello::{
+        BB
+    };
+    ///
     #[cfg_attr(feature = "std", derive(eosio_chain::eosio_scale_info::TypeInfo))]
     #[cfg_attr(feature = "std", scale_info(crate = ::eosio_chain::eosio_scale_info))]
-    #[derive(Default)]
+    #[derive(Clone, Eq, PartialEq, Default)]
+    pub struct MyChecksum {
+        data: [u8; 20],
+        data2: mymod::hello::BB,
+    }
+
     struct AA {
-        aa: u64,
+        value: u64,
     }
 
     pub enum MyVariant1 {
@@ -19,6 +30,10 @@ mod hello {
     #[chain(variant)]
     pub enum MyVariant2 {
         Var2(u64)
+    }
+
+    pub enum MyVariant3 {
+        Var2(u64, u64)
     }
 
     pub struct MyData3 {
@@ -39,6 +54,7 @@ mod hello {
         #[chain(Idx64)]
         a2: u64,
         mydata: MyData2,
+        aa1: AA,
     }
 
     #[chain(main)]
@@ -65,7 +81,8 @@ mod hello {
         }
 
         #[chain(action="test")]
-        pub fn test(&self, a1: String, a2: Option<u8>) {
+        pub fn test(&self, a1: String, a3: Option<u8>) {
+            let a2: Option<u8>;
         }
     }
 }

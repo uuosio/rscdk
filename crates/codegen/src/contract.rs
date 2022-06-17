@@ -99,7 +99,7 @@ impl Contract {
     }
 
     pub fn has_main_struct(&self) -> bool {
-        return true;
+        return self.main_struct.is_some();
     }
 
     fn verify_variant(item: &syn::ItemEnum) -> Result<(), syn::Error> {
@@ -1170,7 +1170,7 @@ impl Contract {
                     #( #structs_code ) *
                     #( #action_scale_info_code ) *
                     #( #table_scale_info_code ) *
-                    return ::eosio_chain::abi::parse_abi_info(&info);
+                    return ::eosio_chain::abi::parse_abi_info(&mut info);
                 }
             };
         });
@@ -1325,7 +1325,13 @@ impl Contract {
         let apply_code = self.generate_apply_code();
         let packers_code = self.generate_code_for_packers();
         let variants_code = self.generate_variants_code()?;
-        let scale_info = self.gather_scale_info()?;
+        let scale_info: Option<TokenStream2>;
+
+        if self.has_main_struct() {
+            scale_info = Some(self.gather_scale_info()?);
+        } else {
+            scale_info  = None;
+        }
 
         let items = self.items.iter().map(|item|{
             match item {

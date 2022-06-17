@@ -5,7 +5,12 @@ use serde::{
     Serialize,
 };
 
-use eosio_scale_info::Type;
+use std::collections::HashMap;
+
+use eosio_scale_info::{
+    Type,
+    Path
+};
 
 pub struct ActionInfo {
     pub name: String,
@@ -115,16 +120,10 @@ fn native_type_to_abi_type(tp: &str) -> &str {
     }
 }
 
-fn is_intrinsic_abi_type(segments: &[&str]) -> bool {
-    if segments.len() != 3 {
-        return false;
-    }
-
-    if segments[0] != "eosio_chain" {
-        return false;
-    }
-
-    match segments[2] {
+fn is_intrinsic_abi_type(name: &str) -> bool {
+    match name {
+        "i8" | "u8" | "i16" | "u16" | "i32" | "u32" | "i64" | "u64" | "f64" | "i128" | "u128" |
+        "String" |
         "Varint32" | "VarUint32" | "Float128" | "TimePoint" | "TimePointSec" |
         "BlockTimeStampType" | "Name" | "Checksum160" | "Checksum256" | "Uint256" |
         "Checksum512" | "PublicKey" | "Signature" | "Symbol" | "SymbolCode" | "Asset" |
@@ -137,7 +136,118 @@ fn is_intrinsic_abi_type(segments: &[&str]) -> bool {
     }
 }
 
-pub fn parse_abi_info(info: &ABIInfo) -> String {
+fn get_full_path_name(path: &Path) -> String {
+    return path.segments().to_vec().join("::");
+}
+
+fn get_last_path_name(path: &Path) -> String {
+    let len = path.segments().len();
+    if len == 0 {
+        return String::from("");
+    }
+    return String::from(path.segments()[len-1]);
+}
+
+pub fn verify_abi_structs(main_structs: &Vec<Type>) -> Vec<Type> {
+    //
+    let mut main_struct_map: HashMap<String, &Type> = HashMap::new();
+    //<name, full_name>
+    let mut struct_name_map: HashMap<String, &Type> = HashMap::new();
+
+    for ty in main_structs {
+        let last_name = get_last_path_name(ty.path());
+        let full_name = get_full_path_name(ty.path());
+        if let Some(ty) = main_struct_map.get(&last_name) {
+            let full_name2 = get_full_path_name(ty.path());
+            if full_name != full_name2 {
+                panic!("abi name conflict detected: {} {}", full_name, full_name2);
+            }
+        } else {
+            main_struct_map.insert(full_name.clone(), ty);
+        }
+
+        if let Some(ty2) = struct_name_map.get(&last_name) {
+            let full_name2 = get_full_path_name(ty2.path());
+            if full_name2 != full_name {
+                panic!("abi name conflict detected: {} {}", full_name, full_name2);
+            }
+        } else {
+            struct_name_map.insert(last_name, ty);
+        }
+    }
+
+    let hashmap_mutex = eosio_scale_info::get_scale_type_map();
+    let global_hash_map = &*hashmap_mutex.lock().unwrap();
+    for (full_name, ty) in  global_hash_map {
+        println!("+++++++ty:{:?}", ty);
+        let last_name = get_last_path_name(ty.path());
+        if let Some(ty) = struct_name_map.get(&last_name) {
+            let full_name2 = get_full_path_name(ty.path());
+            if full_name2 != *full_name {
+                panic!("abi name conflict detected: {} {}", *full_name, full_name2);
+            }
+        } else {
+            struct_name_map.insert(last_name, ty);
+        }
+    }
+
+    let mut other_structs_map: HashMap<String, &Type> = HashMap::new();
+
+    let mut check_rust_type = |rust_type: &str| {
+        if is_intrinsic_abi_type(rust_type) {
+            return;
+        }
+
+        if let Some(_) = main_struct_map.get(rust_type) {
+            return
+        }
+
+        if let Some(ty) = struct_name_map.get(rust_type) {
+            let name = String::from(rust_type);
+            if let Some(ty2) = other_structs_map.get(&name) {
+                //
+            } else {
+                other_structs_map.insert(name, *ty);
+            }
+            return
+        }
+        panic!("abi struct not found: {}", rust_type);
+    };
+
+    main_structs.iter().for_each(|item|{
+        match item.type_def() {
+            ::eosio_scale_info::TypeDef::Composite(x) => {
+                let last_name = get_last_path_name(item.path());
+                x.fields().iter().for_each(|field|{
+                    let rust_type = *field.type_name().unwrap();
+                    if let Some(pos) = rust_type.find("Option<") {
+                        let inner_rust_type = &rust_type["Option<".len()..rust_type.len() -1];
+                        check_rust_type(inner_rust_type);
+                    } else {
+                        check_rust_type(rust_type);
+                    }
+                });
+            }
+            ::eosio_scale_info::TypeDef::Variant(x) => {
+                x.variants().iter().for_each(|v|{
+                    let rust_type = v.fields()[0].type_name().unwrap();
+                    check_rust_type(*rust_type);
+                });
+            }
+            _ => {
+                println!("+++unknown abi type: {:?}", item);
+            }
+        }
+    });
+
+    let mut other_structs: Vec<Type> = Vec::new();
+    for (_, ty) in other_structs_map {
+        other_structs.push(ty.clone());
+    }
+    return other_structs;
+}
+
+pub fn parse_abi_info(info: &mut ABIInfo) -> String {
     let mut abi = ABI {
         version: String::from("eosio::abi/1.1"),
         types: Vec::new(),
@@ -150,10 +260,14 @@ pub fn parse_abi_info(info: &ABIInfo) -> String {
         ricardian_clauses: Vec::new(),    
     };
 
+    let other_structs = verify_abi_structs(&info.structs);
+    info.structs.extend(other_structs);
+
     info.structs.iter().for_each(|item|{
+        println!("+++++++++item:{:?}", item);
         match item.type_def() {
             ::eosio_scale_info::TypeDef::Composite(x) => {
-                if is_intrinsic_abi_type(item.path().segments()) {
+                if is_intrinsic_abi_type(&get_last_path_name(item.path())) {
                     return;
                 }
 
