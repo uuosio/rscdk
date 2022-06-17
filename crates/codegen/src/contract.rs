@@ -1378,6 +1378,8 @@ impl Contract {
         let vis = self.vis();
         Ok(quote! {
             use eosio_chain::{
+                intrinsic_abi_types::*,
+
                 serializer::Packer,
                 db::SecondaryType,
                 db::SecondaryValue,
@@ -1385,25 +1387,11 @@ impl Contract {
                 db::ToPrimaryValue,
                 db::ToSecondaryValue,
                 db::FromSecondaryValue,
-                structs::*,
-                asset::{
-                    Symbol,
-                    SymbolCode,
-                    Asset,
-                    ExtendedAsset,
-                },
-                varint::{
-                    VarUint32,
-                },
                 print::*,
                 vmapi::eosio::{
                     check,
                 },
                 mi,
-            };
-
-            use eosio_chain::name::{
-                Name,
             };
 
             use eosio_chain::{

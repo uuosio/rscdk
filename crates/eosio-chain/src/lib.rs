@@ -106,6 +106,9 @@ pub mod utils;
 ///
 pub mod varint;
 
+///
+pub mod intrinsic_abi_types;
+
 pub use eosio_macro::{
     contract,
     // chain,
