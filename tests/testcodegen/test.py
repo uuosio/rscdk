@@ -69,6 +69,7 @@ class NewChain():
 
 @chain_test
 def test_hello():
+    print('+++++++test_hello', file=sys.stderr)
     # assert False, 'oops!'
     return
     with open('./target/wasm32-wasi/release/hello.wasm', 'rb') as f:
@@ -131,9 +132,10 @@ def run_test(code, error_message):
         os.chdir(temp_dir)
         cmd = f'cargo +nightly build --target=wasm32-wasi -Zbuild-std --no-default-features --release -Zbuild-std-features=panic_immediate_abort'
         cmd = shlex.split(cmd)
+        # process = subprocess.run(cmd)
         process = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         output = process.stderr.decode()
-        # print(output.decode())
+        print(output, file=sys.stderr)
         assert error_message in output, 'bad output'
     finally:
         shutil.rmtree(temp_dir)
