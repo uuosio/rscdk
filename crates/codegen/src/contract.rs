@@ -1136,6 +1136,17 @@ impl Contract {
                 );
             });
 
+        self.tables
+            .iter()
+            .for_each(|table| {
+                let struct_name_ident = &table.item.ident;
+                structs_code.push(
+                    quote!{
+                        info.structs.push(#struct_name_ident::type_info());
+                    }
+                );
+            });
+
         let table_scale_info_code = self.tables
             .iter()
             .map(|table| {
