@@ -8,6 +8,7 @@ use crate::vmapi::eosio::{
     eosio_memcpy,
 };
 
+use crate::asset::Asset;
 
 use crate::{
     check,
@@ -258,6 +259,12 @@ impl ToSecondaryValue for Uint256 {
             check(false, "ToSecondaryValue: bad Secondary type!");
             return SecondaryValue::Idx256(Uint256::default());
         }
+    }
+}
+
+impl ToPrimaryValue for Asset {
+    fn to_primary_value(&self) -> u64 {
+        return self.symbol().code().value();
     }
 }
 
