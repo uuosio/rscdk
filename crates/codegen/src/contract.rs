@@ -975,7 +975,7 @@ impl Contract {
 
             let path_seg = &type_path.path.segments[0];
             let name = path_seg.ident.to_string();
-            if name == "Option" {
+            if name == "Option" || name == "Vec" {
                 if let syn::PathArguments::AngleBracketed(x) = &path_seg.arguments {
                     if x.args.len() != 1 {
                         return Err(format_err_spanned!(
