@@ -12,7 +12,7 @@ fn main() -> Result<(), std::io::Error> {
 		__eosio_generate_abi()
 	};
 
-	println!("++++++abi:{}", abi);
+	// println!("++++++abi:{}", abi);
 	fs::write(Path::new("./target/hello.abi"), abi)?;
 	Ok(())
 }
