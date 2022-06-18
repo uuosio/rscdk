@@ -117,11 +117,23 @@ impl Contract {
         Ok(())
     }
 
+    fn check_struct_name(item: &syn::ItemStruct) -> Result<(), syn::Error> {
+        if let Some(_) = item.ident.to_string().find("_") {
+            println!("++++++++item.ident:{}", item.ident);
+            return Err(format_err_spanned!(
+                item,
+                "struct name with `_` does not supported by contract"
+            ));
+        }
+        return Ok(());
+    }
+
     pub fn analyze_items(&mut self) -> Result<(), syn::Error> {
         let mut arg_types: HashMap<String, String> = HashMap::new();
         for item in &mut self.items {
             match item {
                 syn::Item::Struct(ref mut x) => {
+                    Self::check_struct_name(&x)?;
                     let (chain_attrs, other_attrs) = attrs::partition_attributes(x.attrs.clone()).unwrap();
                     let x_backup = x.clone();
                     x.attrs = other_attrs;
