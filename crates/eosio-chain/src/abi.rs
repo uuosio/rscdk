@@ -160,7 +160,7 @@ pub fn verify_abi_structs(main_structs: &Vec<Type>) -> Vec<Type> {
         if let Some(ty) = main_struct_map.get(&last_name) {
             let full_name2 = get_full_path_name(ty.path());
             if full_name != full_name2 {
-                panic!("abi name conflict detected: {} {}", full_name, full_name2);
+                panic!("Same struct name live in different modules is not supported by ABI\n{}\n<==>\n{}\n", full_name, full_name2);
             }
         } else {
             main_struct_map.insert(full_name.clone(), ty);
@@ -169,7 +169,7 @@ pub fn verify_abi_structs(main_structs: &Vec<Type>) -> Vec<Type> {
         if let Some(ty2) = struct_name_map.get(&last_name) {
             let full_name2 = get_full_path_name(ty2.path());
             if full_name2 != full_name {
-                panic!("abi name conflict detected: {} {}", full_name, full_name2);
+                panic!("Same struct name live in different modules is not supported by ABI\n{}\n<==>\n{}\n", full_name, full_name2);
             }
         } else {
             struct_name_map.insert(last_name, ty);
@@ -179,12 +179,11 @@ pub fn verify_abi_structs(main_structs: &Vec<Type>) -> Vec<Type> {
     let hashmap_mutex = eosio_scale_info::get_scale_type_map();
     let global_hash_map = &*hashmap_mutex.lock().unwrap();
     for (full_name, ty) in  global_hash_map {
-        println!("+++++++ty:{:?}", ty);
         let last_name = get_last_path_name(ty.path());
         if let Some(ty) = struct_name_map.get(&last_name) {
             let full_name2 = get_full_path_name(ty.path());
             if full_name2 != *full_name {
-                panic!("abi name conflict detected: {} {}", *full_name, full_name2);
+                panic!("Same struct name live in different modules is not supported by ABI\n{}\n<==>\n{}\n", *full_name, full_name2);
             }
         } else {
             struct_name_map.insert(last_name, ty);
@@ -222,6 +221,9 @@ pub fn verify_abi_structs(main_structs: &Vec<Type>) -> Vec<Type> {
                     let rust_type = *field.type_name().unwrap();
                     if let Some(pos) = rust_type.find("Option<") {
                         let inner_rust_type = &rust_type["Option<".len()..rust_type.len() -1];
+                        check_rust_type(inner_rust_type);
+                    } else if let Some(pos) = rust_type.find("Vec<") {
+                        let inner_rust_type = &rust_type["Vec<".len()..rust_type.len() -1];
                         check_rust_type(inner_rust_type);
                     } else {
                         check_rust_type(rust_type);
@@ -282,6 +284,8 @@ pub fn parse_abi_info(info: &mut ABIInfo) -> String {
                     let rust_type = *field.type_name().unwrap();
                     if let Some(pos) = rust_type.find("Option<") {
                         ty = String::from(native_type_to_abi_type(&rust_type["Option<".len()..rust_type.len() -1])) + "?";
+                    } else if let Some(pos) = rust_type.find("Vec<") {
+                        ty = String::from(native_type_to_abi_type(&rust_type["Vec<".len()..rust_type.len() -1])) + "[]";
                     } else {
                         ty = String::from(native_type_to_abi_type(rust_type));
                     }
