@@ -148,31 +148,31 @@ fn get_last_path_name(path: &Path) -> String {
     return String::from(path.segments()[len-1]);
 }
 
-pub fn verify_abi_structs(main_structs: &Vec<Type>) -> Vec<Type> {
+pub fn verify_abi_structs(main_contract_structs: &Vec<Type>) -> Vec<Type> {
     //
-    let mut main_struct_map: HashMap<String, &Type> = HashMap::new();
+    let mut main_contract_structs_map: HashMap<String, &Type> = HashMap::new();
     //<name, full_name>
-    let mut struct_name_map: HashMap<String, &Type> = HashMap::new();
+    let mut all_structs_map: HashMap<String, &Type> = HashMap::new();
 
-    for ty in main_structs {
+    for ty in main_contract_structs {
         let last_name = get_last_path_name(ty.path());
         let full_name = get_full_path_name(ty.path());
-        if let Some(ty) = main_struct_map.get(&last_name) {
+        if let Some(ty) = main_contract_structs_map.get(&last_name) {
             let full_name2 = get_full_path_name(ty.path());
             if full_name != full_name2 {
                 panic!("Same struct name live in different modules is not supported by ABI\n{}\n<==>\n{}\n", full_name, full_name2);
             }
         } else {
-            main_struct_map.insert(full_name.clone(), ty);
+            main_contract_structs_map.insert(last_name.clone(), ty);
         }
 
-        if let Some(ty2) = struct_name_map.get(&last_name) {
+        if let Some(ty2) = all_structs_map.get(&last_name) {
             let full_name2 = get_full_path_name(ty2.path());
             if full_name2 != full_name {
                 panic!("Same struct name live in different modules is not supported by ABI\n{}\n<==>\n{}\n", full_name, full_name2);
             }
         } else {
-            struct_name_map.insert(last_name, ty);
+            all_structs_map.insert(last_name, ty);
         }
     }
 
@@ -180,13 +180,13 @@ pub fn verify_abi_structs(main_structs: &Vec<Type>) -> Vec<Type> {
     let global_hash_map = &*hashmap_mutex.lock().unwrap();
     for (full_name, ty) in  global_hash_map {
         let last_name = get_last_path_name(ty.path());
-        if let Some(ty) = struct_name_map.get(&last_name) {
+        if let Some(ty) = all_structs_map.get(&last_name) {
             let full_name2 = get_full_path_name(ty.path());
             if full_name2 != *full_name {
                 panic!("Same struct name live in different modules is not supported by ABI\n{}\n<==>\n{}\n", *full_name, full_name2);
             }
         } else {
-            struct_name_map.insert(last_name, ty);
+            all_structs_map.insert(last_name, ty);
         }
     }
 
@@ -197,11 +197,11 @@ pub fn verify_abi_structs(main_structs: &Vec<Type>) -> Vec<Type> {
             return;
         }
 
-        if let Some(_) = main_struct_map.get(rust_type) {
+        if let Some(_) = main_contract_structs_map.get(rust_type) {
             return
         }
 
-        if let Some(ty) = struct_name_map.get(rust_type) {
+        if let Some(ty) = all_structs_map.get(rust_type) {
             let name = String::from(rust_type);
             if let Some(ty2) = other_structs_map.get(&name) {
                 //
@@ -213,7 +213,7 @@ pub fn verify_abi_structs(main_structs: &Vec<Type>) -> Vec<Type> {
         panic!("abi struct not found: {}", rust_type);
     };
 
-    main_structs.iter().for_each(|item|{
+    main_contract_structs.iter().for_each(|item|{
         match item.type_def() {
             ::eosio_scale_info::TypeDef::Composite(x) => {
                 let last_name = get_last_path_name(item.path());
@@ -244,6 +244,7 @@ pub fn verify_abi_structs(main_structs: &Vec<Type>) -> Vec<Type> {
 
     let mut other_structs: Vec<Type> = Vec::new();
     for (_, ty) in other_structs_map {
+        println!("++++++other type: {:?}", ty);
         other_structs.push(ty.clone());
     }
     return other_structs;
@@ -262,11 +263,15 @@ pub fn parse_abi_info(info: &mut ABIInfo) -> String {
         ricardian_clauses: Vec::new(),    
     };
 
+    info.structs.iter().for_each(|item|{
+        println!("+++++++++main contract structs:{:?}", item);
+    });
+
     let other_structs = verify_abi_structs(&info.structs);
     info.structs.extend(other_structs);
 
     info.structs.iter().for_each(|item|{
-        println!("+++++++++item:{:?}", item);
+        // println!("+++++++++item:{:?}", item);
         match item.type_def() {
             ::eosio_scale_info::TypeDef::Composite(x) => {
                 if is_intrinsic_abi_type(&get_last_path_name(item.path())) {
