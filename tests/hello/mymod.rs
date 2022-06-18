@@ -15,6 +15,7 @@ pub mod hello {
     pub struct BB {
         value: u64,
         cc: CC,
+        dd: Vec<Asset>,
     }
 
     #[derive(Clone, Eq, PartialEq)]

@@ -132,9 +132,9 @@ def run_test(code, error_message):
         cmd = f'cargo +nightly build --target=wasm32-wasi -Zbuild-std --no-default-features --release -Zbuild-std-features=panic_immediate_abort'
         cmd = shlex.split(cmd)
         process = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        output = process.stderr
+        output = process.stderr.decode()
         # print(output.decode())
-        assert output.find(error_message) >= 0, 'bad output'
+        assert error_message in output, 'bad output'
     finally:
         shutil.rmtree(temp_dir)
 
@@ -149,7 +149,7 @@ mod hello {
     }
 }
 '''
-    error_message = b'''
+    error_message = '''
 error: struct name with `_` does not supported by contract
  --> lib.rs:6:5
   |

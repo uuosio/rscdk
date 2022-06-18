@@ -55,6 +55,7 @@ mod hello {
         a2: u64,
         mydata: MyData2,
         aa1: AA,
+        bb: BB,
     }
 
     #[chain(main)]
@@ -81,8 +82,7 @@ mod hello {
         }
 
         #[chain(action="test")]
-        pub fn test(&self, a1: String, a3: Option<u8>) {
-            let a2: Option<u8>;
+        pub fn test(&self, a1: String, a2: Option<u8>, a3: Vec<Asset>) {
         }
     }
 }
