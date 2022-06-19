@@ -134,9 +134,6 @@ pub use self::vmapi::eosio:: {
 
 ///
 pub mod name;
-pub use self::name::{
-    Name,
-};
 
 ///
 pub mod action;
@@ -148,6 +145,7 @@ pub mod varint;
 
 ///
 pub mod intrinsic_abi_types;
+pub use intrinsic_abi_types::*;
 
 pub use eosio_macro::{
     contract,
