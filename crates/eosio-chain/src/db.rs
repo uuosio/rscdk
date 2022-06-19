@@ -12,7 +12,6 @@ use crate::asset::Asset;
 
 use crate::{
     check,
-    eosio_assert,
 };
 
 use crate::print::{
@@ -84,7 +83,7 @@ impl FromSecondaryValue for u64 {
         if let SecondaryValue::Idx64(x) = value {
             x
         } else {
-            eosio_assert(false, "from value is not an Idx64 value");
+            check(false, "from value is not an Idx64 value");
             0
         }
     }
@@ -125,7 +124,7 @@ impl FromSecondaryValue for i64 {
         if let SecondaryValue::Idx64(x) = value {
             x as i64
         } else {
-            eosio_assert(false, "from value is not an Idx64 value");
+            check(false, "from value is not an Idx64 value");
             0
         }
     }
@@ -160,7 +159,7 @@ impl FromSecondaryValue for f64 {
         if let SecondaryValue::IdxF64(x) = value {
             x
         } else {
-            eosio_assert(false, "from value is not an Idx64 value");
+            check(false, "from value is not an Idx64 value");
             0.0
         }
     }
@@ -183,7 +182,7 @@ impl FromSecondaryValue for Float128 {
         if let SecondaryValue::IdxF128(x) = value {
             x
         } else {
-            eosio_assert(false, "from value is not an Idx64 value");
+            check(false, "from value is not an Idx64 value");
             Float128::default()
         }
     }
