@@ -661,7 +661,7 @@ impl Contract {
                     if i == #index {
                         let ret = self.#field_ident.to_secondary_value(eosio_chain::db::SecondaryType::#idx_ident);
                         match ret {
-                            SecondaryValue::#idx_ident(_) => {
+                            eosio_chain::db::SecondaryValue::#idx_ident(_) => {
                                 return ret;
                             }
                             _ => {
@@ -687,13 +687,13 @@ impl Contract {
 
             let secondary_impls = quote_spanned!(span =>    
                 #[allow(unused_variables, unused_mut)]
-                fn get_secondary_value(&self, i: usize) -> SecondaryValue {
+                fn get_secondary_value(&self, i: usize) -> eosio_chain::db::SecondaryValue {
                     #( #secondary_getter_impls )*
-                    return SecondaryValue::None;
+                    return eosio_chain::db::SecondaryValue::None;
                 }
 
                 #[allow(unused_variables, unused_mut)]
-                fn set_secondary_value(&mut self, i: usize, value: SecondaryValue) {
+                fn set_secondary_value(&mut self, i: usize, value: eosio_chain::db::SecondaryValue) {
                     #( #secondary_setter_impls )*
                 }
             );
@@ -744,27 +744,27 @@ impl Contract {
                 match arg {
                     attrs::AttributeArg::Idx64(_) => {
                         return quote! {
-                            SecondaryType::Idx64
+                            eosio_chain::db::SecondaryType::Idx64
                         }
                     }
                     attrs::AttributeArg::Idx128(_) => {
                         return quote! {
-                            SecondaryType::Idx128
+                            eosio_chain::db::SecondaryType::Idx128
                         }
                     }
                     attrs::AttributeArg::Idx256(_) => {
                         return quote! {
-                            SecondaryType::Idx256
+                            eosio_chain::db::SecondaryType::Idx256
                         }
                     }
                     attrs::AttributeArg::IdxF64(_) => {
                         return quote! {
-                            SecondaryType::IdxF64
+                            eosio_chain::db::SecondaryType::IdxF64
                         }
                     }
                     attrs::AttributeArg::IdxF128(_) => {
                         return quote! {
-                            SecondaryType::IdxF128
+                            eosio_chain::db::SecondaryType::IdxF128
                         }
                     }
                     _ => {
@@ -811,7 +811,7 @@ impl Contract {
                 #[allow(dead_code)]
                 impl #mi_ident {
                     ///
-                    pub fn new(code: Name, scope: Name, table: Name, indexes: &[SecondaryType], unpacker: fn(&[u8]) -> Box<#table_ident>) -> Self {
+                    pub fn new(code: Name, scope: Name, table: Name, indexes: &[eosio_chain::db::SecondaryType], unpacker: fn(&[u8]) -> Box<#table_ident>) -> Self {
                         Self {
                             mi: ::eosio_chain::mi::MultiIndex::<#table_ident>::new(code, scope, table, indexes, unpacker),
                         }
@@ -888,7 +888,7 @@ impl Contract {
                 impl #table_ident {
                     #[allow(dead_code)]
                     fn new_mi(code: Name, scope: Name) -> Box<#mi_ident> {
-                        let indexes: [SecondaryType; #len_secondary] = [#( #secondary_types ),*];
+                        let indexes: [eosio_chain::db::SecondaryType; #len_secondary] = [#( #secondary_types ),*];
                         #[allow(dead_code)]
                         fn unpacker(data: &[u8]) -> Box<#table_ident> {
                             let mydata = #table_ident::default();
@@ -1400,44 +1400,25 @@ impl Contract {
         let attrs = self.attrs();
         let vis = self.vis();
         Ok(quote! {
-            use eosio_chain::{
-                intrinsic_abi_types::*,
-
-                serializer::Packer,
-                db::SecondaryType,
-                db::SecondaryValue,
-                db::MultiIndexValue,
-                db::ToPrimaryValue,
-                db::ToSecondaryValue,
-                db::FromSecondaryValue,
-                print::*,
-                vmapi::eosio::{
-                    check,
-                },
-                mi,
-            };
-
-            use eosio_chain::{
-                eosio_print,
-                eosio_println,
-            };
-
-            use eosio_chain::{
-                vec,
-                vec::Vec,
-                boxed::Box,
-                string::String,
-            };
-
-            #[cfg(feature = "std")]
-            use eosio_chain::eosio_scale_info::TypeInfo as _;
-
-            #[cfg(feature = "std")]
-            use eosio_chain::eosio_scale_info;
-
             #( #attrs )*
             #vis mod #ident {
-                use super::*;
+                use eosio_chain::{
+                    vec,
+                    vec::Vec,
+                    boxed::Box,
+                    string::String,
+                };
+    
+                use eosio_chain::serializer::Packer as _;
+                use eosio_chain::db::ToPrimaryValue as _;
+                use eosio_chain::db::SecondaryType as _;
+    
+                #[cfg(feature = "std")]
+                use eosio_chain::eosio_scale_info::TypeInfo as _;
+    
+                #[cfg(feature = "std")]
+                use eosio_chain::eosio_scale_info;
+
                 #( #items ) *
                 #packers_code
                 #variants_code
