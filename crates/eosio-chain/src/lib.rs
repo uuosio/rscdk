@@ -85,11 +85,51 @@ pub mod print;
 ///
 pub mod mi;
 ///
-pub mod asset;
+mod asset;
+pub use asset::{
+    Asset,
+    Symbol,
+};
 
 pub use self::vmapi::eosio:: {
-    eosio_assert,
+    get_active_producers,
+    get_permission_last_used,
+    get_account_creation_time,
+    read_action_data,
+    action_data_size,
+    require_recipient,
+    require_auth,
+    has_auth,
+    require_auth2,
+    is_account,
+    send_inline,
+    send_context_free_inline,
+    publication_time,
+    current_receiver,
     check,
+    eosio_assert_code,
+    eosio_exit,
+    current_time,
+    is_feature_activated,
+    get_sender,
+    get_resource_limits,
+    set_resource_limits,
+    set_proposed_producers,
+    set_proposed_producers_ex,
+    is_privileged,
+    set_privileged,
+    set_blockchain_parameters_packed,
+    get_blockchain_parameters_packed,
+    preactivate_feature,
+    send_deferred,
+    cancel_deferred,
+    read_transaction,
+    transaction_size,
+    tapos_block_num,
+    tapos_block_prefix,
+    expiration,
+    get_action,
+    get_context_free_data,
 };
 
 ///
