@@ -1,3 +1,5 @@
+use core::ops;
+
 use crate::serializer::{
     Packer,
     Encoder,
@@ -22,8 +24,6 @@ use crate::string::{
 use crate::vmapi::eosio::{
     check,
 };
-
-use core::ops::{Add, Sub};
 
 const MAX_AMOUNT: i64 = (1 << 62) - 1;
 
@@ -192,9 +192,9 @@ impl Packer for Symbol {
 #[derive(Copy, Clone, Default, Eq, PartialEq)]
 pub struct Asset {
     ///
-    pub amount: i64,
+    amount: i64,
     ///
-    pub symbol: Symbol,
+    symbol: Symbol,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -315,7 +315,7 @@ impl Asset {
 // check(amount <= MAX_AMOUNT, "addition overflow");
 // return new Asset(amount, Symbol.fromU64(a.symbol.value));
 
-impl Add for Asset {
+impl ops::Add for Asset {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
@@ -330,7 +330,13 @@ impl Add for Asset {
     }
 }
 
-impl Sub for Asset {
+impl ops::AddAssign for Asset {
+    fn add_assign(&mut self, rhs: Asset) {
+        *self = *self + rhs;
+    }
+}
+
+impl ops::Sub for Asset {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
@@ -342,6 +348,12 @@ impl Sub for Asset {
             amount: amount,
             symbol: self.symbol
         }
+    }
+}
+
+impl ops::SubAssign for Asset {
+    fn sub_assign(&mut self, rhs: Asset) {
+        *self = *self - rhs;
     }
 }
 
