@@ -246,8 +246,8 @@ impl Packer for Name {
 macro_rules! name {
      ( $head:expr ) => {
         {
-            const n: u64 = static_str_to_name($head);
-            Name::from_u64(n)             
+            const n: u64 = eosio_chain::name::static_str_to_name($head);
+            eosio_chain::name::Name::from_u64(n)
         }
     };
 }
