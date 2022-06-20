@@ -35,7 +35,7 @@ jobs:
       - name: test code generator
         working-directory: crates/codegen
         run: |
-          cargo test contract::tests::
+          cargo test contract_tests::tests::
       - name: ${{ matrix.step }}
         working-directory: tests
         run: |
