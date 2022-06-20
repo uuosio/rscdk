@@ -66,3 +66,9 @@ pub fn s2n(s: &str) -> u64 {
 
 	return value;
 }
+
+///verify if name contain invalid character(s)
+pub fn is_name_valid(name: &str) -> bool {
+	INVALID_NAME != s2n(name)
+}
+

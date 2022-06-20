@@ -21,7 +21,10 @@ use crate::{
     table::Table,
     attrs,
     // FixedString,
-    name::s2n,
+    name::{
+        s2n,
+        is_name_valid,
+    },
     format_err_spanned,
     attrs::Attrs as _,
 };
@@ -199,6 +202,20 @@ impl Contract {
                     match &arg {
                         attrs::AttributeArg::Table(_) => {
                             if let Some(name) = attr.table_name() {
+                                if !is_name_valid(&name.str()) {
+                                    return Err(format_err_spanned!(
+                                        attr.args().next().unwrap().ast,
+                                        "table name contain invalid character(s), valid charaters are a-z & 1-5: {}", name.str()
+                                    ));
+                                }
+                                if self.tables.iter().any(|table| {
+                                    table.table_name == name
+                                }) {
+                                    return Err(format_err_spanned!(
+                                        attr.args().next().unwrap().ast,
+                                        "dumplicated table name: {}", name.str()
+                                    ));
+                                }
                                 self.tables.push(
                                     Table {
                                         item: x_backup,
@@ -248,6 +265,20 @@ impl Contract {
                                 if chain_attrs.len() > 0 {
                                     let attr = &chain_attrs[0];
                                     if let Some(name) = attr.action_name() {
+                                        if !is_name_valid(&name.str()) {
+                                            return Err(format_err_spanned!(
+                                                attr.args().next().unwrap().ast,
+                                                "action name contain invalid character(s), valid charaters are a-z & 1-5: {}", name.str()
+                                            ));
+                                        }
+                                        if self.actions.iter().any(|action| {
+                                            action.action_name == name
+                                        }) {
+                                            return Err(format_err_spanned!(
+                                                attr.args().next().unwrap().ast,
+                                                "dumplicated action name: {}", name.str()
+                                            ));
+                                        }
                                         self.actions.push(
                                             Action{
                                                 item: method_item.clone(),
