@@ -1,5 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(not(feature = "std"), feature(alloc_error_handler, core_intrinsics))]
+#![cfg_attr(not(feature = "std"), feature(alloc_error_handler, panic_info_message, core_intrinsics))]
 
 #[cfg(not(feature = "std"))]
 mod allocator;
@@ -13,6 +13,8 @@ static mut ALLOC: allocator::bump::BumpAllocator = allocator::bump::BumpAllocato
 #[allow(unused_variables)]
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {
+    let msg = format!("{:?}", info.message().unwrap().as_str().unwrap());
+    self::vmapi::eosio::check(false, &msg);
     core::arch::wasm32::unreachable();
 }
 
