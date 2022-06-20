@@ -32,6 +32,10 @@ jobs:
           python3 -m pip install pytest
           python3 -m pip install pytest-xdist
           python3 -m pip install ipyeos
+      - name: test code generator
+        working-directory: crates/codegen
+        run: |
+          cargo test contract::tests::
       - name: ${{ matrix.step }}
         working-directory: tests
         run: |
