@@ -2,12 +2,14 @@
 resolver = "2"
 members = [
     "crates/eosio-chain",
-    "crates/eosio-chain/macro",
-    "crates/eosio-chain/codegen",
+    "crates/macro",
+    "crates/codegen",
+    # "examples/token",
 ]
+
 exclude = [
     "examples/",
-    "tests/",
+    "tests",
 ]
 
 [profile.release]

@@ -505,7 +505,7 @@ impl Contract {
                         #( #serialize )*
                         return enc.get_bytes();
                     }
-                
+
                     fn unpack<'a>(&mut self, data: &'a [u8]) -> usize {
                         check(data.len() >= self.size(), #error_lit);
                         #[allow(unused_mut)]
@@ -1408,11 +1408,20 @@ impl Contract {
                     boxed::Box,
                     string::String,
                 };
-    
-                use eosio_chain::serializer::Packer as _;
-                use eosio_chain::db::ToPrimaryValue as _;
-                use eosio_chain::db::SecondaryType as _;
-    
+                use eosio_chain::{
+                    check,
+                };
+
+                use eosio_chain::{
+                    serializer::Packer as _,
+                    db::ToPrimaryValue as _,
+                    db::SecondaryType as _,
+                    print::Printable as _,
+                    db::FromSecondaryValue as _,
+                    db::ToSecondaryValue as _,
+                    db::TryFromSecondaryValue as _,
+                };
+
                 #[cfg(feature = "std")]
                 use eosio_chain::eosio_scale_info::TypeInfo as _;
     

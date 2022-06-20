@@ -1,10 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use eosio_chain as mychain;
-use eosio_chain as chain;
 
-
-#[chain::contract]
+#[eosio_chain::contract]
 mod token {
     use eosio_chain::{
         require_auth,

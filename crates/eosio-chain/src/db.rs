@@ -58,7 +58,7 @@ pub trait TryFromSecondaryValue: Sized {
     ///
     type Error;
     ///
-    fn from_secondary_value(value: SecondaryValue) -> Result<Self, Self::Error>;
+    fn try_from_secondary_value(value: SecondaryValue) -> Result<Self, Self::Error>;
 }
 
 impl ToPrimaryValue for u64 {
@@ -93,7 +93,7 @@ impl TryFromSecondaryValue for u64 {
     ///
     type Error = DBError;
     ///
-    fn from_secondary_value(value: SecondaryValue) -> Result<Self, Self::Error> {
+    fn try_from_secondary_value(value: SecondaryValue) -> Result<Self, Self::Error> {
         if let SecondaryValue::Idx64(x) = value {
             Ok(x)
         } else {
@@ -134,7 +134,7 @@ impl TryFromSecondaryValue for i64 {
     ///
     type Error = DBError;
     ///
-    fn from_secondary_value(value: SecondaryValue) -> Result<Self, Self::Error> {
+    fn try_from_secondary_value(value: SecondaryValue) -> Result<Self, Self::Error> {
         if let SecondaryValue::Idx64(x) = value {
             Ok(x as i64)
         } else {

@@ -1,11 +1,18 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-mod mymod;
 use eosio_chain as chain;
+mod mymod;
 
 #[chain::contract]
 mod hello {
-    use super::*;
+    use super::mymod;
+    use eosio_chain::{
+        Asset,
+        Name,
+        eosio_print,
+        eosio_println,
+        name,
+    };
 
     use mymod::hello::{
         BB
@@ -83,6 +90,7 @@ mod hello {
 
         #[chain(action="test")]
         pub fn test(&self, a1: String, a2: Option<u8>, a3: Vec<Asset>) {
+            let aa = name!("hello");
         }
     }
 }

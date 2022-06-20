@@ -4,6 +4,10 @@ use eosio_chain as chain;
 
 #[chain::contract]
 pub mod hello {
+    use eosio_chain::{
+        Asset,
+    };
+    
     #[chain(packer)]
     #[derive(Clone, Eq, PartialEq)]
     pub struct AA {
