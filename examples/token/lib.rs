@@ -52,8 +52,7 @@ mod token {
             check(maximum_supply.amount() > 0, "max_supply must be positive");
             let sym_code = maximum_supply.symbol().code().value();
             let db = CurrencyStats::new_mi(self.receiver, Name{n: sym_code});
-            let it = db.find(sym_code);
-            check(!it.is_ok(), "token with symbol already exists");
+            db.find(sym_code).expect_not_ok("token with symbol already exists");
 
             let stats = CurrencyStats{
                 supply: Asset::new(0, maximum_supply.symbol()),
@@ -69,8 +68,9 @@ mod token {
             check(memo.len() <= 256, "memo has more than 256 bytes");
             let sym_code = quantity.symbol().code().value();
             let db = CurrencyStats::new_mi(self.receiver, Name{n: sym_code});
-            let it = db.find(sym_code);
-            check(it.is_ok(), "token with symbol does not exist, create token before issue");
+            let it = db
+                .find(sym_code)
+                .expect("token with symbol does not exist, create token before issue");
             let mut stats = db.get(it).unwrap();
             check(to == stats.issuer, "tokens can only be issued to issuer account");
             require_auth(stats.issuer);
@@ -90,8 +90,9 @@ mod token {
             check(memo.len() <= 256, "memo has more than 256 bytes");
             let sym_code = quantity.symbol().code().value();
             let db = CurrencyStats::new_mi(self.receiver, Name{n: sym_code});
-            let it = db.find(sym_code);
-            check(it.is_ok(), "token with symbol does not exist");
+            let it = db
+                .find(sym_code)
+                .expect("token with symbol does not exist");
             let mut stat = db.get(it).unwrap();
             require_auth(stat.issuer);
             check(quantity.is_valid(), "invalid quantity");
@@ -109,8 +110,9 @@ mod token {
             check(is_account(to), "to account does not exist");
             let sym_code = quantity.symbol().code().value();
             let db = CurrencyStats::new_mi(self.receiver, Name::from_u64(sym_code));
-            let it = db.find(sym_code);
-            check(it.is_ok(), "token with symbol does not exist");
+            let it = db
+                .find(sym_code)
+                .expect("token with symbol does not exist");
             let currency = db.get(it).unwrap();
             
             require_recipient(from);
@@ -136,8 +138,9 @@ mod token {
             require_auth(ram_payer);
             check(is_account(owner), "owner account does not exist");
             let db = CurrencyStats::new_mi(self.receiver, Name::from_u64(symbol.code().value()));
-            let it = db.find(symbol.code().value());
-            check(it.is_ok(), "symbol does not exist");
+            let it = db
+                .find(symbol.code().value())
+                .expect("symbol does not exist");
             let stat = db.get(it).unwrap();
             check(stat.supply.symbol() == symbol, "symbol precision mismatch");
             let accounts = Account::new_mi(self.receiver, owner);
@@ -154,8 +157,9 @@ mod token {
         pub fn close(&self, owner: Name, symbol: Symbol) {
             require_auth(owner);
             let accounts = Account::new_mi(self.receiver, owner);
-            let it = accounts.find(symbol.code().value());
-            check(it.is_ok(), "balance row already deleted or never existed. Action won't have any effect.");
+            let it = accounts
+                .find(symbol.code().value())
+                .expect("balance row already deleted or never existed. Action won't have any effect.");
             let value = accounts.get(it).unwrap();
             check(value.balance.amount() == 0, "cannot close because the balance is not zero.");
             accounts.remove(it);
@@ -175,8 +179,9 @@ mod token {
 
         fn sub_balance(&self, owner: Name, quantity: &Asset) {
             let accounts = Account::new_mi(self.receiver, owner);
-            let it = accounts.find(quantity.symbol().code().value());
-            check(it.is_ok(), "no balance object found");
+            let it = accounts
+                .find(quantity.symbol().code().value())
+                .expect("no balance object found");
             let mut from = accounts.get(it).unwrap();
             check(from.balance.amount() >= quantity.amount(), "overdraw balance");
             from.balance -= *quantity;

@@ -538,7 +538,7 @@ impl Contract {
                     }
 
                     fn unpack<'a>(&mut self, data: &'a [u8]) -> usize {
-                        check(data.len() >= self.size(), #error_lit);
+                        eosio_chain::check(data.len() >= self.size(), #error_lit);
                         #[allow(unused_mut)]
                         let mut dec = ::eosio_chain::serializer::Decoder::new(data);
                         #( #deserialize )*
@@ -1439,9 +1439,6 @@ impl Contract {
                     boxed::Box,
                     string::String,
                 };
-                use eosio_chain::{
-                    check,
-                };
 
                 use eosio_chain::{
                     serializer::Packer as _,
@@ -1512,3 +1509,25 @@ impl Contract {
     }
 }
 
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_contract() {
+        let contract = Contract::new(
+            syn::parse_quote! { #[ink(invalid)] },
+            syn::parse_quote! {
+                mod hello {
+
+                }
+            }
+        );
+
+        // if let Err(err) = &contract {
+        //     println!("{}", err.to_compile_error().to_string());
+        // }
+        assert_eq!(contract.is_ok(), true);
+    }
+}

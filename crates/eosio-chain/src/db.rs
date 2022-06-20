@@ -315,9 +315,22 @@ impl Iterator {
     pub fn is_ok(&self) -> bool {
         self.i >= 0
     }
+
     ///
     pub fn is_end(&self) -> bool {
         return self.i == -2;
+    }
+
+    ///
+    pub fn expect(self, msg: &str) -> Self {
+        check(self.is_ok(), msg);            
+        return self;
+    }
+
+    ///
+    pub fn expect_not_ok(self, msg: &str) -> Self {
+        check(!self.is_ok(), msg);            
+        return self;
     }
 }
 
