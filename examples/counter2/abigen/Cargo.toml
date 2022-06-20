@@ -1,0 +1,22 @@
+[package]
+authors = [""]
+edition = "2021"
+name = "abi-gen"
+publish = false
+rust-version = "1.56.1"
+version = "0.1.0"
+
+[[bin]]
+name = "abi-gen"
+path = "main.rs"
+
+[dependencies]
+
+[dependencies.contract]
+package = "counter2"
+path = ".."
+
+[features]
+default = ["std"]
+std = [
+]
