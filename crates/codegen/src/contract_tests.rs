@@ -132,26 +132,30 @@ mod tests {
     }
 
     #[test]
-    fn test_singleton_table() {
-        let contract = Contract::new(
+    fn test_table_no_primary() {
+        let ret = Contract::new(
             syn::parse_quote! {},
             syn::parse_quote! {
                 mod hello {
-                    #[chain(table="mydata", singleton)]
+                    #[chain(table="mydata")]
                     pub struct Counter {
                         count: u64,
                     }
                 }
             }
         );
-        assert!(contract.is_err(), "bad return");
-        println!("+++++{}", contract.as_ref().err().unwrap().to_compile_error().to_string());
-        assert!(contract.as_ref().err().unwrap().to_compile_error().to_string().contains("dumplicated table name: mydata"));
+
+        assert!(ret.is_ok(), "bad return");
+        let code = ret.unwrap().generate_code();
+        assert!(code.is_err(), "bad return");
+        println!("+++++{}", code.as_ref().err().unwrap().to_compile_error().to_string());
+        assert!(code.as_ref().err().unwrap().to_compile_error().to_string().contains("primary index does not specified in struct Counter"));
     }
 
     #[test]
     fn test_singleton_table_with_primary() {
-        let contract = Contract::new(
+        println!("++++++test test_singleton_table_with_primary");
+        let ret = Contract::new(
             syn::parse_quote! {},
             syn::parse_quote! {
                 mod hello {
@@ -164,8 +168,12 @@ mod tests {
                 }
             }
         );
-        assert!(contract.is_err(), "bad return");
-        assert!(contract.as_ref().err().unwrap().to_compile_error().to_string().contains("singelton table does not need a primary attribute in struct Counter"));
+
+        assert!(ret.is_ok(), "bad return");
+        let code = ret.unwrap().generate_code();
+        assert!(code.is_err(), "bad return");
+        println!("+++++{}", code.as_ref().err().unwrap().to_compile_error().to_string());
+        assert!(code.as_ref().err().unwrap().to_compile_error().to_string().contains("singelton table does not need a primary attribute in struct Counter"));
     }
     
 }
