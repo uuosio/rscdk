@@ -312,13 +312,18 @@ pub struct Iterator {
 
 impl Iterator {
     ///
+    pub fn new(i: i32) -> Self {
+        Self { i }
+    }
+
+    ///
     pub fn is_ok(&self) -> bool {
         self.i >= 0
     }
 
     ///
     pub fn is_end(&self) -> bool {
-        return self.i == -2;
+        return self.i < -1;
     }
 
     ///
@@ -352,7 +357,7 @@ impl SecondaryIterator {
     }
     ///
     pub fn is_end(&self) -> bool {
-        return self.i == -2;
+        return self.i < -1;
     }
 }
 
