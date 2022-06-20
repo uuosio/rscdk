@@ -745,7 +745,7 @@ impl Contract {
                 action_structs_code.push(quote_spanned!(span =>
                     impl ::eosio_chain::db::DBInterface for #table_ident {
                         fn get_primary(&self) -> u64 {
-                            return Name::new(#table_name);
+                            return eosio_chain::name!(#table_name).value();
                         }
                         #secondary_impls
                     }
@@ -832,6 +832,50 @@ impl Contract {
 
             let mi_name = table_ident.to_string() + "MultiIndex";
             let mi_ident = syn::Ident::new(&mi_name, span);
+            if table.singleton {
+                return quote_spanned!(span =>
+                    pub struct #mi_ident {
+                        mi: ::eosio_chain::mi::MultiIndex<#table_ident>
+                    }
+                
+                    #[allow(dead_code)]
+                    impl #mi_ident {
+                        ///
+                        pub fn new(code: eosio_chain::Name, scope: eosio_chain::Name, table: eosio_chain::Name, unpacker: fn(&[u8]) -> #table_ident) -> Self {
+                            Self {
+                                mi: ::eosio_chain::mi::MultiIndex::<#table_ident>::new(code, scope, table, &[eosio_chain::db::SecondaryType::Idx64; 0], unpacker),
+                            }
+                        }
+
+                        fn get(&self) -> Option<#table_ident> {
+                            let it = self.mi.find(eosio_chain::Name::new(#table_name).value());
+                            return self.mi.get(it);
+                        }
+
+                        fn set(&self, value: &#table_ident, payer: eosio_chain::Name) {
+                            let it = self.mi.find(eosio_chain::Name::new(#table_name).value());
+                            if it.is_ok() {
+                                self.mi.update(it, value, payer);
+                            } else {
+                                self.mi.set(eosio_chain::Name::new(#table_name).value(), value, payer);
+                            }
+                        }
+                    }
+
+                    impl #table_ident {
+                        #[allow(dead_code)]
+                        fn new_mi(code: eosio_chain::Name, scope: eosio_chain::Name) -> Box<#mi_ident> {
+                            #[allow(dead_code)]
+                            fn unpacker(data: &[u8]) -> #table_ident {
+                                let mut ret = #table_ident::default();
+                                ret.unpack(data);
+                                return ret;
+                            }
+                            return Box::new(#mi_ident::new(code, scope, eosio_chain::Name::new(#table_name), unpacker));
+                        }
+                    }
+                );
+            }
     
             return quote_spanned!(span =>
 
@@ -842,19 +886,19 @@ impl Contract {
                 #[allow(dead_code)]
                 impl #mi_ident {
                     ///
-                    pub fn new(code: Name, scope: Name, table: Name, indexes: &[eosio_chain::db::SecondaryType], unpacker: fn(&[u8]) -> Box<#table_ident>) -> Self {
+                    pub fn new(code: eosio_chain::Name, scope: eosio_chain::Name, table: eosio_chain::Name, indexes: &[eosio_chain::db::SecondaryType], unpacker: fn(&[u8]) -> #table_ident) -> Self {
                         Self {
                             mi: ::eosio_chain::mi::MultiIndex::<#table_ident>::new(code, scope, table, indexes, unpacker),
                         }
                     }
             
                     ///
-                    pub fn store(&self, value: &#table_ident, payer: Name) -> ::eosio_chain::db::Iterator {
+                    pub fn store(&self, value: &#table_ident, payer: eosio_chain::Name) -> ::eosio_chain::db::Iterator {
                         return self.mi.store(value, payer);
                     }
                 
                     ///
-                    pub fn update(&self, iterator: ::eosio_chain::db::Iterator, value: &#table_ident, payer: Name) {
+                    pub fn update(&self, iterator: ::eosio_chain::db::Iterator, value: &#table_ident, payer: eosio_chain::Name) {
                         return self.mi.update(iterator, value, payer);
                     }
                 
@@ -864,12 +908,12 @@ impl Contract {
                     }
                 
                     ///
-                    pub fn get(&self, iterator: ::eosio_chain::db::Iterator) -> Option<Box<#table_ident>> {
+                    pub fn get(&self, iterator: ::eosio_chain::db::Iterator) -> Option<#table_ident> {
                         return self.mi.get(iterator)
                     }
                 
                     ///
-                    pub fn get_by_primary(&self, primary: u64) -> Option<Box<#table_ident>> {
+                    pub fn get_by_primary(&self, primary: u64) -> Option<#table_ident> {
                         return self.mi.get_by_primary(primary);
                     }
 
@@ -909,7 +953,7 @@ impl Contract {
                     }
                 
                     ///
-                    pub fn idx_update(&self, it: ::eosio_chain::db::SecondaryIterator, value: ::eosio_chain::db::SecondaryValue, payer: Name) {
+                    pub fn idx_update(&self, it: ::eosio_chain::db::SecondaryIterator, value: ::eosio_chain::db::SecondaryValue, payer: eosio_chain::Name) {
                         self.mi.idx_update(it, value, payer);
                     }
 
@@ -918,16 +962,15 @@ impl Contract {
 
                 impl #table_ident {
                     #[allow(dead_code)]
-                    fn new_mi(code: Name, scope: Name) -> Box<#mi_ident> {
+                    fn new_mi(code: eosio_chain::Name, scope: eosio_chain::Name) -> Box<#mi_ident> {
                         let indexes: [eosio_chain::db::SecondaryType; #len_secondary] = [#( #secondary_types ),*];
                         #[allow(dead_code)]
-                        fn unpacker(data: &[u8]) -> Box<#table_ident> {
-                            let mydata = #table_ident::default();
-                            let mut ret = Box::new(mydata);// as Box<dyn MultiIndexValue>;
+                        fn unpacker(data: &[u8]) -> #table_ident {
+                            let mut ret = #table_ident::default();
                             ret.unpack(data);
                             return ret;
                         }
-                        return Box::new(#mi_ident::new(code, scope, Name::new(#table_name), &indexes, unpacker));
+                        return Box::new(#mi_ident::new(code, scope, eosio_chain::Name::new(#table_name), &indexes, unpacker));
                     }
                 }
             );
@@ -1241,9 +1284,9 @@ impl Contract {
         quote!{
             #[no_mangle]
             fn apply(receiver: u64, first_receiver: u64, action: u64) {
-                let _receiver = Name{n: receiver};
-                let _first_receiver = Name{n: first_receiver};
-                let _action = Name{n: action};
+                let _receiver = eosio_chain::Name{n: receiver};
+                let _first_receiver = eosio_chain::Name{n: first_receiver};
+                let _action = eosio_chain::Name{n: action};
                 #[allow(unused_mut)]
                 let mut contract: #ident = #ident::new(_receiver, _first_receiver, _action);
                 if receiver == first_receiver {
