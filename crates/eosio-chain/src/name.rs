@@ -204,6 +204,10 @@ impl Name {
         Name { n: s2n(s) }
     }
 
+	pub fn value(&self) -> u64 {
+		return self.n
+	}
+
     ///
     pub fn from_u64(n: u64) -> Self {
         check(n != INVALID_NAME, "bad name value");

@@ -44,7 +44,7 @@ pub fn printqf(value: &Float128) {
 
 ///
 pub fn printn(name: Name) {
-    vmapi::print::printn(name.n);
+    vmapi::print::printn(name.value());
 }
 
 ///

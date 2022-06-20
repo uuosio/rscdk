@@ -120,7 +120,7 @@ pub fn get_active_producers() -> Vec<Name> {
 ///
 pub fn get_permission_last_used( account: Name, permission: Name ) -> TimePoint {
 	unsafe {
-		let elapsed = intrinsics::get_permission_last_used(account.n, permission.n);
+		let elapsed = intrinsics::get_permission_last_used(account.value(), permission.value());
 		return TimePoint{elapsed: elapsed};
 	}
 }
@@ -128,7 +128,7 @@ pub fn get_permission_last_used( account: Name, permission: Name ) -> TimePoint 
 ///
 pub fn get_account_creation_time( account: Name ) -> TimePoint {
 	unsafe {
-		let elapsed = intrinsics::get_account_creation_time(account.n);
+		let elapsed = intrinsics::get_account_creation_time(account.value());
 		return TimePoint{elapsed: elapsed};
 	}
 }
@@ -156,35 +156,35 @@ pub fn action_data_size() -> usize {
 ///
 pub fn require_recipient(name: Name) {
 	unsafe {
-		intrinsics::require_recipient(name.n);
+		intrinsics::require_recipient(name.value());
 	}
 }
 
 ///
 pub fn require_auth(name: Name) {
 	unsafe {
-		intrinsics::require_auth(name.n);
+		intrinsics::require_auth(name.value());
 	}
 }
 
 ///
 pub fn has_auth( name: Name ) -> bool {
 	unsafe {
-		return intrinsics::has_auth(name.n);
+		return intrinsics::has_auth(name.value());
 	}
 }
 
 ///
 pub fn require_auth2( name: Name, permission: Name ) {
 	unsafe {
-		intrinsics::require_auth2(name.n, permission.n);
+		intrinsics::require_auth2(name.value(), permission.value());
 	}
 }
 
 ///
 pub fn is_account( name: Name ) -> bool {
 	unsafe {
-		return intrinsics::is_account(name.n);
+		return intrinsics::is_account(name.value());
 	}
 }
 
@@ -269,7 +269,7 @@ pub fn get_resource_limits( account: Name) -> (i64, i64, i64) {
 		let mut ram_bytes = 0;
 		let mut net_weight = 0;
 		let mut cpu_weight = 0;
-		intrinsics::get_resource_limits(account.n, &mut ram_bytes, &mut net_weight, &mut cpu_weight);
+		intrinsics::get_resource_limits(account.value(), &mut ram_bytes, &mut net_weight, &mut cpu_weight);
 		return (ram_bytes, net_weight, cpu_weight);
 	}
 }
@@ -277,7 +277,7 @@ pub fn get_resource_limits( account: Name) -> (i64, i64, i64) {
 ///
 pub fn set_resource_limits( account: Name, ram_bytes: i64, net_weight: i64, cpu_weight: i64) {
 	unsafe {
-		intrinsics::set_resource_limits(account.n, ram_bytes, net_weight, cpu_weight);
+		intrinsics::set_resource_limits(account.value(), ram_bytes, net_weight, cpu_weight);
 	}
 }
 
@@ -296,14 +296,14 @@ pub fn set_proposed_producers_ex(_producer_data_format: u64, _producer_keys: &[P
 ///
 pub fn is_privileged(account: Name) -> bool {
 	unsafe {
-		return intrinsics::is_privileged(account.n);
+		return intrinsics::is_privileged(account.value());
 	}
 }
 
 ///
 pub fn set_privileged( account: Name, is_priv: bool) {
 	unsafe {
-		intrinsics::set_privileged(account.n, is_priv);
+		intrinsics::set_privileged(account.value(), is_priv);
 	}
 }
 
@@ -339,7 +339,7 @@ pub fn preactivate_feature(feature_digest:  &Checksum256) {
 ///
 pub fn send_deferred(sender_id: &Uint128, payer: Name, serialized_transaction: &[u8], replace_existing: u32) {
 	unsafe {
-		intrinsics::send_deferred(sender_id, payer.n, serialized_transaction.as_ptr(), serialized_transaction.len(), replace_existing);
+		intrinsics::send_deferred(sender_id, payer.value(), serialized_transaction.as_ptr(), serialized_transaction.len(), replace_existing);
 	}
 }
 

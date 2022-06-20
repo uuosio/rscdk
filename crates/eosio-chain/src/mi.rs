@@ -29,7 +29,7 @@ pub struct MultiIndex<T> {
     ///
     pub idxdbs: Vec<Box<dyn IndexDB>>,
     ///
-    pub unpacker: fn(&[u8]) -> Box<T>,
+    pub unpacker: fn(&[u8]) -> T,
 }
 
 impl<T> MultiIndex<T>
@@ -37,17 +37,17 @@ where
     T: DBInterface + Packer
 {
     ///
-    pub fn new<'a>(code: Name, scope: Name, table: Name, indexes: &[SecondaryType], unpacker: fn(&[u8]) -> Box<T>) -> Self {
+    pub fn new<'a>(code: Name, scope: Name, table: Name, indexes: &[SecondaryType], unpacker: fn(&[u8]) -> T) -> Self {
         let mut idxdbs: Vec<Box<dyn IndexDB>> = Vec::new();
         let mut i: usize = 0;
-        let idx_table = table.n & 0xfffffffffffffff0;
+        let idx_table = table.value() & 0xfffffffffffffff0;
         for idx in indexes {
             match idx {
-                SecondaryType::Idx64 => idxdbs.push(Box::new(Idx64DB::new(i, code.n, scope.n, idx_table + i as u64))),
-                SecondaryType::Idx128 => idxdbs.push(Box::new(Idx128DB::new(i, code.n, scope.n, idx_table + i as u64))),
-                SecondaryType::Idx256 => idxdbs.push(Box::new(Idx256DB::new(i, code.n, scope.n, idx_table + i as u64))),
-                SecondaryType::IdxF64 => idxdbs.push(Box::new(IdxF64DB::new(i, code.n, scope.n, idx_table + i as u64))),
-                SecondaryType::IdxF128 => idxdbs.push(Box::new(IdxF128DB::new(i, code.n, scope.n, idx_table + i as u64))),
+                SecondaryType::Idx64 => idxdbs.push(Box::new(Idx64DB::new(i, code.value(), scope.value(), idx_table + i as u64))),
+                SecondaryType::Idx128 => idxdbs.push(Box::new(Idx128DB::new(i, code.value(), scope.value(), idx_table + i as u64))),
+                SecondaryType::Idx256 => idxdbs.push(Box::new(Idx256DB::new(i, code.value(), scope.value(), idx_table + i as u64))),
+                SecondaryType::IdxF64 => idxdbs.push(Box::new(IdxF64DB::new(i, code.value(), scope.value(), idx_table + i as u64))),
+                SecondaryType::IdxF128 => idxdbs.push(Box::new(IdxF128DB::new(i, code.value(), scope.value(), idx_table + i as u64))),
                 // _ => check(false, "unsupported secondary index type"),
             }
             i += 1;
@@ -56,10 +56,20 @@ where
             code,
             scope,
             table,
-            db: DBI64::new(code.n, scope.n, table.n),
+            db: DBI64::new(code.value(), scope.value(), table.value()),
             idxdbs,
             unpacker: unpacker,
         }
+    }
+
+    ///
+    pub fn set<'a>(&self, key: u64, value: &'a T, payer: Name) -> Iterator {
+        for i in 0..self.idxdbs.len() {
+            let v2 = value.get_secondary_value(i);
+            self.idxdbs[i].store(payer.value(), key, v2);
+        }
+        let it = self.db.store(payer.value(), key, &value.pack());
+        return it;
     }
 
     ///
@@ -67,9 +77,9 @@ where
         let primary = value.get_primary();
         for i in 0..self.idxdbs.len() {
             let v2 = value.get_secondary_value(i);
-            self.idxdbs[i].store(payer.n, primary, v2);
+            self.idxdbs[i].store(payer.value(), primary, v2);
         }
-        let it = self.db.store(payer.n, primary, &value.pack());
+        let it = self.db.store(payer.value(), primary, &value.pack());
         return it;
     }
 
@@ -85,9 +95,9 @@ where
             if secondary_value == v2 {
                 continue;
             }
-            self.idxdbs[i].update(it_secondary, v2, payer.n);
+            self.idxdbs[i].update(it_secondary, v2, payer.value());
         }
-        self.db.update(iterator, &value.pack(), payer.n);
+        self.db.update(iterator, &value.pack(), payer.value());
     }
 
     ///
@@ -103,7 +113,7 @@ where
     }
 
     ///
-    pub fn get(&self, iterator: Iterator) -> Option<Box<T>> {
+    pub fn get(&self, iterator: Iterator) -> Option<T> {
         if !iterator.is_ok() {
             return None;
         }
@@ -112,7 +122,7 @@ where
     }
 
     ///
-    pub fn get_by_primary(&self, primary: u64) -> Option<Box<T>> {
+    pub fn get_by_primary(&self, primary: u64) -> Option<T> {
         let it = self.db.find(primary);
         return self.get(it);
     }
@@ -158,8 +168,8 @@ where
         if let Some(mut db_value) = self.get(it_primary) {
             let idx_db = self.idxdbs[it.db_index].as_ref();
             db_value.set_secondary_value(idx_db.get_db_index(), value);
-            self.update(it_primary, db_value.as_ref(), payer);
-            idx_db.update(it, value, payer.n);    
+            self.update(it_primary, &db_value, payer);
+            idx_db.update(it, value, payer.value());    
         } else {
 
         }
@@ -187,12 +197,12 @@ impl MultiIndexNotGeneric {
     pub fn new<'a>(code: Name, scope: Name, table: Name, indexes: &[SecondaryType], unpacker: fn(&[u8]) -> Box<dyn MultiIndexValue>) -> Self {
         let mut idxdbs: Vec<Box<dyn IndexDB>> = Vec::new();
         let mut i: usize = 0;
-        let idx_table = table.n & 0xfffffffffffffff0;
+        let idx_table = table.value() & 0xfffffffffffffff0;
         for idx in indexes {
             match idx {
-                SecondaryType::Idx64 => idxdbs.push(Box::new(Idx64DB::new(i, code.n, scope.n, idx_table + i as u64))),
-                SecondaryType::Idx128 => idxdbs.push(Box::new(Idx128DB::new(i, code.n, scope.n, idx_table + i as u64))),
-                SecondaryType::Idx256 => idxdbs.push(Box::new(Idx256DB::new(i, code.n, scope.n, idx_table + i as u64))),
+                SecondaryType::Idx64 => idxdbs.push(Box::new(Idx64DB::new(i, code.value(), scope.value(), idx_table + i as u64))),
+                SecondaryType::Idx128 => idxdbs.push(Box::new(Idx128DB::new(i, code.value(), scope.value(), idx_table + i as u64))),
+                SecondaryType::Idx256 => idxdbs.push(Box::new(Idx256DB::new(i, code.value(), scope.value(), idx_table + i as u64))),
                 _ => panic!("unsupported secondary index type"),
             }
             i += 1;
@@ -201,7 +211,7 @@ impl MultiIndexNotGeneric {
             code,
             scope,
             table,
-            db: DBI64::new(code.n, scope.n, table.n),
+            db: DBI64::new(code.value(), scope.value(), table.value()),
             idxdbs,
             unpacker: unpacker,
         }
@@ -212,9 +222,9 @@ impl MultiIndexNotGeneric {
         let primary = value.get_primary();
         for i in 0..self.idxdbs.len() {
             let v2 = value.get_secondary_value(i);
-            self.idxdbs[i].store(payer.n, primary, v2);
+            self.idxdbs[i].store(payer.value(), primary, v2);
         }
-        let it = self.db.store(payer.n, primary, &value.pack());
+        let it = self.db.store(payer.value(), primary, &value.pack());
         return it;
     }
 
@@ -230,9 +240,9 @@ impl MultiIndexNotGeneric {
             if secondary_value == v2 {
                 continue;
             }
-            self.idxdbs[i].update(it_secondary, v2, payer.n);
+            self.idxdbs[i].update(it_secondary, v2, payer.value());
         }
-        self.db.update(iterator, &value.pack(), payer.n);
+        self.db.update(iterator, &value.pack(), payer.value());
     }
 
     ///
@@ -304,7 +314,7 @@ impl MultiIndexNotGeneric {
             let idx_db = self.idxdbs[it.db_index].as_ref();
             db_value.set_secondary_value(idx_db.get_db_index(), value);
             self.update(it_primary, db_value.as_ref(), payer);
-            idx_db.update(it, value, payer.n);    
+            idx_db.update(it, value, payer.value());    
         } else {
 
         }

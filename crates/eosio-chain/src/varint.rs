@@ -27,6 +27,10 @@ impl VarUint32 {
     pub fn new(n: u32) -> Self {
         Self { n: n }
     }
+
+    pub fn value(&self) -> u32 {
+        return self.n;
+    }
 }
 
 impl Packer for VarUint32 {

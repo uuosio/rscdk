@@ -207,12 +207,12 @@ impl Packer for String {
     fn unpack(&mut self, data: &[u8]) -> usize {
         let mut length = VarUint32{n: 0};
         let size = length.unpack(data);
-        if let Ok(s) = String::from_utf8(data[size..size+length.n as usize].to_vec()) {
+        if let Ok(s) = String::from_utf8(data[size..size+length.value() as usize].to_vec()) {
             *self = s;
         } else {
             check(false, "invalid utf8 string");
         }
-        return size + length.n as usize;
+        return size + length.value() as usize;
     }
 }
 
@@ -246,8 +246,8 @@ impl<T> Packer for Vec<T> where T: Packer + Default {
         let mut dec = Decoder::new(data);
         let mut size = VarUint32{n: 0};
         dec.unpack(&mut size);
-        self.reserve(size.n as usize);
-        for _ in 0..size.n {
+        self.reserve(size.value() as usize);
+        for _ in 0..size.value() {
             let mut v: T = Default::default();
             dec.unpack(&mut v);
             self.push(v);
