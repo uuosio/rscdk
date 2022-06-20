@@ -244,7 +244,6 @@ pub fn verify_abi_structs(main_contract_structs: &Vec<Type>) -> Vec<Type> {
 
     let mut other_structs: Vec<Type> = Vec::new();
     for (_, ty) in other_structs_map {
-        println!("++++++other type: {:?}", ty);
         other_structs.push(ty.clone());
     }
     return other_structs;
@@ -263,9 +262,6 @@ pub fn parse_abi_info(info: &mut ABIInfo) -> String {
         ricardian_clauses: Vec::new(),    
     };
 
-    info.structs.iter().for_each(|item|{
-        println!("+++++++++main contract structs:{:?}", item);
-    });
 
     let other_structs = verify_abi_structs(&info.structs);
     info.structs.extend(other_structs);

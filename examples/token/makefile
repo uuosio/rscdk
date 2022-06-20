@@ -15,5 +15,5 @@ build:
 abi: abigen/main.rs lib.rs
 	cargo run --package abi-gen --release
 
-test: ./target/token.wasm
+test: ./target/token.wasm ./target/token.abi
 	run-ipyeos -m pytest -s test.py -k test_token
