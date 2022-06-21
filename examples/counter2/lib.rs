@@ -32,7 +32,7 @@ mod token {
         pub fn inc_count(&self) {
             let db = Counter::new_mi(self.receiver, self.receiver);
             let mut value = db.get().unwrap_or(Counter{count: 1});
-            eosio_println!("+++++count:", value.count);
+            eosio_println!("+++++count2:", value.count);
             value.count += 1;
             db.set(&value, self.receiver);
         }

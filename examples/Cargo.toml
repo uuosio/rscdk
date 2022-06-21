@@ -1,0 +1,10 @@
+[workspace]
+resolver = "2"
+members = [
+    "counter",
+    "counter2",
+    "token",
+]
+
+exclude = [
+]

@@ -61,14 +61,43 @@ class NewChain():
     def __exit__(self, type, value, traceback):
         self.chain.free()
 
-@chain_test
-def test_token():
-    with open('./target/wasm32-wasi/release/token.wasm', 'rb') as f:
+test_dir = os.path.dirname(__file__)
+def deploy_contract(package_name):
+    with open(f'{test_dir}/target/{package_name}/{package_name}.wasm', 'rb') as f:
         code = f.read()
-    with open('./target/token.abi', 'rb') as f:
+    with open(f'{test_dir}/target/{package_name}/{package_name}.abi', 'rb') as f:
         abi = f.read()
     chain.deploy_contract('hello', code, abi)
 
+@chain_test
+def test_1counter():
+    deploy_contract('counter')
+
+    args = {}
+    r = chain.push_action('hello', 'inc', args)
+    logger.info('+++++++create elapsed: %s', r['elapsed'])
+    chain.produce_block()
+
+    r = chain.push_action('hello', 'inc', args)
+    logger.info('+++++++create elapsed: %s', r['elapsed'])
+    chain.produce_block()
+
+@chain_test
+def test_2counter():
+    deploy_contract('counter2')
+
+    args = {}
+    r = chain.push_action('hello', 'inc', args)
+    logger.info('+++++++create elapsed: %s', r['elapsed'])
+    chain.produce_block()
+
+    r = chain.push_action('hello', 'inc', args)
+    logger.info('+++++++create elapsed: %s', r['elapsed'])
+    chain.produce_block()
+
+@chain_test
+def test_token():
+    deploy_contract('token')
     create = {
         "issuer": "hello",
         "maximum_supply": "100.0000 EOS",

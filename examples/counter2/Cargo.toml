@@ -17,6 +17,3 @@ default = ["std"]
 std = [
     "eosio_chain/std",
 ]
-
-[workspace]
-members = ["abigen"]
