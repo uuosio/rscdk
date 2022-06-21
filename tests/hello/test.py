@@ -63,9 +63,9 @@ class NewChain():
 
 @chain_test
 def test_hello():
-    with open('./target/wasm32-wasi/release/hello.wasm', 'rb') as f:
+    with open('../target/hello/wasm32-wasi/release/hello.wasm', 'rb') as f:
         code = f.read()
-    with open('./target/hello.abi', 'rb') as f:
+    with open('../target/hello/hello.abi', 'rb') as f:
         abi = f.read()
     chain.deploy_contract('hello', code, abi)
 

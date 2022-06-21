@@ -1,5 +1,5 @@
 [package]
-name = "hello"
+name = "testmi"
 version = "0.1.0"
 authors = [""]
 edition = "2021"
@@ -8,9 +8,13 @@ edition = "2021"
 eosio_chain = { version = "0.1.0", path = "../../crates/eosio-chain", default-features = false }
 
 [lib]
-name = "hello"
+name = "testmi"
 path = "lib.rs"
 crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+panic = "abort"
+lto = true
 
 [features]
 default = ["std"]

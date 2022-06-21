@@ -61,14 +61,17 @@ class NewChain():
     def __exit__(self, type, value, traceback):
         self.chain.free()
 
-@chain_test
-def test_hello():
-    with open('./target/hello/wasm32-wasi/release/hello.wasm', 'rb') as f:
+test_dir = os.path.dirname(__file__)
+def deploy_contract(package_name):
+    with open(f'{test_dir}/target/{package_name}/{package_name}.wasm', 'rb') as f:
         code = f.read()
-    with open('./target/hello/hello.abi', 'rb') as f:
+    with open(f'{test_dir}/target/{package_name}/{package_name}.abi', 'rb') as f:
         abi = f.read()
     chain.deploy_contract('hello', code, abi)
 
+@chain_test
+def test_hello():
+    deploy_contract('hello')
     args = {
         'name': 'rust'
     }
@@ -82,6 +85,7 @@ def test_hello():
 
 @chain_test
 def test_abi():
+    deploy_contract('testabi')
     with open('./target/testabi/testabi.wasm', 'rb') as f:
         code = f.read()
     with open('./target/testabi/testabi.abi', 'rb') as f:
@@ -122,6 +126,19 @@ def test_abi():
         "a31": ['1.0000 EOS', 'eosio.token'],
         # "a31": {'quantity': '1.0000 EOS', 'contract': 'eosio.token'}
     }
+
+    r = chain.push_action('hello', 'test', args, {'hello': 'active'})
+    logger.info('++++++elapsed: %s', r['elapsed'])
+    chain.produce_block()
+
+@chain_test
+def test_mi():
+    deploy_contract('testmi')
+
+    args = {}
+    r = chain.push_action('hello', 'test', args, {'hello': 'active'})
+    logger.info('++++++elapsed: %s', r['elapsed'])
+    chain.produce_block()
 
     r = chain.push_action('hello', 'test', args, {'hello': 'active'})
     logger.info('++++++elapsed: %s', r['elapsed'])
