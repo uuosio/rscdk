@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use core::convert::TryFrom;
-use itertools::Itertools;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 use quote::quote_spanned;
@@ -463,7 +462,7 @@ impl Contract {
         let action_structs_code = self.actions.iter().map(|action|{
             let item = &action.item;
             let span = item.span();
-            let ident = &item.sig.ident;
+            // let ident = &item.sig.ident;
             let struct_name = action.action_name.str();
             let struct_name_ident = proc_macro2::Ident::new(&struct_name, proc_macro2::Span::call_site());
 
@@ -1038,6 +1037,7 @@ impl Contract {
         }
     }
 
+    #[allow(dead_code)]
     fn is_option_type(ty: &syn::Type) -> bool {
         if let syn::Type::Path(type_path) = ty {
             if type_path.path.segments.len() != 1 {
@@ -1141,7 +1141,7 @@ impl Contract {
                     }
 
                     for field in &x.variants {
-                        let field_ident = &field.ident;
+                        // let field_ident = &field.ident;
                         if let syn::Fields::Unnamed(unnamed_fields) = &field.fields {
                             let unnamed_field = unnamed_fields.unnamed.last().unwrap();
                             let type_name = Self::get_type_name_from_field(unnamed_field)?;
@@ -1171,7 +1171,7 @@ impl Contract {
 
         for action in &self.actions {
             let item = &action.item;
-            let span = item.span();
+            // let span = item.span();
             for arg in item.sig.inputs.iter() {
                 if let syn::FnArg::Typed(pat_type) = arg {
                     let (type_name, ty) = Self::extract_type(&pat_type.ty)?;
@@ -1243,7 +1243,7 @@ impl Contract {
         let action_scale_info_code = self.actions
             .iter()
             .map(|action| {
-                let ident = &action.item.sig.ident;
+                // let ident = &action.item.sig.ident;
                 let struct_name = action.action_name.str();
                 let action_name_lit = proc_macro2::Literal::string(&action.action_name.str());
 
@@ -1360,10 +1360,9 @@ impl Contract {
 
             let getsize_code = item.variants
                 .iter()
-                .enumerate()
-                .map(|(i,field)| {
+                .map(|field| {
                     let field_ident = &field.ident;
-                    let index = syn::LitInt::new(&i.to_string(), proc_macro2::Span::call_site());
+                    // let index = syn::LitInt::new(&i.to_string(), proc_macro2::Span::call_site());
                     quote!{
                         #variant_ident::#field_ident(x) => {
                             _size = 1 + x.size();

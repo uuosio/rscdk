@@ -1,8 +1,6 @@
-use crate::contract::Contract;
-
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::contract::Contract;
     #[test]
     fn test_bad_struct() {
         let contract = Contract::new(
