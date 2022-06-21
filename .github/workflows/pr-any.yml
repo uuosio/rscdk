@@ -36,7 +36,7 @@ jobs:
         run: |
           set -e
           curl -L https://github.com/WebAssembly/binaryen/releases/download/version_109/binaryen-version_109-x86_64-linux.tar.gz | tar xzf -
-          echo "`pwd`/binaryen-version_109" > $GITHUB_PATH
+          echo "`pwd`/binaryen-version_109/bin" > $GITHUB_PATH
       - name: Cache cargo plugins
         uses: actions/cache@v2
         id: cache-cargo-plugins
