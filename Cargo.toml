@@ -4,7 +4,6 @@ members = [
     "crates/eosio-chain",
     "crates/macro",
     "crates/codegen",
-    # "examples/token",
 ]
 
 exclude = [

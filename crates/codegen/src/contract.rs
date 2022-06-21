@@ -342,7 +342,12 @@ impl Contract {
     
     fn is_primitive_type(name: &str) -> bool {
         match name {
-            "String" | "Name" | "i8" | "u8" | "i16" | "u16" | "i32" | "u32" | "i64" | "u64" | "i128" | "u128" => {
+            "bool" | "i8" | "u8" | "i16" | "u16" | "i32" | "u32" | "i64" | "u64" | "f32" | "f64" | "i128" | "u128" |
+            "String" |
+            "Varint32" | "VarUint32" | "Float128" | "TimePoint" | "TimePointSec" |
+            "BlockTimeStampType" | "Name" | "Checksum160" | "Checksum256" | "Uint256" |
+            "Checksum512" | "PublicKey" | "Signature" | "Symbol" | "SymbolCode" | "Asset" |
+            "ExtendedAsset" => {
                 return true;
             }
             _ => {

@@ -122,7 +122,7 @@ fn native_type_to_abi_type(tp: &str) -> &str {
 
 fn is_intrinsic_abi_type(name: &str) -> bool {
     match name {
-        "i8" | "u8" | "i16" | "u16" | "i32" | "u32" | "i64" | "u64" | "f64" | "i128" | "u128" |
+        "bool" | "i8" | "u8" | "i16" | "u16" | "i32" | "u32" | "i64" | "u64" | "f32" | "f64" | "i128" | "u128" |
         "String" |
         "Varint32" | "VarUint32" | "Float128" | "TimePoint" | "TimePointSec" |
         "BlockTimeStampType" | "Name" | "Checksum160" | "Checksum256" | "Uint256" |
@@ -192,13 +192,13 @@ pub fn verify_abi_structs(main_contract_structs: &Vec<Type>) -> Vec<Type> {
 
     let mut other_structs_map: HashMap<String, &Type> = HashMap::new();
 
-    let mut check_rust_type = |rust_type: &str| {
+    let mut check_rust_type = |struct_name: &str, field_name: &str, rust_type: &str| {
         if is_intrinsic_abi_type(rust_type) {
             return;
         }
 
         if let Some(_) = main_contract_structs_map.get(rust_type) {
-            return
+            return;
         }
 
         if let Some(ty) = all_structs_map.get(rust_type) {
@@ -208,32 +208,34 @@ pub fn verify_abi_structs(main_contract_structs: &Vec<Type>) -> Vec<Type> {
             } else {
                 other_structs_map.insert(name, *ty);
             }
-            return
+            return;
         }
-        panic!("abi struct not found: {}", rust_type);
+        panic!("abi struct not found: {}.{}: {}", struct_name, field_name, rust_type);
     };
 
     main_contract_structs.iter().for_each(|item|{
+        let struct_name = &get_last_path_name(item.path());
         match item.type_def() {
             ::eosio_scale_info::TypeDef::Composite(x) => {
-                let last_name = get_last_path_name(item.path());
                 x.fields().iter().for_each(|field|{
+                    let field_name = *field.name().unwrap();
                     let rust_type = *field.type_name().unwrap();
-                    if let Some(pos) = rust_type.find("Option<") {
+                    if let Some(_) = rust_type.find("Option<") {
                         let inner_rust_type = &rust_type["Option<".len()..rust_type.len() -1];
-                        check_rust_type(inner_rust_type);
+                        check_rust_type(struct_name, field_name, inner_rust_type);
                     } else if let Some(pos) = rust_type.find("Vec<") {
                         let inner_rust_type = &rust_type["Vec<".len()..rust_type.len() -1];
-                        check_rust_type(inner_rust_type);
+                        check_rust_type(struct_name, field_name, inner_rust_type);
                     } else {
-                        check_rust_type(rust_type);
+                        check_rust_type(struct_name, field_name, rust_type);
                     }
                 });
             }
             ::eosio_scale_info::TypeDef::Variant(x) => {
                 x.variants().iter().for_each(|v|{
+                    let name = *v.name();
                     let rust_type = v.fields()[0].type_name().unwrap();
-                    check_rust_type(*rust_type);
+                    check_rust_type(struct_name, name, *rust_type);
                 });
             }
             _ => {
@@ -267,7 +269,6 @@ pub fn parse_abi_info(info: &mut ABIInfo) -> String {
     info.structs.extend(other_structs);
 
     info.structs.iter().for_each(|item|{
-        // println!("+++++++++item:{:?}", item);
         match item.type_def() {
             ::eosio_scale_info::TypeDef::Composite(x) => {
                 if is_intrinsic_abi_type(&get_last_path_name(item.path())) {
@@ -286,7 +287,12 @@ pub fn parse_abi_info(info: &mut ABIInfo) -> String {
                     if let Some(pos) = rust_type.find("Option<") {
                         ty = String::from(native_type_to_abi_type(&rust_type["Option<".len()..rust_type.len() -1])) + "?";
                     } else if let Some(pos) = rust_type.find("Vec<") {
-                        ty = String::from(native_type_to_abi_type(&rust_type["Vec<".len()..rust_type.len() -1])) + "[]";
+                        let inner_rust_type = &rust_type["Vec<".len()..rust_type.len() -1];
+                        if inner_rust_type == "u8" {
+                            ty = String::from("bytes");
+                        } else {
+                            ty = String::from(native_type_to_abi_type(inner_rust_type)) + "[]";
+                        }
                     } else {
                         ty = String::from(native_type_to_abi_type(rust_type));
                     }
