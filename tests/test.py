@@ -86,11 +86,6 @@ def test_hello():
 @chain_test
 def test_abi():
     deploy_contract('testabi')
-    with open('./target/testabi/testabi.wasm', 'rb') as f:
-        code = f.read()
-    with open('./target/testabi/testabi.abi', 'rb') as f:
-        abi = f.read()
-    chain.deploy_contract('hello', code, abi)
 
     args = {
         "a1": True,
