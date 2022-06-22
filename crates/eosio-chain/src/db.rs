@@ -304,16 +304,41 @@ pub struct IdxTable {
 }
 
 ///
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Iterator {
+pub struct Iterator<'a, T> 
+where T: Packer + DBInterface + Default
+{
     ///
-    pub i: i32,
+    pub(crate) i: i32,
+    pub(crate) primary: Option<u64>,
+    db: &'a DBI64<T>,
 }
 
-impl Iterator {
+impl<'a, T> Iterator<'a, T> 
+where T: Packer + DBInterface + Default
+{
     ///
-    pub fn new(i: i32) -> Self {
-        Self { i }
+    pub fn new(i: i32, primary: Option<u64>, db: &'a DBI64<T>) -> Self {
+        Self { i, primary, db }
+    }
+
+    pub fn get_primary(&self) -> Option<u64> {
+        if !self.is_ok() {
+            return None;
+        }
+
+        if self.primary.is_some() {
+            return self.primary;
+        }
+
+        return Some(self.db.get(self).unwrap().get_primary());
+    }
+
+    pub fn get_value(&self) -> Option<T> {
+        return self.db.get(self);
+    }
+
+    pub fn get_i(&self) -> i32 {
+        return self.i;
     }
 
     ///
@@ -393,93 +418,110 @@ pub enum SecondaryValue {
     IdxF128(Float128),
 }
 
+
 ///
-pub struct DBI64 {
+pub struct DBI64<T> {
     ///
     pub code: u64,
     ///
     pub scope: u64,
     ///
     pub table: u64,
+    _marker: core::marker::PhantomData<T>,
 }
 
-impl DBI64 {
+impl<T> DBI64<T> 
+where T: Packer + DBInterface + Default,
+{
     ///
     pub fn new(code: u64, scope: u64, table: u64) -> Self {
         DBI64 {
             code,
             scope,
             table,
+            _marker: core::marker::PhantomData::<T>{}
         }
     }
 
     ///
-    pub fn store(&self, payer: u64, id: u64,  data: &[u8]) -> Iterator {
+    pub fn store(&self, payer: u64, id: u64,  data: &[u8]) -> Iterator<T> {
         let it = db_store_i64(self.scope, self.table, payer, id, data.as_ptr(), data.len() as u32);
-        Iterator { i: it }
+        Iterator::<T> { i: it, primary: Some(id), db: self }
     }
 
     ///
-    pub fn update(&self, iterator: Iterator, data: &[u8], payer: u64) {
+    pub fn update(&self, iterator: &Iterator<T>, data: &[u8], payer: u64) {
         db_update_i64(iterator.i, payer, data.as_ptr(), data.len() as u32);
     }
 
     ///
-    pub fn remove(&self, iterator: Iterator) {
+    pub fn remove(&self, iterator: &Iterator<T>) {
         db_remove_i64(iterator.i);
     }
 
     ///
-    pub fn get(&self, iterator: Iterator) -> Vec<u8> {
-        //, data: *const u32, len: u32
-        let size = db_get_i64(iterator.i, 0 as *const u8, 0);
-        if size == 0 {
-            return Vec::new();
+    pub fn get(&self, iterator: &Iterator<T>) -> Option<T> {
+        if !iterator.is_ok() {
+            return None;
         }
+
+        let size = db_get_i64(iterator.i, 0 as *const u8, 0);
         let mut data: Vec<u8> = vec![0; size as usize];
-        // let mut data: Vec<u8> = Vec::with_capacity(size as usize);
-        // data.resize_with(size as usize, Default::default);
         let ptr = data.as_mut_ptr();
         db_get_i64(iterator.i, ptr, size as u32);
-        return data;
+        let mut ret = T::default();
+        ret.unpack(&data); 
+        Some(ret)
     }
 
     ///
-    pub fn next(&self, iterator: Iterator) -> (Iterator, u64) {
+    pub fn next(&self, iterator: &Iterator<T>) -> Iterator<T> {
         let mut primary = 0;
         let it = db_next_i64(iterator.i, &mut primary);
-        (Iterator { i: it }, primary)
+        if it != -1 {
+            Iterator::<T> { i: it, primary: Some(primary), db: self }
+        } else {
+            Iterator::<T> { i: it, primary: None, db: self }
+        }
     }
 
     ///
-    pub fn previous(&self, iterator: Iterator) -> (Iterator, u64) {
+    pub fn previous(&self, iterator: &Iterator<T>) -> Iterator<T> {
         let mut primary = 0;
         let it = db_previous_i64(iterator.i, &mut primary);
-        (Iterator { i: it ,}, primary)
+        if it != -1 {
+            Iterator::<T> { i: it, primary: Some(primary), db: self }
+        } else {
+            Iterator::<T> { i: it, primary: None, db: self }
+        }
     }
 
     ///
-    pub fn find(&self, id: u64) -> Iterator {
+    pub fn find(&self, id: u64) -> Iterator<T> {
         let it = db_find_i64(self.code, self.scope, self.table, id);
-        Iterator { i: it }
+        if it != -1 {
+            Iterator::<T> { i: it, primary: Some(id), db: self }
+        } else {
+            Iterator::<T> { i: it, primary: None, db: self }
+        }
     }
 
     ///
-    pub fn lowerbound(&self, id: u64) -> Iterator {
+    pub fn lowerbound(&self, id: u64) -> Iterator<T> {
         let it = db_lowerbound_i64(self.code, self.scope, self.table, id);
-        Iterator { i: it }
+        Iterator::<T> { i: it, primary: None, db: self }
     }
 
     ///
-    pub fn upperbound(&self, id: u64) -> Iterator {
+    pub fn upperbound(&self, id: u64) -> Iterator<T> {
         let it = db_upperbound_i64(self.code, self.scope, self.table, id);
-        Iterator { i: it }
+        Iterator::<T> { i: it, primary: None, db: self }
     }
 
     ///
-    pub fn end(&self) -> Iterator {
+    pub fn end(&self) -> Iterator<T> {
         let it = db_end_i64(self.code, self.scope, self.table);
-        Iterator { i: it }
+        Iterator::<T> { i: it, primary: None, db: self }
     }
 }
 

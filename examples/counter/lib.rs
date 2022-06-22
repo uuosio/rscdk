@@ -34,9 +34,9 @@ mod token {
         pub fn inc_count(&self) {
             let db = Counter::new_mi(self.receiver, self.receiver);
             let it = db.find(1u64);
-            if let Some(mut value) = db.get(it) {
+            if let Some(mut value) = db.get(&it) {
                 value.count += 1;
-                db.update(it, &value, self.receiver);
+                db.update(&it, &value, self.receiver);
                 eosio_println!("count is", value.count);
             } else {
                 db.store(&Counter{key: 1, count: 1}, self.receiver);

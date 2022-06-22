@@ -71,7 +71,7 @@ mod token {
             let it = db
                 .find(sym_code)
                 .expect("token with symbol does not exist, create token before issue");
-            let mut stats = db.get(it).unwrap();
+            let mut stats = it.get_value().unwrap();
             check(to == stats.issuer, "tokens can only be issued to issuer account");
             require_auth(stats.issuer);
             check(quantity.is_valid(), "invalid quantity");
@@ -80,7 +80,7 @@ mod token {
             check(quantity.symbol() == stats.supply.symbol(), "symbol precision mismatch");
             check(quantity.amount() <= stats.max_supply.amount() - stats.supply.amount(), "quantity exceeds available supply");
             stats.supply += quantity;
-            db.update(it, &stats, stats.issuer);
+            db.update(&it, &stats, stats.issuer);
             self.add_balance(to, &quantity, to);
         }
 
@@ -93,13 +93,13 @@ mod token {
             let it = db
                 .find(sym_code)
                 .expect("token with symbol does not exist");
-            let mut stat = db.get(it).unwrap();
+            let mut stat = it.get_value().unwrap();
             require_auth(stat.issuer);
             check(quantity.is_valid(), "invalid quantity");
             check(quantity.amount() > 0, "must retire postive quantity");
             check(quantity.symbol() == stat.supply.symbol(), "symbol precision mismatch");
             stat.supply -= quantity;
-            db.update(it, &stat, Name{n: 0});
+            db.update(&it, &stat, Name{n: 0});
             self.sub_balance(stat.issuer, &quantity);
         }
 
@@ -113,7 +113,7 @@ mod token {
             let it = db
                 .find(sym_code)
                 .expect("token with symbol does not exist");
-            let currency = db.get(it).unwrap();
+            let currency = it.get_value().unwrap();
             
             require_recipient(from);
             require_recipient(to);
@@ -141,7 +141,7 @@ mod token {
             let it = db
                 .find(symbol.code().value())
                 .expect("symbol does not exist");
-            let stat = db.get(it).unwrap();
+            let stat = it.get_value().unwrap();
             check(stat.supply.symbol() == symbol, "symbol precision mismatch");
             let accounts = Account::new_mi(self.receiver, owner);
             let it_account = accounts.find(symbol.code().value());
@@ -160,9 +160,9 @@ mod token {
             let it = accounts
                 .find(symbol.code().value())
                 .expect("balance row already deleted or never existed. Action won't have any effect.");
-            let value = accounts.get(it).unwrap();
+            let value = it.get_value().unwrap();
             check(value.balance.amount() == 0, "cannot close because the balance is not zero.");
-            accounts.remove(it);
+            accounts.remove(&it);
         }
 
         fn add_balance(&self, owner: Name, value: &Asset, payer: Name) {
@@ -171,9 +171,9 @@ mod token {
             if !it.is_ok() {
                 accounts.store(&Account{balance: *value}, payer);
             } else {
-                let mut to = accounts.get(it).unwrap();
+                let mut to = it.get_value().unwrap();
                 to.balance += *value;
-                accounts.update(it, &to, Name::from_u64(0));
+                accounts.update(&it, &to, Name::from_u64(0));
             }
         }
 
@@ -182,10 +182,10 @@ mod token {
             let it = accounts
                 .find(quantity.symbol().code().value())
                 .expect("no balance object found");
-            let mut from = accounts.get(it).unwrap();
+            let mut from = it.get_value().unwrap();
             check(from.balance.amount() >= quantity.amount(), "overdraw balance");
             from.balance -= *quantity;
-            accounts.update(it, &from, owner);
+            accounts.update(&it, &from, owner);
         }
     }
 }

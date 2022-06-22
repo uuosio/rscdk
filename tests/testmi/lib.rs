@@ -38,21 +38,25 @@ mod hello {
 
         #[chain(action="test")]
         pub fn test(&self) {
-            let db1 = MyData1::new_mi(self.receiver, self.receiver);
-            let db2 = MyData2::new_mi(self.receiver, self.receiver);
-
-            let it1 = db1.find(1u64);
-            let it2 = db2.find(1u64);
-            if it1.is_ok() {
-                eosio_println!("+++it1:", db1.end().i);
-            } else {
-                db1.store(&MyData1{a1:1}, self.receiver);
-            }
-
-            if it2.is_ok() {
-                eosio_println!("+++it2:", db2.end().i);
-            } else {
-                db2.store(&MyData2{a2:1}, self.receiver);
+            let it1: eosio_chain::db::Iterator<MyData1>;
+            {
+                let db1 = MyData1::new_mi(self.receiver, self.receiver);
+                let db2 = MyData2::new_mi(self.receiver, self.receiver);
+    
+                it1 = db1.find(1u64);
+                let it2 = db2.find(1u64);
+                if it1.is_ok() {
+                    eosio_println!("+++it1:", db1.end().get_i());
+                } else {
+                    db1.store(&MyData1{a1:1}, self.receiver);
+                }
+    
+                if it2.is_ok() {
+                    eosio_println!("+++it2:", db2.end().get_i());
+                } else {
+                    db2.store(&MyData2{a2:1}, self.receiver);
+                }                
+                it1.get_value();
             }
         }
     }

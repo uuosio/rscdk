@@ -853,13 +853,13 @@ impl Contract {
 
                         fn get(&self) -> Option<#table_ident> {
                             let it = self.mi.find(eosio_chain::Name::new(#table_name).value());
-                            return self.mi.get(it);
+                            return self.mi.get(&it);
                         }
 
                         fn set(&self, value: &#table_ident, payer: eosio_chain::Name) {
                             let it = self.mi.find(eosio_chain::Name::new(#table_name).value());
                             if it.is_ok() {
-                                self.mi.update(it, value, payer);
+                                self.mi.update(&it, value, payer);
                             } else {
                                 self.mi.set(eosio_chain::Name::new(#table_name).value(), value, payer);
                             }
@@ -869,13 +869,7 @@ impl Contract {
                     impl #table_ident {
                         #[allow(dead_code)]
                         fn new_mi(code: eosio_chain::Name, scope: eosio_chain::Name) -> Box<#mi_ident> {
-                            #[allow(dead_code)]
-                            fn unpacker(data: &[u8]) -> #table_ident {
-                                let mut ret = #table_ident::default();
-                                ret.unpack(data);
-                                return ret;
-                            }
-                            return Box::new(#mi_ident::new(code, scope, eosio_chain::Name::new(#table_name), unpacker));
+                            return Box::new(#mi_ident::new(code, scope, eosio_chain::Name::new(#table_name)));
                         }
                     }
                 );
@@ -890,29 +884,29 @@ impl Contract {
                 #[allow(dead_code)]
                 impl #mi_ident {
                     ///
-                    pub fn new(code: eosio_chain::Name, scope: eosio_chain::Name, table: eosio_chain::Name, indexes: &[eosio_chain::db::SecondaryType], unpacker: fn(&[u8]) -> #table_ident) -> Self {
+                    pub fn new(code: eosio_chain::Name, scope: eosio_chain::Name, table: eosio_chain::Name, indexes: &[eosio_chain::db::SecondaryType]) -> Self {
                         Self {
-                            mi: ::eosio_chain::mi::MultiIndex::<#table_ident>::new(code, scope, table, indexes, unpacker),
+                            mi: ::eosio_chain::mi::MultiIndex::<#table_ident>::new(code, scope, table, indexes),
                         }
                     }
-            
+
                     ///
-                    pub fn store(&self, value: &#table_ident, payer: eosio_chain::Name) -> ::eosio_chain::db::Iterator {
+                    pub fn store(&self, value: &#table_ident, payer: eosio_chain::Name) -> ::eosio_chain::db::Iterator<#table_ident> {
                         return self.mi.store(value, payer);
                     }
                 
                     ///
-                    pub fn update(&self, iterator: ::eosio_chain::db::Iterator, value: &#table_ident, payer: eosio_chain::Name) {
+                    pub fn update(&self, iterator: &::eosio_chain::db::Iterator<#table_ident>, value: &#table_ident, payer: eosio_chain::Name) {
                         return self.mi.update(iterator, value, payer);
                     }
                 
                     ///
-                    pub fn remove(&self, iterator: ::eosio_chain::db::Iterator) {
+                    pub fn remove(&self, iterator: &::eosio_chain::db::Iterator<#table_ident>) {
                         return self.mi.remove(iterator);
                     }
                 
                     ///
-                    pub fn get(&self, iterator: ::eosio_chain::db::Iterator) -> Option<#table_ident> {
+                    pub fn get(&self, iterator: &::eosio_chain::db::Iterator<#table_ident>) -> Option<#table_ident> {
                         return self.mi.get(iterator)
                     }
                 
@@ -922,32 +916,32 @@ impl Contract {
                     }
 
                     ///
-                    pub fn next(&self, iterator: ::eosio_chain::db::Iterator) -> (::eosio_chain::db::Iterator, u64) {
+                    pub fn next(&self, iterator: &::eosio_chain::db::Iterator<#table_ident>) -> ::eosio_chain::db::Iterator<#table_ident> {
                         return self.mi.db.next(iterator);
                     }
 
                     ///
-                    pub fn previous(&self, iterator: ::eosio_chain::db::Iterator) -> (::eosio_chain::db::Iterator, u64) {
+                    pub fn previous(&self, iterator: &::eosio_chain::db::Iterator<#table_ident>) -> ::eosio_chain::db::Iterator<#table_ident> {
                         return self.mi.db.previous(iterator);
                     }
 
                     ///
-                    pub fn find(&self, id: u64) -> ::eosio_chain::db::Iterator {
+                    pub fn find(&self, id: u64) -> ::eosio_chain::db::Iterator<#table_ident> {
                         return self.mi.db.find(id);
                     }
                 
                     ///
-                    pub fn lowerbound(&self, id: u64) -> ::eosio_chain::db::Iterator {
+                    pub fn lowerbound(&self, id: u64) -> ::eosio_chain::db::Iterator<#table_ident> {
                         return self.mi.db.lowerbound(id);
                     }
                 
                     ///
-                    pub fn upperbound(&self, id: u64) -> ::eosio_chain::db::Iterator {
+                    pub fn upperbound(&self, id: u64) -> ::eosio_chain::db::Iterator<#table_ident> {
                         return self.mi.db.upperbound(id);
                     }
                 
                     ///
-                    pub fn end(&self) -> ::eosio_chain::db::Iterator {
+                    pub fn end(&self) -> ::eosio_chain::db::Iterator<#table_ident> {
                         return self.mi.db.end();
                     }
                 
@@ -968,13 +962,7 @@ impl Contract {
                     #[allow(dead_code)]
                     fn new_mi(code: eosio_chain::Name, scope: eosio_chain::Name) -> Box<#mi_ident> {
                         let indexes: [eosio_chain::db::SecondaryType; #len_secondary] = [#( #secondary_types ),*];
-                        #[allow(dead_code)]
-                        fn unpacker(data: &[u8]) -> #table_ident {
-                            let mut ret = #table_ident::default();
-                            ret.unpack(data);
-                            return ret;
-                        }
-                        return Box::new(#mi_ident::new(code, scope, eosio_chain::Name::new(#table_name), &indexes, unpacker));
+                        return Box::new(#mi_ident::new(code, scope, eosio_chain::Name::new(#table_name), &indexes));
                     }
                 }
             );

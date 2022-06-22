@@ -82,8 +82,11 @@ pub use self::structs::*;
 pub mod serializer;
 ///
 pub mod db;
+
 ///
+#[macro_use]
 pub mod print;
+
 ///
 pub mod mi;
 ///
@@ -135,6 +138,7 @@ pub use self::vmapi::eosio:: {
 };
 
 ///
+#[macro_use]
 pub mod name;
 
 ///
