@@ -6,6 +6,7 @@ members = [
     # "testcodegen",
     "testmi",
     "testabi",
+    "testmod",
 ]
 
 exclude = [

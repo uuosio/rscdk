@@ -1,4 +1,4 @@
-ALL : test_hello test_abi test_mi
+ALL : test_hello test_abi test_mi test_mod
 
 test_hello:
 	cd hello;cargo eosiocontract build --release
@@ -10,4 +10,8 @@ test_abi:
 
 test_mi:
 	cd testmi;cargo eosiocontract build --release
+	run-ipyeos -m pytest -s test.py -k test_mi
+
+test_mod:
+	cd testmod;cargo eosiocontract build --release
 	run-ipyeos -m pytest -s test.py -k test_mi
