@@ -4,6 +4,10 @@ use crate::print;
 
 use crate::vmapi::db::*;
 
+use crate::name::{
+    Name,
+};
+
 use crate::vmapi::eosio::{
     eosio_memcpy,
 };
@@ -432,7 +436,9 @@ pub enum SecondaryValue {
 
 
 ///
-pub struct DBI64<T> {
+pub struct DBI64<T> 
+where T: Packer + DBInterface + Default,
+{
     ///
     pub code: u64,
     ///
@@ -445,25 +451,26 @@ pub struct DBI64<T> {
 impl<T> DBI64<T> 
 where T: Packer + DBInterface + Default,
 {
-    ///
-    pub fn new(code: u64, scope: u64, table: u64) -> Self {
+    /// Creates a new DBI64 instance
+    pub fn new(code: Name, scope: Name, table: Name) -> Self {
         DBI64 {
-            code,
-            scope,
-            table,
+            code: code.value(),
+            scope: scope.value(),
+            table: table.value(),
             _marker: core::marker::PhantomData::<T>{}
         }
     }
 
     ///
-    pub fn store(&self, payer: u64, id: u64,  data: &[u8]) -> Iterator<T> {
-        let it = db_store_i64(self.scope, self.table, payer, id, data.as_ptr(), data.len() as u32);
-        Iterator::<T> { i: it, primary: Some(id), db: self }
+    pub fn store(&self, payer: Name, primary_key: u64,  value: &T) -> Iterator<T> {
+        let data = value.pack();
+        let it = db_store_i64(self.scope, self.table, payer.value(), primary_key, data.as_ptr(), data.len() as u32);
+        Iterator::<T> { i: it, primary: Some(primary_key), db: self }
     }
 
     ///
-    pub fn update(&self, iterator: &Iterator<T>, data: &[u8], payer: u64) {
-        db_update_i64(iterator.i, payer, data.as_ptr(), data.len() as u32);
+    pub fn update(&self, iterator: &Iterator<T>, data: &[u8], payer: Name) {
+        db_update_i64(iterator.i, payer.value(), data.as_ptr(), data.len() as u32);
     }
 
     ///
@@ -603,9 +610,9 @@ pub trait IndexDB {
     ///
     fn get_db_index(&self) -> usize;
     ///
-    fn store(&self, payer: u64, id: u64, secondary: SecondaryValue) -> SecondaryIterator;
+    fn store(&self, payer: Name, id: u64, secondary: SecondaryValue) -> SecondaryIterator;
     ///
-    fn update(&self, iterator: SecondaryIterator, secondary: SecondaryValue, payer: u64);
+    fn update(&self, iterator: SecondaryIterator, secondary: SecondaryValue, payer: Name);
     ///
     fn remove(&self, iterator: SecondaryIterator);
     ///
@@ -658,12 +665,12 @@ impl<'a, T: ToSecondaryValue + FromSecondaryValue + Printable + Default, const I
     }
 
     ///
-    pub fn store(&self, payer: u64, id: u64, value: T) -> SecondaryIterator {
+    pub fn store(&self, payer: Name, id: u64, value: T) -> SecondaryIterator {
         return self.db.store(payer, id, value.to_secondary_value(self.secondary_type));
     }
 
     ///
-    pub fn update(&self, iterator: SecondaryIterator, value: T, payer: u64) {
+    pub fn update(&self, iterator: SecondaryIterator, value: T, payer: Name) {
         self.db.update(iterator, value.to_secondary_value(self.secondary_type), payer);
     }
 
@@ -717,8 +724,8 @@ impl<'a, T: ToSecondaryValue + FromSecondaryValue + Printable + Default, const I
 
 impl Idx64DB {
     ///
-    pub fn new(db_index: usize, code: u64, scope: u64, table: u64) -> Self {
-        Idx64DB { db_index: db_index, code, scope, table }
+    pub fn new(db_index: usize, code: Name, scope: Name, table: Name) -> Self {
+        Idx64DB { db_index: db_index, code: code.value(), scope: scope.value(), table: table.value() }
     }
 }
 
@@ -727,19 +734,19 @@ impl IndexDB for Idx64DB {
         return self.db_index;
     }
 
-    fn store(&self, payer: u64, id: u64, secondary: SecondaryValue) -> SecondaryIterator {
+    fn store(&self, payer: Name, id: u64, secondary: SecondaryValue) -> SecondaryIterator {
         if let SecondaryValue::Idx64(value) = secondary {
             print::printui(value);
-            let ret = db_idx64_store(self.scope, self.table, payer, id, &value);
+            let ret = db_idx64_store(self.scope, self.table, payer.value(), id, &value);
             return SecondaryIterator{ i: ret, primary: id, db_index: self.db_index };    
         }
         check(false, "Idx64DB::store: bad secondary type");
         return SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index }
     }
 
-    fn update(&self, iterator: SecondaryIterator, secondary: SecondaryValue, payer: u64) {
+    fn update(&self, iterator: SecondaryIterator, secondary: SecondaryValue, payer: Name) {
         if let SecondaryValue::Idx64(value) = secondary {
-            db_idx64_update(iterator.i, payer, &value);
+            db_idx64_update(iterator.i, payer.value(), &value);
             return;
         } else {
             check(false, "Idx64DB::update: bad secondary type");
@@ -808,8 +815,8 @@ impl IndexDB for Idx64DB {
 
 impl Idx128DB {
     ///
-    pub fn new(db_index: usize, code: u64, scope: u64, table: u64) -> Self {
-        Idx128DB {db_index: db_index, code, scope, table }
+    pub fn new(db_index: usize, code: Name, scope: Name, table: Name) -> Self {
+        Idx128DB { db_index: db_index, code: code.value(), scope: scope.value(), table: table.value() }
     }
 }
 
@@ -818,10 +825,10 @@ impl IndexDB for Idx128DB {
         return self.db_index;
     }
 
-    fn store(&self, payer: u64, id: u64, secondary: SecondaryValue) -> SecondaryIterator {
+    fn store(&self, payer: Name, id: u64, secondary: SecondaryValue) -> SecondaryIterator {
         if let SecondaryValue::Idx128(value) = secondary {
             let _secondary = Uint128{lo: (value & 0xffffffffffffffff) as u64, hi: (value >> 64) as u64};
-            let ret = db_idx128_store(self.scope, self.table, payer, id, &_secondary);
+            let ret = db_idx128_store(self.scope, self.table, payer.value(), id, &_secondary);
             return SecondaryIterator{ i: ret, primary: id, db_index: self.db_index };
         }
         check(false, "Idx128DB::store: bad secondary type");
@@ -829,10 +836,10 @@ impl IndexDB for Idx128DB {
         //return SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index };
     }
 
-    fn update(&self, iterator: SecondaryIterator, secondary: SecondaryValue, payer: u64) {
+    fn update(&self, iterator: SecondaryIterator, secondary: SecondaryValue, payer: Name) {
         if let SecondaryValue::Idx128(value) = secondary {
             let _secondary = Uint128{lo: (value & 0xffffffffffffffff) as u64, hi: (value >> 64) as u64};
-            db_idx128_update(iterator.i, payer, &_secondary);
+            db_idx128_update(iterator.i, payer.value(), &_secondary);
         } else {
             check(false, "Idx128DB::update: bad secondary type");
         }
@@ -911,8 +918,8 @@ impl IndexDB for Idx128DB {
 
 impl Idx256DB {
     ///
-    pub fn new(db_index: usize, code: u64, scope: u64, table: u64) -> Self {
-        Idx256DB {db_index: db_index, code, scope, table }
+    pub fn new(db_index: usize, code: Name, scope: Name, table: Name) -> Self {
+        Idx256DB { db_index: db_index, code: code.value(), scope: scope.value(), table: table.value() }
     }
 }
 
@@ -921,18 +928,18 @@ impl IndexDB for Idx256DB {
         return self.db_index;
     }
 
-    fn store(&self, payer: u64, id: u64, secondary: SecondaryValue) -> SecondaryIterator {
+    fn store(&self, payer: Name, id: u64, secondary: SecondaryValue) -> SecondaryIterator {
         if let SecondaryValue::Idx256(value) = secondary {
-            let ret = db_idx256_store(self.scope, self.table, payer, id, value.data.as_ptr() as *mut Uint128, 2);
+            let ret = db_idx256_store(self.scope, self.table, payer.value(), id, value.data.as_ptr() as *mut Uint128, 2);
             return SecondaryIterator{ i: ret, primary: id, db_index: self.db_index };
         }
         check(false, "Idx256DB::store: bad secondary type");
         return SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index };
     }
 
-    fn update(&self, iterator: SecondaryIterator, secondary: SecondaryValue, payer: u64) {
+    fn update(&self, iterator: SecondaryIterator, secondary: SecondaryValue, payer: Name) {
         if let SecondaryValue::Idx256(value) = secondary {
-            db_idx256_update(iterator.i, payer, value.data.as_ptr() as *mut Uint128, 2);
+            db_idx256_update(iterator.i, payer.value(), value.data.as_ptr() as *mut Uint128, 2);
         } else {
             check(false, "Idx256DB::update: bad secondary type");
         }
@@ -1006,8 +1013,8 @@ impl IndexDB for Idx256DB {
 
 impl IdxF64DB {
     ///
-    pub fn new(db_index: usize, code: u64, scope: u64, table: u64) -> Self {
-        IdxF64DB { db_index: db_index, code, scope, table }
+    pub fn new(db_index: usize, code: Name, scope: Name, table: Name) -> Self {
+        IdxF64DB { db_index: db_index, code: code.value(), scope: scope.value(), table: table.value() }
     }
 }
 
@@ -1016,18 +1023,18 @@ impl IndexDB for IdxF64DB {
         return self.db_index;
     }
 
-    fn store(&self, payer: u64, id: u64, secondary: SecondaryValue) -> SecondaryIterator {
+    fn store(&self, payer: Name, id: u64, secondary: SecondaryValue) -> SecondaryIterator {
         if let SecondaryValue::IdxF64(value) = secondary {
-            let ret = db_idx_double_store(self.scope, self.table, payer, id, &value);
+            let ret = db_idx_double_store(self.scope, self.table, payer.value(), id, &value);
             return SecondaryIterator{ i: ret, primary: id, db_index: self.db_index };
         }
         check(false, "IdxF64DB::store: bad secondary type");
         return SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index };
     }
 
-    fn update(&self, iterator: SecondaryIterator, secondary: SecondaryValue, payer: u64) {
+    fn update(&self, iterator: SecondaryIterator, secondary: SecondaryValue, payer: Name) {
         if let SecondaryValue::IdxF64(value) = secondary {
-            db_idx_double_update(iterator.i, payer, &value);
+            db_idx_double_update(iterator.i, payer.value(), &value);
         } else {
             check(false, "IdxF64DB::update: bad secondary type")
         }
@@ -1101,8 +1108,8 @@ impl IndexDB for IdxF64DB {
 
 impl IdxF128DB {
     ///
-    pub fn new(db_index: usize, code: u64, scope: u64, table: u64) -> Self {
-        IdxF128DB { code, scope, table, db_index: db_index }
+    pub fn new(db_index: usize, code: Name, scope: Name, table: Name) -> Self {
+        IdxF128DB { db_index: db_index, code: code.value(), scope: scope.value(), table: table.value() }
     }
 }
 
@@ -1111,18 +1118,18 @@ impl IndexDB for IdxF128DB {
         return self.db_index;
     }
 
-    fn store(&self, payer: u64, id: u64, secondary: SecondaryValue) -> SecondaryIterator {
+    fn store(&self, payer: Name, id: u64, secondary: SecondaryValue) -> SecondaryIterator {
         if let SecondaryValue::IdxF128(value) = secondary {
-            let ret = db_idx_long_double_store(self.scope, self.table, payer, id, &value);
+            let ret = db_idx_long_double_store(self.scope, self.table, payer.value(), id, &value);
             return SecondaryIterator{ i: ret, primary: id, db_index: self.db_index };
         }
         check(false, "IdxF128DB::store: bad secondary type");
         return SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index };
     }
 
-    fn update(&self, iterator: SecondaryIterator, secondary: SecondaryValue, payer: u64) {
+    fn update(&self, iterator: SecondaryIterator, secondary: SecondaryValue, payer: Name) {
         if let SecondaryValue::IdxF128(value) = secondary {
-            db_idx_long_double_update(iterator.i, payer, &value);
+            db_idx_long_double_update(iterator.i, payer.value(), &value);
         } else {
             check(false, "IdxF128DB::update: bad secondary type")
         }

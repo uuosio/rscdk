@@ -18,7 +18,9 @@ use crate::{
 
 use crate::boxed::Box;
 ///
-pub struct MultiIndex<T> {
+pub struct MultiIndex<T>
+where T: DBInterface + Packer + Default
+{
     ///
     pub code: Name,
     ///
@@ -42,11 +44,31 @@ where T: DBInterface + Packer + Default
         let idx_table = table.value() & 0xfffffffffffffff0;
         for idx in indexes {
             match idx {
-                SecondaryType::Idx64 => idxdbs.push(Box::new(Idx64DB::new(i, code.value(), scope.value(), idx_table + i as u64))),
-                SecondaryType::Idx128 => idxdbs.push(Box::new(Idx128DB::new(i, code.value(), scope.value(), idx_table + i as u64))),
-                SecondaryType::Idx256 => idxdbs.push(Box::new(Idx256DB::new(i, code.value(), scope.value(), idx_table + i as u64))),
-                SecondaryType::IdxF64 => idxdbs.push(Box::new(IdxF64DB::new(i, code.value(), scope.value(), idx_table + i as u64))),
-                SecondaryType::IdxF128 => idxdbs.push(Box::new(IdxF128DB::new(i, code.value(), scope.value(), idx_table + i as u64))),
+                SecondaryType::Idx64 => idxdbs.push(
+                    Box::new(
+                        Idx64DB::new(i, code, scope, Name::from_u64(idx_table + i as u64))
+                    )
+                ),
+                SecondaryType::Idx128 => idxdbs.push(
+                    Box::new(
+                        Idx128DB::new(i, code, scope, Name::from_u64(idx_table + i as u64))
+                    )
+                ),
+                SecondaryType::Idx256 => idxdbs.push(
+                    Box::new(
+                        Idx256DB::new(i, code, scope, Name::from_u64(idx_table + i as u64))
+                    )
+                ),
+                SecondaryType::IdxF64 => idxdbs.push(
+                    Box::new(
+                        IdxF64DB::new(i, code, scope, Name::from_u64(idx_table + i as u64))
+                    )
+                ),
+                SecondaryType::IdxF128 => idxdbs.push(
+                    Box::new(
+                        IdxF128DB::new(i, code, scope, Name::from_u64(idx_table + i as u64))
+                    )
+                ),
                 // _ => check(false, "unsupported secondary index type"),
             }
             i += 1;
@@ -55,7 +77,7 @@ where T: DBInterface + Packer + Default
             code,
             scope,
             table,
-            db: DBI64::new(code.value(), scope.value(), table.value()),
+            db: DBI64::new(code, scope, table),
             idxdbs,
             _marker: core::marker::PhantomData::<T>{},
         }
@@ -65,9 +87,9 @@ where T: DBInterface + Packer + Default
     pub fn set(&self, key: u64, value: &T, payer: Name) -> Iterator<T> {
         for i in 0..self.idxdbs.len() {
             let v2 = value.get_secondary_value(i);
-            self.idxdbs[i].store(payer.value(), key, v2);
+            self.idxdbs[i].store(payer, key, v2);
         }
-        let it = self.db.store(payer.value(), key, &value.pack());
+        let it = self.db.store(payer, key, &value);
         return it;
     }
 
@@ -76,9 +98,9 @@ where T: DBInterface + Packer + Default
         let primary = value.get_primary();
         for i in 0..self.idxdbs.len() {
             let v2 = value.get_secondary_value(i);
-            self.idxdbs[i].store(payer.value(), primary, v2);
+            self.idxdbs[i].store(payer, primary, v2);
         }
-        let it = self.db.store(payer.value(), primary, &value.pack());
+        let it = self.db.store(payer, primary, &value);
         return it;
     }
 
@@ -93,9 +115,9 @@ where T: DBInterface + Packer + Default
             if secondary_value == v2 {
                 continue;
             }
-            self.idxdbs[i].update(it_secondary, v2, payer.value());
+            self.idxdbs[i].update(it_secondary, v2, payer);
         }
-        self.db.update(&iterator, &value.pack(), payer.value());
+        self.db.update(&iterator, &value.pack(), payer);
     }
 
     ///
@@ -165,7 +187,7 @@ where T: DBInterface + Packer + Default
             let idx_db = self.idxdbs[it.db_index].as_ref();
             db_value.set_secondary_value(idx_db.get_db_index(), value);
             self.update(&it_primary, &db_value, payer);
-            idx_db.update(it, value, payer.value());    
+            idx_db.update(it, value, payer);    
         } else {
 
         }

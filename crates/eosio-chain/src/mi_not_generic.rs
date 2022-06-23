@@ -105,24 +105,24 @@ pub struct DBI64NotGeneric {
 
 impl DBI64NotGeneric {
     ///
-    pub fn new(code: u64, scope: u64, table: u64, unpacker: fn(&[u8]) -> Box<dyn MultiIndexValue>) -> Self {
+    pub fn new(code: Name, scope: Name, table: Name, unpacker: fn(&[u8]) -> Box<dyn MultiIndexValue>) -> Self {
         DBI64NotGeneric {
-            code,
-            scope,
-            table,
+            code: code.value(),
+            scope: scope.value(),
+            table: table.value(),
             unpacker,
         }
     }
 
     ///
-    pub fn store(&self, payer: u64, id: u64,  data: &[u8]) -> IteratorNotGeneric {
-        let it = db_store_i64(self.scope, self.table, payer, id, data.as_ptr(), data.len() as u32);
+    pub fn store(&self, payer: Name, id: u64,  data: &[u8]) -> IteratorNotGeneric {
+        let it = db_store_i64(self.scope, self.table, payer.value(), id, data.as_ptr(), data.len() as u32);
         IteratorNotGeneric { i: it, primary: Some(id), db: self }
     }
 
     ///
-    pub fn update(&self, iterator: &IteratorNotGeneric, data: &[u8], payer: u64) {
-        db_update_i64(iterator.i, payer, data.as_ptr(), data.len() as u32);
+    pub fn update(&self, iterator: &IteratorNotGeneric, data: &[u8], payer: Name) {
+        db_update_i64(iterator.i, payer.value(), data.as_ptr(), data.len() as u32);
     }
 
     ///
@@ -216,9 +216,15 @@ impl MultiIndexNotGeneric {
         let idx_table = table.value() & 0xfffffffffffffff0;
         for idx in indexes {
             match idx {
-                SecondaryType::Idx64 => idxdbs.push(Box::new(Idx64DB::new(i, code.value(), scope.value(), idx_table + i as u64))),
-                SecondaryType::Idx128 => idxdbs.push(Box::new(Idx128DB::new(i, code.value(), scope.value(), idx_table + i as u64))),
-                SecondaryType::Idx256 => idxdbs.push(Box::new(Idx256DB::new(i, code.value(), scope.value(), idx_table + i as u64))),
+                SecondaryType::Idx64 => idxdbs.push(
+                    Box::new(Idx64DB::new(i, code, scope, Name::from_u64(idx_table + i as u64)))
+                ),
+                SecondaryType::Idx128 => idxdbs.push(
+                    Box::new(Idx128DB::new(i, code, scope, Name::from_u64(idx_table + i as u64)))
+                ),
+                SecondaryType::Idx256 => idxdbs.push(
+                    Box::new(Idx256DB::new(i, code, scope, Name::from_u64(idx_table + i as u64)))
+                ),
                 _ => panic!("unsupported secondary index type"),
             }
             i += 1;
@@ -227,7 +233,7 @@ impl MultiIndexNotGeneric {
             code,
             scope,
             table,
-            db: DBI64NotGeneric::new(code.value(), scope.value(), table.value(), unpacker),
+            db: DBI64NotGeneric::new(code, scope, table, unpacker),
             idxdbs,
             unpacker: unpacker,
         }
@@ -238,9 +244,9 @@ impl MultiIndexNotGeneric {
         let primary = value.get_primary();
         for i in 0..self.idxdbs.len() {
             let v2 = value.get_secondary_value(i);
-            self.idxdbs[i].store(payer.value(), primary, v2);
+            self.idxdbs[i].store(payer, primary, v2);
         }
-        let it = self.db.store(payer.value(), primary, &value.pack());
+        let it = self.db.store(payer, primary, &value.pack());
         return it;
     }
 
@@ -255,9 +261,9 @@ impl MultiIndexNotGeneric {
             if secondary_value == v2 {
                 continue;
             }
-            self.idxdbs[i].update(it_secondary, v2, payer.value());
+            self.idxdbs[i].update(it_secondary, v2, payer);
         }
-        self.db.update(iterator, &value.pack(), payer.value());
+        self.db.update(iterator, &value.pack(), payer);
     }
 
     ///
@@ -333,6 +339,6 @@ impl MultiIndexNotGeneric {
         let idx_db = self.idxdbs[it.db_index].as_ref();
         db_value.set_secondary_value(idx_db.get_db_index(), value);
         self.update(&it_primary, db_value.as_ref(), payer);
-        idx_db.update(it, value, payer.value());    
+        idx_db.update(it, value, payer);    
     }
 }
