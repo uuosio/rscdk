@@ -851,9 +851,9 @@ impl Contract {
                     #[allow(dead_code)]
                     impl #mi_ident {
                         ///
-                        pub fn new(code: eosio_chain::Name, scope: eosio_chain::Name, table: eosio_chain::Name, unpacker: fn(&[u8]) -> #table_ident) -> Self {
+                        pub fn new(code: eosio_chain::Name, scope: eosio_chain::Name, table: eosio_chain::Name) -> Self {
                             Self {
-                                mi: ::eosio_chain::mi::MultiIndex::<#table_ident>::new(code, scope, table, &[eosio_chain::db::SecondaryType::Idx64; 0], unpacker),
+                                mi: ::eosio_chain::mi::MultiIndex::<#table_ident>::new(code, scope, table, &[eosio_chain::db::SecondaryType::Idx64; 0]),
                             }
                         }
 
