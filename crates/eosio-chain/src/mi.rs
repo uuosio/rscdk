@@ -117,7 +117,7 @@ where T: DBInterface + Packer + Default
             }
             self.idxdbs[i].update(it_secondary, v2, payer);
         }
-        self.db.update(&iterator, &value.pack(), payer);
+        self.db.update(&iterator, value, payer);
     }
 
     ///

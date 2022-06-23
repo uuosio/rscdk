@@ -469,7 +469,8 @@ where T: Packer + DBInterface + Default,
     }
 
     ///
-    pub fn update(&self, iterator: &Iterator<T>, data: &[u8], payer: Name) {
+    pub fn update(&self, iterator: &Iterator<T>, value: &T, payer: Name) {
+        let data = value.pack();
         db_update_i64(iterator.i, payer.value(), data.as_ptr(), data.len() as u32);
     }
 
