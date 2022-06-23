@@ -245,6 +245,8 @@ impl Packer for Name {
     }
 }
 
+pub const SAME_PAYER: Name = Name{n: static_str_to_name("")};
+
 ///
 #[macro_export]
 macro_rules! name {

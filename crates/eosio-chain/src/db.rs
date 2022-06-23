@@ -317,10 +317,12 @@ impl<'a, T> Iterator<'a, T>
 where T: Packer + DBInterface + Default
 {
     ///
-    pub fn new(i: i32, primary: Option<u64>, db: &'a DBI64<T>) -> Self {
+    pub(crate) fn new(i: i32, primary: Option<u64>, db: &'a DBI64<T>) -> Self {
         Self { i, primary, db }
     }
 
+    /// get primary key of iterator
+    /// access `DBI64` to extract primary key from value if primary key is not cached
     pub fn get_primary(&self) -> Option<u64> {
         if !self.is_ok() {
             return None;
@@ -333,31 +335,41 @@ where T: Packer + DBInterface + Default
         return Some(self.db.get(self).unwrap().get_primary());
     }
 
+    pub fn set_primary(&mut self, primary: u64) {
+        if !self.is_ok() {
+            return;
+        }
+        self.primary = Some(primary);
+    }
+
+    ///
     pub fn get_value(&self) -> Option<T> {
         return self.db.get(self);
     }
 
+    ///
     pub fn get_i(&self) -> i32 {
         return self.i;
     }
 
-    ///
+    /// return `true` if iterator is valid, else `false`
     pub fn is_ok(&self) -> bool {
         self.i >= 0
     }
 
-    ///
+    /// return `true` if it's an end iterator, else `false`
+    /// use this method to check the return value of `MultiIndex.end` or `DBI64.end`
     pub fn is_end(&self) -> bool {
         return self.i < -1;
     }
 
-    ///
+    ///help function for asserting on valid iterator
     pub fn expect(self, msg: &str) -> Self {
         check(self.is_ok(), msg);            
         return self;
     }
 
-    ///
+    ///help function for asserting on invalid iterator
     pub fn expect_not_ok(self, msg: &str) -> Self {
         check(!self.is_ok(), msg);            
         return self;

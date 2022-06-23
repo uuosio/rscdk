@@ -11,6 +11,7 @@ mod token {
         has_auth,
         Asset,
         Name,
+        SAME_PAYER,        
         Symbol,
     };
 
@@ -99,7 +100,7 @@ mod token {
             check(quantity.amount() > 0, "must retire postive quantity");
             check(quantity.symbol() == stat.supply.symbol(), "symbol precision mismatch");
             stat.supply -= quantity;
-            db.update(&it, &stat, Name{n: 0});
+            db.update(&it, &stat, SAME_PAYER);
             self.sub_balance(stat.issuer, &quantity);
         }
 

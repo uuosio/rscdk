@@ -89,6 +89,10 @@ pub mod print;
 
 ///
 pub mod mi;
+
+///
+pub mod mi_not_generic;
+
 ///
 mod asset;
 pub use asset::{
@@ -140,6 +144,10 @@ pub use self::vmapi::eosio:: {
 ///
 #[macro_use]
 pub mod name;
+
+pub use name::{
+    SAME_PAYER,
+};
 
 ///
 pub mod action;

@@ -36,7 +36,7 @@ impl<T> MultiIndex<T>
 where T: DBInterface + Packer + Default
 {
     ///
-    pub fn new<'a>(code: Name, scope: Name, table: Name, indexes: &[SecondaryType]) -> Self {
+    pub fn new(code: Name, scope: Name, table: Name, indexes: &[SecondaryType]) -> Self {
         let mut idxdbs: Vec<Box<dyn IndexDB>> = Vec::new();
         let mut i: usize = 0;
         let idx_table = table.value() & 0xfffffffffffffff0;
@@ -62,7 +62,7 @@ where T: DBInterface + Packer + Default
     }
 
     ///
-    pub fn set<'a>(&self, key: u64, value: &'a T, payer: Name) -> Iterator<T> {
+    pub fn set(&self, key: u64, value: &T, payer: Name) -> Iterator<T> {
         for i in 0..self.idxdbs.len() {
             let v2 = value.get_secondary_value(i);
             self.idxdbs[i].store(payer.value(), key, v2);
@@ -72,7 +72,7 @@ where T: DBInterface + Packer + Default
     }
 
     ///
-    pub fn store<'a>(&self, value: &'a T, payer: Name) -> Iterator<T> {
+    pub fn store(&self, value: &T, payer: Name) -> Iterator<T> {
         let primary = value.get_primary();
         for i in 0..self.idxdbs.len() {
             let v2 = value.get_secondary_value(i);
@@ -83,7 +83,7 @@ where T: DBInterface + Packer + Default
     }
 
     ///
-    pub fn update<'a>(&self, iterator: &Iterator<T>, value: &'a T, payer: Name) {
+    pub fn update(&self, iterator: &Iterator<T>, value: &T, payer: Name) {
         check(iterator.is_ok(), "update:invalid iterator");
         let primary = iterator.get_primary().unwrap();
         check(primary == value.get_primary(), "can not change primary value during update!");
