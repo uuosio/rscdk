@@ -19,7 +19,7 @@ use crate::{
 use crate::boxed::Box;
 ///
 pub struct MultiIndex<T>
-where T: DBInterface + Packer + Default
+where T: PrimaryValueInterface + SecondaryValueInterface + Packer + Default
 {
     ///
     pub code: Name,
@@ -35,7 +35,7 @@ where T: DBInterface + Packer + Default
 }
 
 impl<T> MultiIndex<T> 
-where T: DBInterface + Packer + Default
+where T: PrimaryValueInterface + SecondaryValueInterface + Packer + Default
 {
     ///
     pub fn new(code: Name, scope: Name, table: Name, indexes: &[SecondaryType]) -> Self {

@@ -738,8 +738,11 @@ impl Contract {
             if !table.singleton {
                 let primary_impl_code = primary_impl.unwrap();
                 action_structs_code.push(quote_spanned!(span =>
-                    impl ::eosio_chain::db::DBInterface for #table_ident {
+                    impl ::eosio_chain::db::PrimaryValueInterface for #table_ident {
                         #primary_impl_code
+                    }
+
+                    impl ::eosio_chain::db::SecondaryValueInterface for #table_ident {
                         #secondary_impls
                     }
                     #mi_impls
@@ -747,10 +750,13 @@ impl Contract {
             } else {
                 let table_name = proc_macro2::Literal::string(&table.table_name.str());
                 action_structs_code.push(quote_spanned!(span =>
-                    impl ::eosio_chain::db::DBInterface for #table_ident {
+                    impl ::eosio_chain::db::PrimaryValueInterface for #table_ident {
                         fn get_primary(&self) -> u64 {
                             return eosio_chain::name!(#table_name).value();
                         }
+                    }
+
+                    impl ::eosio_chain::db::SecondaryValueInterface for #table_ident {
                         #secondary_impls
                     }
                     #mi_impls

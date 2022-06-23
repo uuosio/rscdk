@@ -7,7 +7,6 @@ use crate::db::{
     SecondaryValue,
     SecondaryIterator,
     IndexDB,
-    DBInterface,
     MultiIndexValue,
 };
 

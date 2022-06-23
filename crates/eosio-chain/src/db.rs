@@ -272,9 +272,12 @@ impl ToPrimaryValue for Asset {
 }
 
 ///
-pub trait DBInterface {
+pub trait PrimaryValueInterface {
     ///
     fn get_primary(&self) -> u64;
+}
+
+pub trait SecondaryValueInterface {
     ///
     fn get_secondary_value(&self, i: usize) -> SecondaryValue;
     ///
@@ -282,7 +285,7 @@ pub trait DBInterface {
 }
 
 ///
-pub trait MultiIndexValue: DBInterface + Packer {
+pub trait MultiIndexValue: PrimaryValueInterface + SecondaryValueInterface + Packer {
 
 }
 
@@ -309,7 +312,7 @@ pub struct IdxTable {
 
 ///
 pub struct Iterator<'a, T> 
-where T: Packer + DBInterface + Default
+where T: Packer + PrimaryValueInterface + Default
 {
     ///
     pub(crate) i: i32,
@@ -318,7 +321,7 @@ where T: Packer + DBInterface + Default
 }
 
 impl<'a, T> Iterator<'a, T> 
-where T: Packer + DBInterface + Default
+where T: Packer + PrimaryValueInterface + Default
 {
     ///
     pub(crate) fn new(i: i32, primary: Option<u64>, db: &'a DBI64<T>) -> Self {
@@ -437,7 +440,7 @@ pub enum SecondaryValue {
 
 ///
 pub struct DBI64<T> 
-where T: Packer + DBInterface + Default,
+where T: Packer + PrimaryValueInterface + Default,
 {
     ///
     pub code: u64,
@@ -449,7 +452,7 @@ where T: Packer + DBInterface + Default,
 }
 
 impl<T> DBI64<T> 
-where T: Packer + DBInterface + Default,
+where T: Packer + PrimaryValueInterface + Default,
 {
     /// Creates a new DBI64 instance
     pub fn new(code: Name, scope: Name, table: Name) -> Self {
