@@ -348,6 +348,31 @@ pub fn parse_abi_info(info: &mut ABIInfo) -> String {
         }
     });
 
+    let cmp = |x: &str, y: &str| -> std::cmp::Ordering {
+        if x == y {
+            return std::cmp::Ordering::Equal;
+        }
+        if x < y {
+            return std::cmp::Ordering::Less;
+        }
+        return std::cmp::Ordering::Greater;
+    };
+
+    abi.structs.sort_by(|x, y| -> std::cmp::Ordering {
+        cmp(&x.name, &y.name)
+    });
+
+    abi.actions.sort_by(|x, y| -> std::cmp::Ordering {
+        cmp(&x.name, &y.name)
+    });
+
+    abi.tables.sort_by(|x, y| -> std::cmp::Ordering {
+        cmp(&x.name, &y.name)
+    });
+
+    abi.variants.sort_by(|x, y| -> std::cmp::Ordering {
+        cmp(&x.name, &y.name)
+    });
 
     if let Ok(contents) = serde_json::to_string_pretty(&abi) {
         return contents;
