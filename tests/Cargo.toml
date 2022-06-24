@@ -7,7 +7,7 @@ members = [
     "testmi",
     "testabi",
     "testmod",
+    "testinlineaction",
 ]
 
-exclude = [
-]
+exclude = []

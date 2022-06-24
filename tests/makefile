@@ -15,3 +15,7 @@ test_mi:
 test_mod:
 	cd testmod;cargo eosiocontract build --release
 	run-ipyeos -m pytest -s test.py -k test_mi
+
+test_inline:
+	cd testinlineaction;cargo eosiocontract build --release
+	run-ipyeos -m pytest -s test.py -k test_inlineaction

@@ -172,24 +172,10 @@ impl Contract {
                         }
                         attrs::AttributeArg::Packer | attrs::AttributeArg::Table(_) => {
                             self.packers.push(x.clone());
-                            x.fields.iter().for_each(|field|{
-                                if let syn::Type::Path(type_path) = &field.ty {
-                                    let path_seg = type_path.path.segments.last().unwrap();
-                                    let name = path_seg.ident.to_string();
-                                    if name == "Option" {
-                                        if let syn::PathArguments::AngleBracketed(x) = &type_path.path.segments.last().unwrap().arguments {
-                                            if let syn::GenericArgument::Type(tp) = &x.args.last().unwrap() {
-                                                if let syn::Type::Path(type_path) = tp {
-                                                    let name = type_path.path.segments.last().unwrap().ident.to_string();
-                                                    arg_types.insert(name.clone(), name);
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        arg_types.insert(name.clone(), name);
-                                    }
-                                }
-                            });
+                            for field in &x.fields {
+                                let (type_name, _) = Self::extract_type(&field.ty)?;
+                                arg_types.insert(type_name.clone(), type_name);
+                            };
                         }
                         _ => {
                             return Err(format_err_spanned!(
@@ -1095,17 +1081,6 @@ impl Contract {
         ))
     }
 
-    //TODO: parse Option type
-    fn get_type_name_from_field(field: &syn::Field) -> Result<String, syn::Error> {
-        if let syn::Type::Path(type_path) = &field.ty {
-            return Ok(type_path.path.segments.last().unwrap().ident.to_string());
-        }
- 
-        Err(format_err_spanned!(
-            field,
-            "unsupported field type",
-        ))
-    }
 
     fn add_abi_type<'a>(&'a self, tp_name: &str, abi_types: &mut HashMap<String, &'a syn::Type>) -> Result<(), syn::Error> {
         if Self::is_primitive_type(tp_name) {
@@ -1120,11 +1095,11 @@ impl Contract {
                         continue;
                     }
                     for field in &x.fields {
-                        let type_name = Self::get_type_name_from_field(field)?;
+                        let (type_name, ty) = Self::extract_type(&field.ty)?;
                         if Self::is_primitive_type(&type_name) {
                             continue;
                         }
-                        if abi_types.insert(type_name.clone(), &field.ty).is_none() {
+                        if abi_types.insert(type_name.clone(), ty).is_none() {
                             ty_names.push(type_name);
                         }
                     }
@@ -1139,7 +1114,7 @@ impl Contract {
                         // let field_ident = &field.ident;
                         if let syn::Fields::Unnamed(unnamed_fields) = &field.fields {
                             let unnamed_field = unnamed_fields.unnamed.last().unwrap();
-                            let type_name = Self::get_type_name_from_field(unnamed_field)?;
+                            let (type_name, _) = Self::extract_type(&unnamed_field.ty)?;
                             if Self::is_primitive_type(&type_name) {
                                 continue;
                             }
