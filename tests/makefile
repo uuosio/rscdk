@@ -19,3 +19,11 @@ test_mod:
 test_inline:
 	cd testinlineaction;cargo eosiocontract build --release
 	run-ipyeos -m pytest -s test.py -k test_inlineaction
+
+test_asset:
+	cd testasset;cargo eosiocontract build --release
+	run-ipyeos -m pytest -s test.py -k test_asset
+
+test_optional:
+	cd testoptional;cargo eosiocontract build --release
+	run-ipyeos -m pytest -s test.py -k test_optional

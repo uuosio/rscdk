@@ -69,6 +69,22 @@ def deploy_contract(package_name):
         abi = f.read()
     chain.deploy_contract('hello', code, abi)
 
+def check_error_message(ex, err_msg):
+    assert ex.value.args[0]['except']['stack'][0]['data']['s'] == err_msg
+
+def run_test(action, args, err_msg=None, permission = None):
+    if not permission:
+        permission = {'hello': 'active'}
+
+    if err_msg:
+        with pytest.raises(Exception) as exc_info:
+            r = chain.push_action('hello', action, args, permission)
+            chain.produce_block()
+        check_error_message(exc_info, err_msg)
+    else:
+        r = chain.push_action('hello', action, args, permission)
+        chain.produce_block()
+
 @chain_test
 def test_hello():
     deploy_contract('hello')
@@ -159,3 +175,65 @@ def test_inlineaction():
     r = chain.push_action('hello', 'test', args, {'hello': 'active'})
     logger.info('++++++elapsed: %s', r['elapsed'])
     chain.produce_block()
+
+@chain_test
+def test_asset():
+    deploy_contract('testasset')
+
+    MAX_AMOUNT = (1 << 62) - 1
+
+    bad_mini_amount = -MAX_AMOUNT - 1
+    bad_max_amount = MAX_AMOUNT  + 1
+
+    test_cases = [
+        #test basic
+        {
+            'action': 'test',
+            'args': {'a': '1.1234 EOS'},
+            'err_msg': None,
+        },
+        #test Asset.unpack
+        {
+            'action': 'test2',
+            'args': int.to_bytes(bad_max_amount, 8, 'little') + b'\x04EOS\x00\x00\x00\x00',
+            'err_msg': "Asset.unpack: bad asset amount",
+        },
+        #test Asset.unpack
+        {
+            'action': 'test2',
+            'args': int.to_bytes(bad_mini_amount & 0xffffffffffffffff, 8, 'little') + b'\x04EOS\x00\x00\x00\x00',
+            'err_msg': "Asset.unpack: bad asset amount",
+        },
+        #test Asset.unpack
+        {
+            'action': 'test2',
+            'args': int.to_bytes(MAX_AMOUNT, 8, 'little') + b'\x04EOS\x00\x00\x00E',
+            'err_msg': "Symbol.unpack: bad symbol value",
+        },
+        #test Asset.from_string
+        {
+            'action': 'test3',
+            'args': {'error_asset': "1123A.0 EOS"},
+            'err_msg': "Asset.from_string: bad amount",
+        },
+        #test Asset.from_string
+        {
+            'action': 'test3',
+            'args': {'error_asset': "11234.A EOS"},
+            'err_msg': "Asset.from_string: bad amount",
+        },
+    ]
+    for test in test_cases:
+        run_test(**test)
+
+@chain_test
+def test_optional():
+    deploy_contract('testoptional')
+    args = dict(
+        a1 = None,
+        a2 = {"a2": {"a1": 123}},
+        a3 =  {"a2": {"a1": 456}},
+        a4 =  {"a2": {"a1": None}},
+    )
+    run_test('test', args)
+

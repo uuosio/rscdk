@@ -8,6 +8,8 @@ members = [
     "testabi",
     "testmod",
     "testinlineaction",
+    "testasset",
+    "testoptional",
 ]
 
 exclude = []
