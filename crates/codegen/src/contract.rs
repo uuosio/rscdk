@@ -60,7 +60,7 @@ impl TryFrom<syn::ItemMod> for Contract {
             }
         };
 
-        let (_, other_attrs) = attrs::partition_attributes(module.attrs)?;
+        let (_, other_attrs) = attrs::partition_attributes(module.attrs.clone())?;
 
         let mut contract = Self {
             attrs: other_attrs,
@@ -136,13 +136,14 @@ impl Contract {
             match item {
                 syn::Item::Struct(ref mut x) => {
                     Self::check_struct_name(&x)?;
-                    let (chain_attrs, other_attrs) = attrs::partition_attributes(x.attrs.clone()).unwrap();
+                    let (chain_attrs, other_attrs) = attrs::partition_attributes(x.attrs.clone())?;
                     let x_backup = x.clone();
                     x.attrs = other_attrs;
-                    x.fields.iter_mut().for_each(|field| {
-                        let (_, other_attrs) = attrs::partition_attributes(field.attrs.clone()).unwrap();
+
+                    for mut field in &mut x.fields {
+                        let (_, other_attrs) = attrs::partition_attributes(field.attrs.clone())?;
                         field.attrs = other_attrs;
-                    });
+                    }
                     self.structs.push(x.clone());
 
                     if chain_attrs.len() == 0 {
@@ -259,7 +260,7 @@ impl Contract {
                                         }
                                     }
                                 });
-                                let (chain_attrs, other_attrs) = attrs::partition_attributes(method_item.attrs.clone()).unwrap();
+                                let (chain_attrs, other_attrs) = attrs::partition_attributes(method_item.attrs.clone())?;
                                 method_item.attrs = other_attrs;
                                 if chain_attrs.len() > 0 {
                                     let attr = &chain_attrs[0];
@@ -575,7 +576,7 @@ impl Contract {
             let mut primary_impl: Option<TokenStream2> = None;
 
             for field in &item.fields {
-                let (chain_attrs, _) = attrs::partition_attributes(field.attrs.clone()).unwrap();
+                let (chain_attrs, _) = attrs::partition_attributes(field.attrs.clone())?;
                 if chain_attrs.len() == 0 {
                     continue;
                 }
@@ -627,7 +628,7 @@ impl Contract {
             let mut secondary_fields: Vec<(attrs::AttributeArg, syn::Field)> = Vec::new();
 
             for field in &item.fields {
-                let (chain_attrs, _) = attrs::partition_attributes(field.attrs.clone()).unwrap();
+                let (chain_attrs, _) = attrs::partition_attributes(field.attrs.clone())?;
                 if chain_attrs.len() == 0 {
                     continue;
                 }

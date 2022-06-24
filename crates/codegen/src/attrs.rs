@@ -282,7 +282,7 @@ impl TryFrom<syn::NestedMeta> for AttributeFrag {
                                 "IdxF64" => Ok(AttributeArg::IdxF64(FixedString::new(""))),
                                 "IdxF128" => Ok(AttributeArg::IdxF128(FixedString::new(""))),
                                 _ => Err(format_err_spanned!(
-                                    meta, "unknown chain attribute (path)"
+                                    meta, "unknown chain attribute {}", ident
                                 ))
                             })
                             .map(|kind| AttributeFrag { ast: meta, arg: kind, })
