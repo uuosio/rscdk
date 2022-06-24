@@ -2,7 +2,7 @@ use crate::db::{
     Idx64DB,
     Idx128DB,
     Idx256DB,
-    IdxF128DB,
+    // IdxF128DB,
     SecondaryType,
     SecondaryValue,
     SecondaryIterator,
@@ -25,7 +25,6 @@ use crate::{
 
 use crate::{
     check,
-    serializer::Packer,
 };
 
 use crate::boxed::Box;
@@ -114,7 +113,7 @@ impl DBI64NotGeneric {
     }
 
     ///
-    pub fn store(&self, payer: Name, id: u64,  data: &[u8]) -> IteratorNotGeneric {
+    pub fn store(&self, id: u64,  data: &[u8], payer: Name) -> IteratorNotGeneric {
         let it = db_store_i64(self.scope, self.table, payer.value(), id, data.as_ptr(), data.len() as u32);
         IteratorNotGeneric { i: it, primary: Some(id), db: self }
     }
@@ -243,16 +242,15 @@ impl MultiIndexNotGeneric {
         let primary = value.get_primary();
         for i in 0..self.idxdbs.len() {
             let v2 = value.get_secondary_value(i);
-            self.idxdbs[i].store(payer, primary, v2);
+            self.idxdbs[i].store(primary, v2, payer);
         }
-        let it = self.db.store(payer, primary, &value.pack());
+        let it = self.db.store(primary, &value.pack(), payer);
         return it;
     }
 
     ///
     pub fn update(&self, iterator: &IteratorNotGeneric, value: &dyn MultiIndexValue, payer: Name) {
         check(iterator.is_ok(), "update: invalid iterator");
-        let raw = self.db.get(iterator);
         let primary = iterator.get_primary().unwrap();
         for i in 0..self.idxdbs.len() {
             let v2 = value.get_secondary_value(i);

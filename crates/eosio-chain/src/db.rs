@@ -324,7 +324,7 @@ impl<'a, T> Iterator<'a, T>
 where T: Packer + PrimaryValueInterface + Default
 {
     ///
-    pub(crate) fn new(i: i32, primary: Option<u64>, db: &'a DBI64<T>) -> Self {
+    pub fn new(i: i32, primary: Option<u64>, db: &'a DBI64<T>) -> Self {
         Self { i, primary, db }
     }
 
@@ -465,10 +465,10 @@ where T: Packer + PrimaryValueInterface + Default,
     }
 
     ///
-    pub fn store(&self, payer: Name, primary_key: u64,  value: &T) -> Iterator<T> {
+    pub fn store(&self, key: u64,  value: &T, payer: Name) -> Iterator<T> {
         let data = value.pack();
-        let it = db_store_i64(self.scope, self.table, payer.value(), primary_key, data.as_ptr(), data.len() as u32);
-        Iterator::<T> { i: it, primary: Some(primary_key), db: self }
+        let it = db_store_i64(self.scope, self.table, payer.value(), key, data.as_ptr(), data.len() as u32);
+        Iterator::<T> { i: it, primary: Some(key), db: self }
     }
 
     ///
@@ -477,12 +477,12 @@ where T: Packer + PrimaryValueInterface + Default,
         db_update_i64(iterator.i, payer.value(), data.as_ptr(), data.len() as u32);
     }
 
-    ///
+    /// remove value from database by iterator
     pub fn remove(&self, iterator: &Iterator<T>) {
         db_remove_i64(iterator.i);
     }
 
-    ///
+    /// get value by iterator. use `iterator.get_value()` for a more convenient way.
     pub fn get(&self, iterator: &Iterator<T>) -> Option<T> {
         if !iterator.is_ok() {
             return None;
@@ -497,7 +497,7 @@ where T: Packer + PrimaryValueInterface + Default,
         Some(ret)
     }
 
-    ///
+    /// get next iterator
     pub fn next(&self, iterator: &Iterator<T>) -> Iterator<T> {
         let mut primary = 0;
         let it = db_next_i64(iterator.i, &mut primary);
@@ -508,7 +508,7 @@ where T: Packer + PrimaryValueInterface + Default,
         }
     }
 
-    ///
+    /// get previous iterator
     pub fn previous(&self, iterator: &Iterator<T>) -> Iterator<T> {
         let mut primary = 0;
         let it = db_previous_i64(iterator.i, &mut primary);
@@ -520,28 +520,37 @@ where T: Packer + PrimaryValueInterface + Default,
     }
 
     ///
-    pub fn find(&self, id: u64) -> Iterator<T> {
-        let it = db_find_i64(self.code, self.scope, self.table, id);
+    pub fn find(&self, key: u64) -> Iterator<T> {
+        let it = db_find_i64(self.code, self.scope, self.table, key);
         if it != -1 {
-            Iterator::<T> { i: it, primary: Some(id), db: self }
+            Iterator::<T> { i: it, primary: Some(key), db: self }
         } else {
             Iterator::<T> { i: it, primary: None, db: self }
         }
     }
 
-    ///
-    pub fn lowerbound(&self, id: u64) -> Iterator<T> {
-        let it = db_lowerbound_i64(self.code, self.scope, self.table, id);
+    /// return a iterator with a key >= `key`
+    pub fn lowerbound(&self, key: u64) -> Iterator<T> {
+        let it = db_lowerbound_i64(self.code, self.scope, self.table, key);
         Iterator::<T> { i: it, primary: None, db: self }
     }
 
-    ///
-    pub fn upperbound(&self, id: u64) -> Iterator<T> {
-        let it = db_upperbound_i64(self.code, self.scope, self.table, id);
+    /// return a iterator with a key > `key`
+    pub fn upperbound(&self, key: u64) -> Iterator<T> {
+        let it = db_upperbound_i64(self.code, self.scope, self.table, key);
         Iterator::<T> { i: it, primary: None, db: self }
     }
 
-    ///
+    /// Return an end iterator, Iterator.is_end() return true if it's a valid end iterator.
+    /// This method is often used with `DBI64.previous` to get the last iterator.
+
+    /// ```rust
+    /// let mut it = db.end();
+    /// if it.is_end() {
+    ///     it = db.previous();
+    ///     //...
+    /// }
+    /// ```
     pub fn end(&self) -> Iterator<T> {
         let it = db_end_i64(self.code, self.scope, self.table);
         Iterator::<T> { i: it, primary: None, db: self }
@@ -614,7 +623,7 @@ pub trait IndexDB {
     ///
     fn get_db_index(&self) -> usize;
     ///
-    fn store(&self, payer: Name, id: u64, secondary: SecondaryValue) -> SecondaryIterator;
+    fn store(&self, key: u64, secondary: SecondaryValue, payer: Name) -> SecondaryIterator;
     ///
     fn update(&self, iterator: SecondaryIterator, secondary: SecondaryValue, payer: Name);
     ///
@@ -669,8 +678,8 @@ impl<'a, T: ToSecondaryValue + FromSecondaryValue + Printable + Default, const I
     }
 
     ///
-    pub fn store(&self, payer: Name, id: u64, value: T) -> SecondaryIterator {
-        return self.db.store(payer, id, value.to_secondary_value(self.secondary_type));
+    pub fn store(&self, key: u64, value: T, payer: Name) -> SecondaryIterator {
+        return self.db.store(key, value.to_secondary_value(self.secondary_type), payer);
     }
 
     ///
@@ -738,11 +747,11 @@ impl IndexDB for Idx64DB {
         return self.db_index;
     }
 
-    fn store(&self, payer: Name, id: u64, secondary: SecondaryValue) -> SecondaryIterator {
+    fn store(&self, key: u64, secondary: SecondaryValue, payer: Name) -> SecondaryIterator {
         if let SecondaryValue::Idx64(value) = secondary {
             print::printui(value);
-            let ret = db_idx64_store(self.scope, self.table, payer.value(), id, &value);
-            return SecondaryIterator{ i: ret, primary: id, db_index: self.db_index };    
+            let ret = db_idx64_store(self.scope, self.table, payer.value(), key, &value);
+            return SecondaryIterator{ i: ret, primary: key, db_index: self.db_index };    
         }
         check(false, "Idx64DB::store: bad secondary type");
         return SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index }
@@ -829,11 +838,11 @@ impl IndexDB for Idx128DB {
         return self.db_index;
     }
 
-    fn store(&self, payer: Name, id: u64, secondary: SecondaryValue) -> SecondaryIterator {
+    fn store(&self, key: u64, secondary: SecondaryValue, payer: Name) -> SecondaryIterator {
         if let SecondaryValue::Idx128(value) = secondary {
             let _secondary = Uint128{lo: (value & 0xffffffffffffffff) as u64, hi: (value >> 64) as u64};
-            let ret = db_idx128_store(self.scope, self.table, payer.value(), id, &_secondary);
-            return SecondaryIterator{ i: ret, primary: id, db_index: self.db_index };
+            let ret = db_idx128_store(self.scope, self.table, payer.value(), key, &_secondary);
+            return SecondaryIterator{ i: ret, primary: key, db_index: self.db_index };
         }
         check(false, "Idx128DB::store: bad secondary type");
         return SecondaryIterator{ i: -1, primary: 0, db_index: 0 };
@@ -932,10 +941,10 @@ impl IndexDB for Idx256DB {
         return self.db_index;
     }
 
-    fn store(&self, payer: Name, id: u64, secondary: SecondaryValue) -> SecondaryIterator {
+    fn store(&self, key: u64, secondary: SecondaryValue, payer: Name) -> SecondaryIterator {
         if let SecondaryValue::Idx256(value) = secondary {
-            let ret = db_idx256_store(self.scope, self.table, payer.value(), id, value.data.as_ptr() as *mut Uint128, 2);
-            return SecondaryIterator{ i: ret, primary: id, db_index: self.db_index };
+            let ret = db_idx256_store(self.scope, self.table, payer.value(), key, value.data.as_ptr() as *mut Uint128, 2);
+            return SecondaryIterator{ i: ret, primary: key, db_index: self.db_index };
         }
         check(false, "Idx256DB::store: bad secondary type");
         return SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index };
@@ -1027,10 +1036,10 @@ impl IndexDB for IdxF64DB {
         return self.db_index;
     }
 
-    fn store(&self, payer: Name, id: u64, secondary: SecondaryValue) -> SecondaryIterator {
+    fn store(&self, key: u64, secondary: SecondaryValue, payer: Name) -> SecondaryIterator {
         if let SecondaryValue::IdxF64(value) = secondary {
-            let ret = db_idx_double_store(self.scope, self.table, payer.value(), id, &value);
-            return SecondaryIterator{ i: ret, primary: id, db_index: self.db_index };
+            let ret = db_idx_double_store(self.scope, self.table, payer.value(), key, &value);
+            return SecondaryIterator{ i: ret, primary: key, db_index: self.db_index };
         }
         check(false, "IdxF64DB::store: bad secondary type");
         return SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index };
@@ -1122,10 +1131,10 @@ impl IndexDB for IdxF128DB {
         return self.db_index;
     }
 
-    fn store(&self, payer: Name, id: u64, secondary: SecondaryValue) -> SecondaryIterator {
+    fn store(&self, key: u64, secondary: SecondaryValue, payer: Name) -> SecondaryIterator {
         if let SecondaryValue::IdxF128(value) = secondary {
-            let ret = db_idx_long_double_store(self.scope, self.table, payer.value(), id, &value);
-            return SecondaryIterator{ i: ret, primary: id, db_index: self.db_index };
+            let ret = db_idx_long_double_store(self.scope, self.table, payer.value(), key, &value);
+            return SecondaryIterator{ i: ret, primary: key, db_index: self.db_index };
         }
         check(false, "IdxF128DB::store: bad secondary type");
         return SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index };
