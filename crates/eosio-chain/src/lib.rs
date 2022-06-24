@@ -147,6 +147,8 @@ pub mod name;
 
 pub use name::{
     SAME_PAYER,
+    ACTIVE,
+    OWNER,
 };
 
 ///

@@ -246,6 +246,9 @@ impl Packer for Name {
 }
 
 pub const SAME_PAYER: Name = Name{n: static_str_to_name("")};
+pub const ACTIVE: Name = Name{n: static_str_to_name("active")};
+pub const OWNER: Name = Name{n: static_str_to_name("active")};
+
 
 ///
 #[macro_export]
