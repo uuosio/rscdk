@@ -440,7 +440,8 @@ pub enum SecondaryValue {
 
 ///
 pub struct DBI64<T> 
-where T: Packer + PrimaryValueInterface + Default,
+where
+    T: Packer + PrimaryValueInterface + Default,
 {
     ///
     pub code: u64,
@@ -469,6 +470,17 @@ where T: Packer + PrimaryValueInterface + Default,
         let data = value.pack();
         let it = db_store_i64(self.scope, self.table, payer.value(), key, data.as_ptr(), data.len() as u32);
         Iterator::<T> { i: it, primary: Some(key), db: self }
+    }
+
+
+    ///
+    pub fn find(&self, key: u64) -> Iterator<T> {
+        let it = db_find_i64(self.code, self.scope, self.table, key);
+        if it != -1 {
+            Iterator::<T> { i: it, primary: Some(key), db: self }
+        } else {
+            Iterator::<T> { i: it, primary: None, db: self }
+        }
     }
 
     ///
@@ -514,16 +526,6 @@ where T: Packer + PrimaryValueInterface + Default,
         let it = db_previous_i64(iterator.i, &mut primary);
         if it != -1 {
             Iterator::<T> { i: it, primary: Some(primary), db: self }
-        } else {
-            Iterator::<T> { i: it, primary: None, db: self }
-        }
-    }
-
-    ///
-    pub fn find(&self, key: u64) -> Iterator<T> {
-        let it = db_find_i64(self.code, self.scope, self.table, key);
-        if it != -1 {
-            Iterator::<T> { i: it, primary: Some(key), db: self }
         } else {
             Iterator::<T> { i: it, primary: None, db: self }
         }

@@ -7,16 +7,16 @@ mod hello {
         eosio_println,
     };
 
-    #[chain(table="mydata1")]
-    pub struct MyData1 {
-        #[chain(primary)]
-        a1: u64,
-    }
-
     #[chain(table="mydata2")]
     pub struct MyData2 {
         #[chain(primary)]
         a2: u64,
+    }
+
+    #[chain(table="mydata1")]
+    pub struct MyData1 {
+        #[chain(primary)]
+        a1: u64,
     }
 
     #[chain(main)]

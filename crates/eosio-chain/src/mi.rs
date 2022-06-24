@@ -105,6 +105,11 @@ where T: PrimaryValueInterface + SecondaryValueInterface + Packer + Default
     }
 
     ///
+    pub fn find(&self, id: u64) -> Iterator<T> {
+        return self.db.find(id);
+    }
+
+    ///
     pub fn update(&self, iterator: &Iterator<T>, value: &T, payer: Name) {
         check(iterator.is_ok(), "update:invalid iterator");
         let primary = iterator.get_primary().unwrap();
@@ -153,11 +158,6 @@ where T: PrimaryValueInterface + SecondaryValueInterface + Packer + Default
     ///
     pub fn previous(&self, iterator: &Iterator<T>) -> Iterator<T> {
         return self.db.previous(iterator);
-    }
-
-    ///
-    pub fn find(&self, id: u64) -> Iterator<T> {
-        return self.db.find(id);
     }
 
     ///
