@@ -58,4 +58,4 @@ jobs:
       - name: run tests in examples
         working-directory: examples
         run: |
-          PYTHON_SHARED_LIB_PATH=${{ env.pythonLocation }}/lib/libpython3.9.so make
+          PYTHON_SHARED_LIB_PATH=${{ env.pythonLocation }}/lib/libpython3.9.so make -j3
