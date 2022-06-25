@@ -42,7 +42,7 @@ jobs:
         id: cache-cargo-plugins
         with:
           path: ~/.cargo/bin/
-          key: ${{ runner.os }}-cargo-plugins
+          key: ${{ runner.os }}-cargo-plugins-2
       - name: install eosiocontract
         if: steps.cache-cargo-plugins.outputs.cache-hit != 'true'
         run: |
