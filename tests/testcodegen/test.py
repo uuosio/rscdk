@@ -153,7 +153,7 @@ mod hello {
 }
 '''
     error_message = '''
-error: struct name with `_` does not supported by contract
+error: structs with `_` in name are not supported by contract
  --> lib.rs:6:5
   |
 6 | /     struct AAA_ {

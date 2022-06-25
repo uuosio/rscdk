@@ -124,7 +124,7 @@ impl Contract {
             println!("++++++++item.ident:{}", item.ident);
             return Err(format_err_spanned!(
                 item,
-                "struct name with `_` does not supported by contract"
+                "structs with `_` in name are not supported by contract"
             ));
         }
         return Ok(());
@@ -311,7 +311,7 @@ impl Contract {
                     } else {
                         return Err(format_err_spanned!(
                             x,
-                            "only variant attribute supported for enum {}", x.ident
+                            "only variant attribute is supported by contract"
                         ));
                     }
                 }

@@ -14,7 +14,7 @@ mod tests {
             }
         );
         assert!(contract.is_err(), "bad return");
-        assert!(contract.err().unwrap().to_compile_error().to_string().contains("struct name with `_` does not supported by contract"));
+        assert!(contract.err().unwrap().to_compile_error().to_string().contains("structs with `_` in name are not supported by contract"));
     }
 
     #[test]
