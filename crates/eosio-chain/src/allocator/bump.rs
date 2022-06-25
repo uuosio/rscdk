@@ -1,26 +1,5 @@
-// Copyright 2018-2022 Parity Technologies (UK) Ltd.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-//! A simple bump allocator.
-//!
-//! Its goal to have a much smaller footprint than the admittedly more full-featured `wee_alloc`
-//! allocator which is currently being used by ink! smart contracts.
-//!
-//! The heap which is used by this allocator is built from pages of Wasm memory (each page is `64KiB`).
-//! We will request new pages of memory as needed until we run out of memory, at which point we
-//! will crash with an `OOM` error instead of freeing any memory.
-
+//code borrow from https://github.com/paritytech/ink/blob/master/crates/allocator/src/bump.rs
+//with a fix of head_base
 use core::alloc::{
     GlobalAlloc,
     Layout,
