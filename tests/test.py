@@ -248,3 +248,18 @@ def test_variant():
     r = chain.push_action('hello', 'test', args, {'hello': 'active'})
     logger.info('++++++elapsed: %s', r['elapsed'])
     chain.produce_block()
+
+@chain_test
+def test_name():
+    deploy_contract('testname')
+
+    args = {
+        "a11": "hello1",
+        "a12": "hello1",
+        "a21": "aaaaaaaaaaaaj",
+        "a22": "aaaaaaaaaaaaj",
+    }
+
+    r = chain.push_action('hello', 'test', args, {'hello': 'active'})
+    logger.info('++++++elapsed: %s', r['elapsed'])
+    chain.produce_block()
