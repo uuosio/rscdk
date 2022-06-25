@@ -1,5 +1,5 @@
 [package]
-name = "eosio_chain"
+name = "eosio-chain"
 version = "0.1.0"
 authors = ["learnforpractice@gmail.com"]
 edition = "2021"
@@ -20,7 +20,7 @@ serde = { version = "1.0", default-features = false, features = ["derive", "allo
 serde_json = {version = "1.0.32", features = ["preserve_order"]}
 
 eosio_macro = { version = "0.1.0", path = "../macro", default-features = false }
-eosio-scale-info = { git="https://github.com/uuosio/scale-info", branch = "eosio", default-features = false, features = ["derive"], optional = true }
+eosio-scale-info = { version="2.1.2", default-features = false, features = ["derive"], optional = true }
 
 [features]
 default = ["std"]
