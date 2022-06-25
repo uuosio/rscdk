@@ -1,5 +1,5 @@
 [package]
-name = "eosio_macro"
+name = "eosio-macro"
 version = "0.1.0"
 authors = [""]
 edition = "2021"
@@ -7,7 +7,7 @@ edition = "2021"
 license = "Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/uuosio/rscdk"
-documentation = "https://docs.rs/eosio_macro/"
+documentation = "https://docs.rs/eosio-macro/"
 homepage = "https://github.com/uuosio/rscdk"
 description = ""
 keywords = ["wasm", "webassembly", "blockchain", "eosio"]
@@ -16,7 +16,7 @@ include = ["Cargo.toml", "src/**/*.rs", "README.md", "LICENSE"]
 
 [dependencies]
 quote = "1"
-eosio_codegen = { version = "0.1.0", path = "../codegen", default-features = false }
+eosio-codegen = { version = "0.1.0", path = "../codegen", default-features = false }
 
 syn = "1"
 proc-macro2 = "1"
@@ -29,5 +29,5 @@ proc-macro = true
 [features]
 default = ["std"]
 std = [
-    "eosio_codegen/std",
+    "eosio-codegen/std",
 ]

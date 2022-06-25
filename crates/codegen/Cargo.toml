@@ -1,5 +1,5 @@
 [package]
-name = "eosio_codegen"
+name = "eosio-codegen"
 version = "0.1.0"
 authors = ["learnforpractice@gmail.com"]
 edition = "2021"
@@ -7,7 +7,7 @@ edition = "2021"
 license = "Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/uuosio/rscdk"
-documentation = "https://docs.rs/eosio_codegen/"
+documentation = "https://docs.rs/eosio-codegen/"
 homepage = "https://github.com/uuosio/"
 description = "data structures and algorithms for intermediate representation"
 keywords = ["wasm", "eosio", "webassembly", "blockchain"]

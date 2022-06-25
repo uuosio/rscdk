@@ -7,7 +7,7 @@ edition = "2021"
 license = "Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/uuosio/rscdk"
-documentation = "https://docs.rs/eosio_chain/"
+documentation = "https://docs.rs/eosio-chain/"
 homepage = "https://github.com/uuosio/"
 description = "eosio chain module that implementing intrinsics eosio APIs"
 keywords = ["wasm", "eosio", "webassembly", "blockchain"]
@@ -19,7 +19,7 @@ cfg-if = "1.0"
 serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
 serde_json = {version = "1.0.32", features = ["preserve_order"]}
 
-eosio_macro = { version = "0.1.0", path = "../macro", default-features = false }
+eosio-macro = { version = "0.1.0", path = "../macro", default-features = false }
 eosio-scale-info = { version="2.1.2", default-features = false, features = ["derive"], optional = true }
 
 [features]
