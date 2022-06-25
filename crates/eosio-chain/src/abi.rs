@@ -338,7 +338,7 @@ pub fn parse_abi_info(info: &mut ABIInfo) -> String {
     });
 
     info.actions.iter().for_each(|action|{
-		if let ::eosio_scale_info::TypeDef::Composite(x) = action.info.type_def() {
+		if let ::eosio_scale_info::TypeDef::Composite(_) = action.info.type_def() {
 			let name = action.info.path().segments().last().unwrap();
             abi.actions.push(ABIAction {
                 name: String::from(*name),
