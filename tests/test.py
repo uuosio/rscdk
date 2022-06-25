@@ -237,3 +237,14 @@ def test_optional():
     )
     run_test('test', args)
 
+@chain_test
+def test_variant():
+    deploy_contract('testvariant')
+
+    args = dict(
+        v = ['uint64', 10],
+    )
+
+    r = chain.push_action('hello', 'test', args, {'hello': 'active'})
+    logger.info('++++++elapsed: %s', r['elapsed'])
+    chain.produce_block()

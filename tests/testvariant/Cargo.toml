@@ -1,0 +1,19 @@
+[package]
+name = "testvariant"
+version = "0.1.0"
+authors = [""]
+edition = "2021"
+
+[dependencies]
+eosio_chain = { version = "0.1.0", path = "../../crates/eosio-chain", default-features = false }
+
+[lib]
+name = "testvariant"
+path = "lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["std"]
+std = [
+    "eosio_chain/std",
+]

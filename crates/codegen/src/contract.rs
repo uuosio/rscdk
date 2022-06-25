@@ -342,26 +342,44 @@ impl Contract {
         }
     }
 
+    pub fn get_type_name(field: &syn::Field) -> Result<String, syn::Error> {
+        if let syn::Type::Path(type_path) = &field.ty {
+            if type_path.path.segments.len() != 1 {
+                return Err(format_err_spanned!(
+                    field,
+                    "type with multiple segments does not support by contract!"
+                ));
+            }
+            let path_seg = type_path.path.segments.last().unwrap();
+            return Ok(path_seg.ident.to_string());
+        } else {
+            return Err(format_err_spanned!(
+                field,
+                "Invalid contract type!"
+            ));
+        }
+    }
+
     pub fn add_packer(&mut self, name: &str) -> Result<(), syn::Error> {
         if Self::is_primitive_type(name) {
             return Ok(());
         }
 
-        let mut names: Vec<String> = Vec::new();
+        let mut names: HashMap<String, bool> = HashMap::new();
         for item in &self.items {
             match item {
                 syn::Item::Struct(x) => {
                     if x.ident.to_string() != name {
                         continue;
                     }
-                    self.packers.push(x.clone());
+                    if !self.packers.iter().any(|packer| {
+                        x.ident == packer.ident
+                    }) {
+                        self.packers.push(x.clone());
+                    }
                     for field in &x.fields {
-                        if let syn::Type::Path(type_path) = &field.ty {
-                            //TODO: construct full path
-                            let path_seg = type_path.path.segments.last().unwrap();
-                            let name = path_seg.ident.to_string();
-                            names.push(name);
-                        }
+                        let name = Self::get_type_name(field)?;
+                        names.insert(name, true);
                     }
                     break;
                 }
@@ -369,15 +387,39 @@ impl Contract {
                     if x.ident.to_string() != name {
                         continue;
                     }
-                    Self::verify_variant(x)?;
-                    self.variants.push(x.clone());
+                    if !self.variants.iter().any(|v| {
+                        v.ident == x.ident
+                    }) {
+                        self.variants.push(x.clone());
+                    }
+                    for v in &x.variants {
+                        match &v.fields {
+                            syn::Fields::Unnamed(x) => {
+                                if x.unnamed.len() != 1 {
+                                    return Err(format_err_spanned!(
+                                        x,
+                                        "multiple fields in variant does not support by contract!"
+                                    ));
+                                }
+                                let field = x.unnamed.last().unwrap();
+                                let name = Self::get_type_name(field)?;
+                                names.insert(name, true);
+                            }
+                            _ => {
+                                return Err(format_err_spanned!(
+                                    v.fields,
+                                    "invalid variant field"
+                                ));
+                            }
+                        }
+                    }
                     break;
                 }
                 _ => {}
             }
         }
 
-        for name in &names {
+        for (name, _) in &names {
             self.add_packer(name)?;
         }
         Ok(())

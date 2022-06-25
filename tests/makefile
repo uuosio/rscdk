@@ -1,4 +1,5 @@
-ALL : test_hello test_abi test_mi test_mod
+ALL : test_hello test_abi test_mi test_mod \
+	test_inline test_asset test_optional test_variant
 
 test_hello:
 	cd hello;cargo eosiocontract build --release
@@ -27,3 +28,7 @@ test_asset:
 test_optional:
 	cd testoptional;cargo eosiocontract build --release
 	run-ipyeos -m pytest -s test.py -k test_optional
+
+test_variant:
+	cd testvariant;cargo eosiocontract build --release
+	run-ipyeos -m pytest -s test.py -k test_variant
