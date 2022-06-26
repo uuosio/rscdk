@@ -918,74 +918,61 @@ impl Contract {
             
                 #[allow(dead_code)]
                 impl #mi_ident {
-                    ///
+
                     pub fn new(code: eosio_chain::Name, scope: eosio_chain::Name, table: eosio_chain::Name, indexes: &[eosio_chain::db::SecondaryType]) -> Self {
                         Self {
                             mi: ::eosio_chain::mi::MultiIndex::<#table_ident>::new(code, scope, table, indexes),
                         }
                     }
 
-                    ///
                     pub fn store(&self, value: &#table_ident, payer: eosio_chain::Name) -> ::eosio_chain::db::Iterator<#table_ident> {
                         return self.mi.store(value, payer);
                     }
                 
-                    ///
                     pub fn update(&self, iterator: &::eosio_chain::db::Iterator<#table_ident>, value: &#table_ident, payer: eosio_chain::Name) {
                         return self.mi.update(iterator, value, payer);
                     }
                 
-                    ///
                     pub fn remove(&self, iterator: &::eosio_chain::db::Iterator<#table_ident>) {
                         return self.mi.remove(iterator);
                     }
                 
-                    ///
                     pub fn get(&self, iterator: &::eosio_chain::db::Iterator<#table_ident>) -> Option<#table_ident> {
                         return self.mi.get(iterator)
                     }
                 
-                    ///
                     pub fn get_by_primary(&self, primary: u64) -> Option<#table_ident> {
                         return self.mi.get_by_primary(primary);
                     }
 
-                    ///
                     pub fn next(&self, iterator: &::eosio_chain::db::Iterator<#table_ident>) -> ::eosio_chain::db::Iterator<#table_ident> {
                         return self.mi.db.next(iterator);
                     }
 
-                    ///
                     pub fn previous(&self, iterator: &::eosio_chain::db::Iterator<#table_ident>) -> ::eosio_chain::db::Iterator<#table_ident> {
                         return self.mi.db.previous(iterator);
                     }
 
-                    ///
                     pub fn find(&self, id: u64) -> ::eosio_chain::db::Iterator<#table_ident> {
                         return self.mi.db.find(id);
                     }
                 
-                    ///
                     pub fn lowerbound(&self, id: u64) -> ::eosio_chain::db::Iterator<#table_ident> {
                         return self.mi.db.lowerbound(id);
                     }
                 
-                    ///
                     pub fn upperbound(&self, id: u64) -> ::eosio_chain::db::Iterator<#table_ident> {
                         return self.mi.db.upperbound(id);
                     }
                 
-                    ///
                     pub fn end(&self) -> ::eosio_chain::db::Iterator<#table_ident> {
                         return self.mi.db.end();
                     }
                 
-                    ///
                     pub fn get_idx_db(&self, i: usize) -> &dyn ::eosio_chain::db::IndexDB {
                         return self.mi.idxdbs[i].as_ref();
                     }
                 
-                    ///
                     pub fn idx_update(&self, it: ::eosio_chain::db::SecondaryIterator, value: ::eosio_chain::db::SecondaryValue, payer: eosio_chain::Name) {
                         self.mi.idx_update(it, value, payer);
                     }
