@@ -147,11 +147,11 @@ def test_mi():
     deploy_contract('testmi')
 
     args = {}
-    r = chain.push_action('hello', 'test', args, {'hello': 'active'})
+    r = chain.push_action('hello', 'test1', args, {'hello': 'active'})
     logger.info('++++++elapsed: %s', r['elapsed'])
     chain.produce_block()
 
-    r = chain.push_action('hello', 'test', args, {'hello': 'active'})
+    r = chain.push_action('hello', 'test2', args, {'hello': 'active'})
     logger.info('++++++elapsed: %s', r['elapsed'])
     chain.produce_block()
 

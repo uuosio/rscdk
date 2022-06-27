@@ -847,6 +847,18 @@ impl Contract {
                 .iter()
                 .enumerate()
                 .map(|(i, (idx, field))| {
+                    let idx_type: usize;
+                    match idx {
+                        attrs::AttributeArg::Idx64(_) => { idx_type = 0; }
+                        attrs::AttributeArg::Idx128(_) => { idx_type = 1; }
+                        attrs::AttributeArg::Idx256(_) => { idx_type = 2; }
+                        attrs::AttributeArg::IdxF64(_) => { idx_type = 3; }
+                        attrs::AttributeArg::IdxF128(_) => { idx_type = 4; }
+                        _ => {
+                            return quote!()
+                        }
+                    }
+
                     match idx {
                         attrs::AttributeArg::Idx64(_) |
                         attrs::AttributeArg::Idx128(_) |
@@ -860,8 +872,8 @@ impl Contract {
                             let method_ident = syn::Ident::new(&method_name, span);
                             return quote_spanned!(span =>
                                 #[allow(dead_code)]
-                                fn #method_ident(&self) -> ::eosio_chain::db::IndexDBProxy<#ty, 0> {
-                                    return ::eosio_chain::db::IndexDBProxy::<#ty, 0>::new(self.mi.idxdbs[#i].as_ref());
+                                fn #method_ident(&self) -> ::eosio_chain::db::IndexDBProxy<#ty, #idx_type> {
+                                    return ::eosio_chain::db::IndexDBProxy::<#ty, #idx_type>::new(self.mi.idxdbs[#i].as_ref());
                                 }
                             )
                         }

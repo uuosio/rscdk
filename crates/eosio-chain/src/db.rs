@@ -242,9 +242,7 @@ impl ToSecondaryValue for Checksum256 {
 impl FromSecondaryValue for Uint256 {
     fn from_secondary_value(value: SecondaryValue) -> Uint256 {
         if let SecondaryValue::Idx256(x) = value {
-            let mut ret: Uint256 = Default::default();
-            eosio_memcpy(ret.data.as_mut_ptr() as *mut u8, x.data.as_ptr() as *const u8, 32);
-            return ret;
+            return x;
         } else {
             check(false, "FromSecondaryValue<Checksum256>: bad secondary value");
             return Default::default();
@@ -718,7 +716,6 @@ impl<'a, T: ToSecondaryValue + FromSecondaryValue + Printable + Default, const I
     ///
     pub fn lowerbound(&self, secondary: T) -> (SecondaryIterator, T) {
         let (it, value) = self.db.lowerbound(secondary.to_secondary_value(self.secondary_type));
-        let _secondary: T = Default::default();
         return (it, T::from_secondary_value(value));
     }
 
@@ -880,7 +877,7 @@ impl IndexDB for Idx128DB {
         //initialize Uint128
         let mut secondary = Uint128{lo:0, hi: 0};
         let ret = db_idx128_find_primary(self.code, self.scope, self.table, &mut secondary, primary);
-        let _secondary = (secondary.hi as u128) << 64 + secondary.lo as u128;
+        let _secondary = ((secondary.hi as u128) << 64) + secondary.lo as u128;
         return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx128(_secondary));
     }
 
@@ -901,7 +898,7 @@ impl IndexDB for Idx128DB {
             // let _secondary: SecondaryValue = secondary;
             let mut _secondary = Uint128{lo: (value & 0xffffffffffffffff) as u64, hi: (value >> 64) as u64};
             let ret = db_idx128_lowerbound(self.code, self.scope, self.table, &mut _secondary, &mut primary);
-            value = (_secondary.hi as u128) << 64 + _secondary.lo as u128;
+            value = ((_secondary.hi as u128) << 64) + _secondary.lo as u128;
             return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx128(value));
         }
         check(false, "Idx128DB::lowerbound: bad secondary type");
@@ -915,7 +912,7 @@ impl IndexDB for Idx128DB {
                 // let _secondary = secondary;
                 let mut _secondary = Uint128{lo: (value & 0xffffffffffffffff) as u64, hi: (value >> 64) as u64};
                 let ret = db_idx128_upperbound(self.code, self.scope, self.table, &mut _secondary, &mut primary);
-                value = (_secondary.hi as u128) << 64 + _secondary.lo as u128;
+                value = ((_secondary.hi as u128) << 64) + _secondary.lo as u128;
                 return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx128(value));
             },
             _ => {
@@ -996,9 +993,8 @@ impl IndexDB for Idx256DB {
     fn lowerbound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
         if let SecondaryValue::Idx256(mut value) = secondary {
             let mut primary = 0;
-            let _secondary: SecondaryValue = secondary;
             let ret = db_idx256_lowerbound(self.code, self.scope, self.table, value.data.as_mut_ptr() as *mut u8 as *mut Uint128, 2, &mut primary);
-            return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, _secondary);
+            return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx256(value));
         }
         check(false, "Idx256DB::lowerbound: bad secondary type");
         return (SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index }, SecondaryValue::Idx128(0));
@@ -1008,9 +1004,8 @@ impl IndexDB for Idx256DB {
         match secondary {
             SecondaryValue::Idx256(mut value) => {
                 let mut primary = 0;
-                let _secondary = secondary;
                 let ret = db_idx256_upperbound(self.code, self.scope, self.table, value.data.as_mut_ptr() as *mut u8 as *mut Uint128, 2, &mut primary);
-                return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, _secondary);
+                return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx256(value));
             },
             _ => {
                 check(false, "Idx256DB::upperbound: bad secondary type");
@@ -1091,9 +1086,8 @@ impl IndexDB for IdxF64DB {
     fn lowerbound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
         if let SecondaryValue::IdxF64(mut value) = secondary {
             let mut primary = 0;
-            let _secondary: SecondaryValue = secondary;
             let ret = db_idx_double_lowerbound(self.code, self.scope, self.table, &mut value, &mut primary);
-            return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, _secondary);
+            return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::IdxF64(value));
         }
         check(false, "IdxF64DB::lowerbound: bad secondary type");
         return (SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index }, SecondaryValue::IdxF64(0.0));
@@ -1103,9 +1097,8 @@ impl IndexDB for IdxF64DB {
         match secondary {
             SecondaryValue::IdxF64(mut value) => {
                 let mut primary = 0;
-                let _secondary = secondary;
                 let ret = db_idx_double_upperbound(self.code, self.scope, self.table, &mut value, &mut primary);
-                return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, _secondary);    
+                return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::IdxF64(value));    
             },
             _ => {
                 check(false, "IdxF64DB::upperbound: bad secondary type");
@@ -1186,9 +1179,8 @@ impl IndexDB for IdxF128DB {
     fn lowerbound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
         if let SecondaryValue::IdxF128(mut value) = secondary {
             let mut primary = 0;
-            let _secondary: SecondaryValue = secondary;
             let ret = db_idx_long_double_lowerbound(self.code, self.scope, self.table, &mut value, &mut primary);
-            return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, _secondary);
+            return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::IdxF128(value));
         }
         check(false, "IdxF128DB::lowerbound: bad secondary type");
         return (SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index }, SecondaryValue::IdxF128(Float128::default()));
@@ -1197,9 +1189,8 @@ impl IndexDB for IdxF128DB {
     fn upperbound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
         if let SecondaryValue::IdxF128(mut value) = secondary {
             let mut primary = 0;
-            let _secondary = secondary;
             let ret = db_idx_long_double_upperbound(self.code, self.scope, self.table, &mut value, &mut primary);
-            return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, _secondary);    
+            return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::IdxF128(value));    
         }
         check(false, "IdxF128DB::upperbound: bad secondary type");
         return (SecondaryIterator{ i: -1, primary: 0, db_index: 0 }, SecondaryValue::None);   
