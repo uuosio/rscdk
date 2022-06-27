@@ -32,21 +32,12 @@ jobs:
           python3 -m pip install pytest
           python3 -m pip install pytest-xdist
           python3 -m pip install ipyeos
+          python3 -m pip install rust-contracts-builder
       - name: Install binaryen
         run: |
           set -e
           curl -L https://github.com/WebAssembly/binaryen/releases/download/version_109/binaryen-version_109-x86_64-linux.tar.gz | tar xzf -
           echo "`pwd`/binaryen-version_109/bin" > $GITHUB_PATH
-      - name: Cache cargo plugins
-        uses: actions/cache@v2
-        id: cache-cargo-plugins
-        with:
-          path: ~/.cargo/bin/
-          key: ${{ runner.os }}-cargo-plugins-3
-      - name: install eosiocontract
-        if: steps.cache-cargo-plugins.outputs.cache-hit != 'true'
-        run: |
-          cargo install --git https://github.com/uuosio/cargo-eosiocontract/ --branch eosio
       - name: test code generator
         working-directory: crates/codegen
         run: |

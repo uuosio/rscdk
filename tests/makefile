@@ -1,31 +1,31 @@
 ALL : build_all test_all
 
 build_hello:
-	cd hello;cargo +nightly eosiocontract build 
+	cd hello;rust-contract build
 
 build_abi:
-	cd testabi;cargo +nightly eosiocontract build 
+	cd testabi;rust-contract build 
 
 build_mi:
-	cd testmi;cargo +nightly eosiocontract build 
+	cd testmi;rust-contract build 
 
 build_mod:
-	cd testmod;cargo +nightly eosiocontract build 
+	cd testmod;rust-contract build 
 
 build_inline:
-	cd testinlineaction;cargo +nightly eosiocontract build 
+	cd testinlineaction;rust-contract build 
 
 build_asset:
-	cd testasset;cargo +nightly eosiocontract build 
+	cd testasset;rust-contract build 
 
 build_optional:
-	cd testoptional;cargo +nightly eosiocontract build 
+	cd testoptional;rust-contract build 
 
 build_variant:
-	cd testvariant;cargo +nightly eosiocontract build 
+	cd testvariant;rust-contract build 
 
 build_name:
-	cd testname;cargo +nightly eosiocontract build 
+	cd testname;rust-contract build 
 
 
 test_hello: build_hello
