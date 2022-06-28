@@ -245,9 +245,10 @@ impl Packer for Name {
     }
 }
 
-pub const SAME_PAYER: Name = Name{n: static_str_to_name("")};
+pub const SAME_PAYER: Name = Name{n: 0};
 pub const ACTIVE: Name = Name{n: static_str_to_name("active")};
-pub const OWNER: Name = Name{n: static_str_to_name("active")};
+pub const OWNER: Name = Name{n: static_str_to_name("owner")};
+pub const CODE: Name = Name{n: static_str_to_name("eosio.code")};
 
 
 ///

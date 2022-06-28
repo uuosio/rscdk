@@ -156,6 +156,7 @@ pub use name::{
     SAME_PAYER,
     ACTIVE,
     OWNER,
+    CODE,
 };
 
 ///
