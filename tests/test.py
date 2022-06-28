@@ -263,3 +263,12 @@ def test_name():
     r = chain.push_action('hello', 'test', args, {'hello': 'active'})
     logger.info('++++++elapsed: %s', r['elapsed'])
     chain.produce_block()
+
+@chain_test
+def test_transaction():
+    deploy_contract('testtransaction')
+
+    args = {}
+    r = chain.push_action('hello', 'test', args, {'hello': 'active'})
+    logger.info('++++++elapsed: %s', r['elapsed'])
+    chain.produce_block()

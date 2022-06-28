@@ -22,7 +22,8 @@ use crate::serializer::{
 };
 
 ///
-#[derive(Copy, Clone, Debug, Default)]
+#[cfg_attr(feature = "std", derive(eosio_scale_info::TypeInfo))]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Default)]
 pub struct PermissionLevel {
     ///
     pub actor: Name,
@@ -62,6 +63,8 @@ impl Packer for PermissionLevel {
 }
 
 ///
+#[cfg_attr(feature = "std", derive(eosio_scale_info::TypeInfo))]
+#[derive(Clone, Eq, PartialEq)]
 pub struct Action {
     /// action account
     pub account: Name,

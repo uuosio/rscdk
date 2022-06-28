@@ -11,12 +11,9 @@ use crate::print::{
     printi,
 };
 
-#[cfg(feature = "std")]
-use eosio_scale_info::TypeInfo;
-
 ///
+#[cfg_attr(feature = "std", derive(crate::eosio_scale_info::TypeInfo))]
 #[derive(Copy, Clone, Eq, PartialEq, Default)]
-#[cfg_attr(feature = "std", derive(TypeInfo))]
 pub struct VarUint32 {
     ///
     pub n: u32,

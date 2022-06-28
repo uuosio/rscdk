@@ -27,6 +27,8 @@ build_variant:
 build_name:
 	cd testname;rust-contract build 
 
+build_transaction:
+	cd testtransaction;rust-contract build 
 
 test_hello: build_hello
 	run-ipyeos -m pytest -s test.py -k test_hello
@@ -54,6 +56,9 @@ test_variant: build_variant
 
 test_name: build_name
 	run-ipyeos -m pytest -s test.py -k test_name
+
+test_transaction: build_transaction
+	run-ipyeos -m pytest -s test.py -k test_transaction
 
 build_all: build_hello build_abi build_mi build_mod \
 	build_inline build_asset build_optional build_variant build_name

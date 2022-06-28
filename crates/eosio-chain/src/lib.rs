@@ -79,6 +79,13 @@ pub mod structs;
 pub use self::structs::*;
 
 ///
+pub mod transaction;
+pub use self::transaction::{
+    TransactionExtension,
+    Transaction,
+};
+
+///
 pub mod serializer;
 ///
 pub mod db;

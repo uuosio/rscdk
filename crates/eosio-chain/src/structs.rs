@@ -568,10 +568,16 @@ impl Packer for TimePoint {
 
 ///
 #[cfg_attr(feature = "std", derive(eosio_scale_info::TypeInfo))]
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Eq, PartialEq, Default)]
 pub struct TimePointSec {
     ///
     pub utc_seconds: u32,
+}
+
+impl TimePointSec {
+    pub fn utc_seconds(&self) -> u32 {
+        return self.utc_seconds;
+    }
 }
 
 impl Packer for TimePointSec {

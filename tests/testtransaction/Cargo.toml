@@ -1,5 +1,5 @@
 [package]
-name = "testname"
+name = "testtransaction"
 version = "0.1.0"
 authors = [""]
 edition = "2021"
@@ -8,7 +8,7 @@ edition = "2021"
 eosio-chain = { path = "../../crates/eosio-chain", default-features = false }
 
 [lib]
-name = "testname"
+name = "testtransaction"
 path = "lib.rs"
 crate-type = ["cdylib", "rlib"]
 
