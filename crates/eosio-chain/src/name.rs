@@ -255,8 +255,8 @@ pub const OWNER: Name = Name{n: static_str_to_name("active")};
 macro_rules! name {
      ( $head:expr ) => {
         {
-            const n: u64 = eosio_chain::name::static_str_to_name($head);
-            eosio_chain::name::Name::from_u64(n)
+            const n: u64 = $crate::name::static_str_to_name($head);
+            $crate::name::Name::from_u64(n)
         }
     };
 }
