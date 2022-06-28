@@ -127,7 +127,8 @@ impl DBI64 {
     }
 
     ///
-    pub fn update(&self, iterator: &Iterator, data: &[u8], payer: Name) {
+    pub fn update(&self, iterator: &Iterator, value: &dyn MultiIndexValue, payer: Name) {
+        let data = value.pack();
         db_update_i64(iterator.i, payer.value(), data.as_ptr(), data.len() as u32);
     }
 
@@ -268,7 +269,7 @@ impl MultiIndex {
             }
             self.idxdbs[i].update(it_secondary, v2, payer);
         }
-        self.db.update(iterator, &value.pack(), payer);
+        self.db.update(iterator, value, payer);
     }
 
     ///
