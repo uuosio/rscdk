@@ -10,7 +10,7 @@ eosio-chain = { version = "0.1.0", path = "../../crates/eosio-chain", default-fe
 [lib]
 name = "testinlineaction"
 path = "lib.rs"
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 
 [features]
 default = ["std"]

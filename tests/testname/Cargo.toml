@@ -10,7 +10,7 @@ eosio-chain = { path = "../../crates/eosio-chain", default-features = false }
 [lib]
 name = "testname"
 path = "lib.rs"
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 
 [features]
 default = ["std"]
