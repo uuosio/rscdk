@@ -1,3 +1,5 @@
+use core::ops::Mul;
+
 use crate::db::{
     Idx64DB,
     Idx128DB,
@@ -56,6 +58,10 @@ impl<'a> Iterator<'a> {
         
         let value = self.db.get(self).unwrap();
         return Some(value.get_primary());
+    }
+
+    pub fn get_value(&self) -> Option<Box<dyn MultiIndexValue>> {
+        return self.db.get(self);
     }
 
     ///

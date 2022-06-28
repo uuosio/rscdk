@@ -282,8 +282,12 @@ pub trait SecondaryValueInterface {
     fn set_secondary_value(&mut self, i: usize, value: SecondaryValue);
 }
 
+pub trait AsAny {
+    fn as_any(&self) -> &dyn core::any::Any;
+}
+
 ///
-pub trait MultiIndexValue: PrimaryValueInterface + SecondaryValueInterface + Packer {
+pub trait MultiIndexValue: PrimaryValueInterface + SecondaryValueInterface + Packer + AsAny {
 
 }
 

@@ -5,6 +5,7 @@ members = [
     "hello/abigen",
     # "testcodegen",
     "testmi",
+    "testmi2",
     "testabi",
     "testmod",
     "testinlineaction",

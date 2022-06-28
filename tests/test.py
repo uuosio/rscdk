@@ -156,6 +156,18 @@ def test_mi():
     chain.produce_block()
 
 @chain_test
+def test_2mi():
+    deploy_contract('testmi2')
+    args = {}
+    r = chain.push_action('hello', 'test', args, {'hello': 'active'})
+    logger.info('++++++elapsed: %s', r['elapsed'])
+    chain.produce_block()
+
+    r = chain.push_action('hello', 'test', args, {'hello': 'active'})
+    logger.info('++++++elapsed: %s', r['elapsed'])
+    chain.produce_block()
+
+@chain_test
 def test_mod():
     deploy_contract('testmod')
     args = {
