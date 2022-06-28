@@ -672,11 +672,13 @@ impl Contract {
                 let first_attr = attr.args().next().unwrap();
                 match first_attr.arg {
                     attrs::AttributeArg::Primary => {},
-                    attrs::AttributeArg::Idx64(_) |
-                    attrs::AttributeArg::Idx128(_) |
-                    attrs::AttributeArg::Idx256(_) |
-                    attrs::AttributeArg::IdxF64(_) |
-                    attrs::AttributeArg::IdxF128(_) => {
+                    attrs::AttributeArg::Secondary => {
+                        if !Self::is_secondary_type(&field.ty) {
+                            return Err(format_err_spanned!(
+                                first_attr.ast,
+                                "invalid secondary type, only  \"u64\", \"u128\", \"Uint256\", \"f64\" or \"Float128\" supported"
+                            ));
+                        }
                         secondary_fields.push((first_attr.arg.clone(), field.clone()));
                     }
                     _ => {
@@ -690,49 +692,11 @@ impl Contract {
 
             let secondary_getter_impls = secondary_fields.iter()
             .enumerate()
-            .map(|(index, (attr_arg, field))|{
+            .map(|(index, (_, field))|{
                 let field_ident = field.ident.as_ref().unwrap();
-                let error_msg: proc_macro2::Literal;
-                let idx_ident: proc_macro2::Ident;
-
-                match attr_arg {
-                    attrs::AttributeArg::Idx64(_) => {
-                        idx_ident = proc_macro2::Ident::new("Idx64", proc_macro2::Span::call_site());
-                        error_msg = proc_macro2::Literal::string("Invalid Idx64 value!");
-                    }
-                    attrs::AttributeArg::Idx128(_) => {
-                        idx_ident = proc_macro2::Ident::new("Idx128", proc_macro2::Span::call_site());
-                        error_msg = proc_macro2::Literal::string("Invalid Idx128 value!");
-                    }
-                    attrs::AttributeArg::Idx256(_) => {
-                        idx_ident = proc_macro2::Ident::new("Idx256", proc_macro2::Span::call_site());
-                        error_msg = proc_macro2::Literal::string("Invalid Idx256 value!");
-                    }
-                    attrs::AttributeArg::IdxF64(_) => {
-                        idx_ident = proc_macro2::Ident::new("IdxF64", proc_macro2::Span::call_site());
-                        error_msg = proc_macro2::Literal::string("Invalid IdxF64 value!");
-                    }
-                    attrs::AttributeArg::IdxF128(_) => {
-                        idx_ident = proc_macro2::Ident::new("IdxF128", proc_macro2::Span::call_site());
-                        error_msg = proc_macro2::Literal::string("Invalid IdxF128 value!");
-                    }
-                    _ => {
-                        idx_ident = proc_macro2::Ident::new("", proc_macro2::Span::call_site());
-                        error_msg = proc_macro2::Literal::string("Invalid value!");
-                    }
-                }
                 return quote! {
                     if i == #index {
-                        let ret = self.#field_ident.to_secondary_value(eosio_chain::db::SecondaryType::#idx_ident);
-                        match ret {
-                            eosio_chain::db::SecondaryValue::#idx_ident(_) => {
-                                return ret;
-                            }
-                            _ => {
-                                ::eosio_chain::vmapi::eosio::eosio_assert(false, #error_msg);
-                            }
-                        }
-                        return ret;
+                        return self.#field_ident.into();
                     }
                 }
             });
@@ -741,10 +705,9 @@ impl Contract {
             .enumerate()
             .map(|(index, (_attr_arg, field))|{
                 let field_ident = field.ident.as_ref().unwrap();
-                let ty = &field.ty;
                 return quote!{
                     if i == #index {
-                        self.#field_ident = #ty::from_secondary_value(value);
+                        self.#field_ident = value.into();
                     }
                 }
             });
@@ -809,30 +772,30 @@ impl Contract {
 
         let secondary_types = secondary_fields
             .iter()
-            .enumerate()
-            .map(|(_n, (arg, _))| {
-                match arg {
-                    attrs::AttributeArg::Idx64(_) => {
+            .map(|(_, field)| {
+                let secondary_type_name = Self::to_secondary_type(&field.ty);
+                match secondary_type_name {
+                    Some("Idx64") => {
                         return quote! {
                             eosio_chain::db::SecondaryType::Idx64
                         }
                     }
-                    attrs::AttributeArg::Idx128(_) => {
+                    Some("Idx128") => {
                         return quote! {
                             eosio_chain::db::SecondaryType::Idx128
                         }
                     }
-                    attrs::AttributeArg::Idx256(_) => {
+                    Some("Idx256") => {
                         return quote! {
                             eosio_chain::db::SecondaryType::Idx256
                         }
                     }
-                    attrs::AttributeArg::IdxF64(_) => {
+                    Some("IdxF64") => {
                         return quote! {
                             eosio_chain::db::SecondaryType::IdxF64
                         }
                     }
-                    attrs::AttributeArg::IdxF128(_) => {
+                    Some("IdxF128") => {
                         return quote! {
                             eosio_chain::db::SecondaryType::IdxF128
                         }
@@ -846,26 +809,22 @@ impl Contract {
             let get_idx_db_funcs = secondary_fields
                 .iter()
                 .enumerate()
-                .map(|(i, (idx, field))| {
+                .map(|(i, (_, field))| {
                     let idx_type: usize;
-                    match idx {
-                        attrs::AttributeArg::Idx64(_) => { idx_type = 0; }
-                        attrs::AttributeArg::Idx128(_) => { idx_type = 1; }
-                        attrs::AttributeArg::Idx256(_) => { idx_type = 2; }
-                        attrs::AttributeArg::IdxF64(_) => { idx_type = 3; }
-                        attrs::AttributeArg::IdxF128(_) => { idx_type = 4; }
+                    let secondary_type = Self::to_secondary_type(&field.ty);
+                    match secondary_type {
+                        Some("Idx64") => { idx_type = 0; }
+                        Some("Idx128") => { idx_type = 1; }
+                        Some("Idx256") => { idx_type = 2; }
+                        Some("IdxF64") => { idx_type = 3; }
+                        Some("IdxF128") => { idx_type = 4; }
                         _ => {
                             return quote!()
                         }
                     }
 
-                    match idx {
-                        attrs::AttributeArg::Idx64(_) |
-                        attrs::AttributeArg::Idx128(_) |
-                        attrs::AttributeArg::Idx256(_) |
-                        attrs::AttributeArg::IdxF64(_) |
-                        attrs::AttributeArg::IdxF128(_)
-                         => {
+                    match secondary_type {
+                        Some("Idx64") | Some("Idx128") | Some("Idx256") | Some("IdxF64") | Some("IdxF128") => {
                             let span = field.span();
                             let ty = &field.ty;
                             let method_name = String::from("get_idx_by_") + &field.ident.as_ref().unwrap().to_string();
@@ -1122,6 +1081,47 @@ impl Contract {
         ))
     }
 
+    fn is_secondary_type(ty: &syn::Type) -> bool {
+        if let syn::Type::Path(type_path) = ty {
+            if type_path.path.segments.len() != 1 {
+                return false;
+            }
+
+            let path_seg = &type_path.path.segments[0];
+            let name = path_seg.ident.to_string();
+            if name == "u64" || name == "u128" || name == "Uint256" || name == "f64" || name == "Float128" {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    fn to_secondary_type(ty: &syn::Type) -> Option<&'static str> {
+        if let syn::Type::Path(type_path) = ty {
+            if type_path.path.segments.len() != 1 {
+                return None;
+            }
+
+            let path_seg = &type_path.path.segments[0];
+            let name = path_seg.ident.to_string();
+            if name == "u64" {
+                return Some("Idx64");
+            }  else if name == "u128" {
+                return Some("Idx128");
+            } else if name == "Uint256" {
+                return Some("Idx256");
+            } else if name == "f64" {
+                return Some("IdxF64");
+            } else if name == "Float128" {
+                return Some("IdxF128");
+            } else {
+                return None;
+            }
+        }
+        return None;
+    }
 
     fn add_abi_type<'a>(&'a self, tp_name: &str, abi_types: &mut HashMap<String, &'a syn::Type>) -> Result<(), syn::Error> {
         if Self::is_primitive_type(tp_name) {

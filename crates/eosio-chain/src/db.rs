@@ -1,3 +1,8 @@
+use core::convert::{
+    From,
+    Into,
+};
+
 use crate::structs::{ Uint128, Uint256, Float128, Checksum256 };
 use crate::serializer::Packer;
 use crate::print;
@@ -439,6 +444,97 @@ pub enum SecondaryValue {
     IdxF128(Float128),
 }
 
+impl From<u64> for SecondaryValue {
+    fn from(value: u64) -> Self {
+        SecondaryValue::Idx64(value)
+    }
+}
+
+impl From<u128> for SecondaryValue {
+    fn from(value: u128) -> Self {
+        SecondaryValue::Idx128(value)
+    }
+}
+
+impl From<Uint256> for SecondaryValue {
+    fn from(value: Uint256) -> Self {
+        SecondaryValue::Idx256(value)
+    }
+}
+
+impl From<f64> for SecondaryValue {
+    fn from(value: f64) -> Self {
+        SecondaryValue::IdxF64(value)
+    }
+}
+
+impl From<Float128> for SecondaryValue {
+    fn from(value: Float128) -> Self {
+        SecondaryValue::IdxF128(value)
+    }
+}
+
+
+
+
+
+
+
+
+impl From<SecondaryValue> for u64 {
+    fn from(value: SecondaryValue) -> Self {
+        if let SecondaryValue::Idx64(x) = value {
+            x
+        } else {
+            check(false, "From<SecondaryValue> for u128: Invalid SecondaryValue");
+            Default::default()
+        }
+    }
+}
+
+impl From<SecondaryValue> for u128 {
+    fn from(value: SecondaryValue) -> Self {
+        if let SecondaryValue::Idx128(x) = value {
+            x
+        } else {
+            check(false, "From<SecondaryValue> for u128: Invalid SecondaryValue");
+            Default::default()
+        }
+    }
+}
+
+impl From<SecondaryValue> for Uint256 {
+    fn from(value: SecondaryValue) -> Self {
+        if let SecondaryValue::Idx256(x) = value {
+            x
+        } else {
+            check(false, "From<SecondaryValue> for Uint256: Invalid SecondaryValue");
+            Default::default()
+        }
+    }
+}
+
+impl From<SecondaryValue> for f64 {
+    fn from(value: SecondaryValue) -> Self {
+        if let SecondaryValue::IdxF64(x) = value {
+            x
+        } else {
+            check(false, "From<SecondaryValue> for f64: Invalid SecondaryValue");
+            Default::default()
+        }
+    }
+}
+
+impl From<SecondaryValue> for Float128 {
+    fn from(value: SecondaryValue) -> Self {
+        if let SecondaryValue::IdxF128(x) = value {
+            x
+        } else {
+            check(false, "From<SecondaryValue> for Float128: Invalid SecondaryValue");
+            Default::default()
+        }
+    }
+}
 
 ///
 pub struct DBI64<T> 
@@ -649,11 +745,11 @@ pub trait IndexDB {
 }
 
 ///
-pub struct IndexDBProxy<'a, T: ToSecondaryValue + FromSecondaryValue + Printable + Default, const IDX_TYPE: usize> {
+pub struct IndexDBProxy<'a, T: From<SecondaryValue> + Into<SecondaryValue> + Printable + Default, const IDX_TYPE: usize> {
     ///
     pub db: &'a dyn IndexDB,
-    __: T,
     secondary_type: SecondaryType,
+    _marker: core::marker::PhantomData<T>,
 }
 
 fn index_to_secondary_type(i: usize) -> SecondaryType {
@@ -667,13 +763,14 @@ fn index_to_secondary_type(i: usize) -> SecondaryType {
     }
 }
 
-impl<'a, T: ToSecondaryValue + FromSecondaryValue + Printable + Default, const IDX_TYPE: usize> IndexDBProxy<'a, T, IDX_TYPE> {
+impl<'a, T: From<SecondaryValue> + Into<SecondaryValue> + Printable + Default, const IDX_TYPE: usize> IndexDBProxy<'a, T, IDX_TYPE>
+{
     ///
     pub fn new(db: &'a dyn IndexDB) -> Self {
         Self {
             db,
-            __: Default::default(),
             secondary_type: index_to_secondary_type(IDX_TYPE),
+            _marker: core::marker::PhantomData::<T>{},
         }
     }
     ///
@@ -683,12 +780,13 @@ impl<'a, T: ToSecondaryValue + FromSecondaryValue + Printable + Default, const I
 
     ///
     pub fn store(&self, key: u64, value: T, payer: Name) -> SecondaryIterator {
-        return self.db.store(key, value.to_secondary_value(self.secondary_type), payer);
+        let _value: SecondaryValue = value.into();
+        return self.db.store(key, _value, payer);
     }
 
     ///
     pub fn update(&self, iterator: SecondaryIterator, value: T, payer: Name) {
-        self.db.update(iterator, value.to_secondary_value(self.secondary_type), payer);
+        self.db.update(iterator, value.into(), payer);
     }
 
     ///
@@ -709,25 +807,25 @@ impl<'a, T: ToSecondaryValue + FromSecondaryValue + Printable + Default, const I
     ///
     pub fn find_primary(&self, primary: u64) -> (SecondaryIterator, T) {
         let (it, value) = self.db.find_primary(primary);
-        return (it, T::from_secondary_value(value));
+        return (it, value.into());
     }
 
     ///
     pub fn find(&self, secondary: T) -> SecondaryIterator {
-        return self.db.find(secondary.to_secondary_value(self.secondary_type));
+        return self.db.find(secondary.into());
     }
 
     ///
     pub fn lowerbound(&self, secondary: T) -> (SecondaryIterator, T) {
-        let (it, value) = self.db.lowerbound(secondary.to_secondary_value(self.secondary_type));
-        return (it, T::from_secondary_value(value));
+        let (it, value) = self.db.lowerbound(secondary.into());
+        return (it, value.into());
     }
 
     ///
     pub fn upperbound(&self, secondary: T) -> (SecondaryIterator, T) {
-        let _secondary = secondary.to_secondary_value(self.secondary_type);
+        let _secondary = secondary.into();
         let (it, value) = self.db.upperbound(_secondary);
-        let _value = T::from_secondary_value(value);
+        let _value = value.into();
         return (it, _value);
     }
 

@@ -86,11 +86,6 @@ pub enum AttributeArgKind {
     Singleton,
     Primary,
     Secondary,
-    Idx64,
-    Idx128,
-    Idx256,
-    IdxF64,
-    IdxF128,
 }
 
 impl core::fmt::Display for AttributeArgKind {
@@ -105,11 +100,6 @@ impl core::fmt::Display for AttributeArgKind {
             Self::Secondary => write!(f, "secondary"),
             Self::Action => write!(f, "action"),
             Self::Notify => write!(f, "notify"),
-            Self::Idx64 => write!(f, "Idx64=N:string"),
-            Self::Idx128 => write!(f, "Idx128"),
-            Self::Idx256 => write!(f, "Idx256"),
-            Self::IdxF64 => write!(f, "IdxF64"),
-            Self::IdxF128 => write!(f, "IdxF128"),
         }
     }
 }
@@ -124,12 +114,7 @@ pub enum AttributeArg {
     Table(FixedString),
     Singleton,
     Primary,
-    Secondary,
-    Idx64(FixedString),
-    Idx128(FixedString),
-    Idx256(FixedString),
-    IdxF64(FixedString),
-    IdxF128(FixedString),
+    Secondary
 }
 
 impl AttributeArg {
@@ -145,11 +130,6 @@ impl AttributeArg {
             Self::Singleton => AttributeArgKind::Singleton,
             Self::Primary => AttributeArgKind::Primary,
             Self::Secondary => AttributeArgKind::Secondary,
-            Self::Idx64(_) => AttributeArgKind::Idx64,
-            Self::Idx128(_) => AttributeArgKind::Idx128,
-            Self::Idx256(_) => AttributeArgKind::Idx256,
-            Self::IdxF64(_) => AttributeArgKind::IdxF64,
-            Self::IdxF128(_) => AttributeArgKind::IdxF128,
         }
     }
 }
@@ -182,61 +162,6 @@ impl TryFrom<syn::NestedMeta> for AttributeFrag {
             syn::NestedMeta::Meta(meta) => {
                 match &meta {
                     syn::Meta::NameValue(name_value) => {
-                        if name_value.path.is_ident("Idx64") {
-                            if let syn::Lit::Str(lit_str) = &name_value.lit {
-                                let value = lit_str.value();
-                                return Ok(AttributeFrag {
-                                    ast: meta,
-                                    arg: AttributeArg::Idx64(FixedString::new(&value)),
-                                })
-                            }
-                            return Err(format_err!(name_value, "expected `str` value type for `flag` in #[chain(Idx64)]"))
-                        }
-
-                        if name_value.path.is_ident("Idx128") {
-                            if let syn::Lit::Str(lit_str) = &name_value.lit {
-                                let value = lit_str.value();
-                                return Ok(AttributeFrag {
-                                    ast: meta,
-                                    arg: AttributeArg::Idx128(FixedString::new(&value)),
-                                })
-                            }
-                            return Err(format_err!(name_value, "expected `str` value type for `flag` in #[chain(Idx128)]"))
-                        }
-
-                        if name_value.path.is_ident("Idx256") {
-                            if let syn::Lit::Str(lit_str) = &name_value.lit {
-                                let value = lit_str.value();
-                                return Ok(AttributeFrag {
-                                    ast: meta,
-                                    arg: AttributeArg::Idx256(FixedString::new(&value)),
-                                })
-                            }
-                            return Err(format_err!(name_value, "expected `str` value type for `flag` in #[chain(Idx256)]"))
-                        }
-
-                        if name_value.path.is_ident("IdxF64") {
-                            if let syn::Lit::Str(lit_str) = &name_value.lit {
-                                let value = lit_str.value();
-                                return Ok(AttributeFrag {
-                                    ast: meta,
-                                    arg: AttributeArg::IdxF64(FixedString::new(&value)),
-                                })
-                            }
-                            return Err(format_err!(name_value, "expected `str` value type for `flag` in #[chain(IdxF64)]"))
-                        }
-
-                        if name_value.path.is_ident("IdxF128") {
-                            if let syn::Lit::Str(lit_str) = &name_value.lit {
-                                let value = lit_str.value();
-                                return Ok(AttributeFrag {
-                                    ast: meta,
-                                    arg: AttributeArg::IdxF128(FixedString::new(&value)),
-                                })
-                            }
-                            return Err(format_err!(name_value, "expected `str` value type for `flag` in #[chain(IdxF128)]"))
-                        }
-
                         if name_value.path.is_ident("action") {
                             if let syn::Lit::Str(lit_str) = &name_value.lit {
                                 let value = lit_str.value();
@@ -276,11 +201,6 @@ impl TryFrom<syn::NestedMeta> for AttributeFrag {
                                 "primary" => Ok(AttributeArg::Primary),
                                 "secondary" => Ok(AttributeArg::Secondary),
                                 "notify" => Ok(AttributeArg::Notify),
-                                "Idx64" => Ok(AttributeArg::Idx64(FixedString::new(""))),
-                                "Idx128" => Ok(AttributeArg::Idx128(FixedString::new(""))),
-                                "Idx256" => Ok(AttributeArg::Idx256(FixedString::new(""))),
-                                "IdxF64" => Ok(AttributeArg::IdxF64(FixedString::new(""))),
-                                "IdxF128" => Ok(AttributeArg::IdxF128(FixedString::new(""))),
                                 _ => Err(format_err_spanned!(
                                     meta, "unknown chain attribute {}", ident
                                 ))

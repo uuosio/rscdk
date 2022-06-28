@@ -20,19 +20,20 @@ mod test {
     pub struct MyData {
         #[chain(primary)]
         a1: u64,
-        #[chain(Idx64)]
+        #[chain(secondary)]
         a2: u64,
-        #[chain(Idx128)]
+        #[chain(secondary)]
         a3: u128,
-        #[chain(Idx256)]
+        #[chain(secondary)]
         a4: Uint256,
-        #[chain(IdxF64)]
+        #[chain(secondary)]
         a5: f64,
-        #[chain(IdxF128)]
+        #[chain(secondary)]
         a6: Float128,
     }
 
     #[chain(main)]
+    #[allow(dead_code)]
     pub struct TestSerialzier {
         receiver: Name,
         first_receiver: Name,
@@ -70,10 +71,10 @@ mod test {
 
             let a6_6: Float128 = Float128::new([0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0x01,0x40]);
 
-            let mut it = mydb.find(1);
+            let it = mydb.find(1);
             if !it.is_ok() {
                 let mydata = MyData{a1: 1, a2: 2, a3: 3, a4: Uint256::new(4, 0), a5: 5.0, a6: a6_6};
-                it = mydb.store(&mydata, receiver);    
+                mydb.store(&mydata, receiver);    
             }
             eosio_println!("test1 done!");
         }
@@ -85,7 +86,7 @@ mod test {
 
             let mydb = MyData::new_mi(receiver, receiver);
 
-            let mut it = mydb.find(1);
+            let it = mydb.find(1);
             // 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0x01,0x40,
             // 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x08,0x05,0x40,
             // 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x4d,0x08,0x40,
@@ -99,19 +100,19 @@ mod test {
             if !it.is_ok() {
                 //6.0
                 let mydata = MyData{a1: 1, a2: 2, a3: 3, a4: Uint256::new(4, 0), a5: 5.0, a6: a6_6};
-                it = mydb.store(&mydata, receiver);  
+                mydb.store(&mydata, receiver);  
             }
 
-            let mut it = mydb.find(11);
+            let it = mydb.find(11);
             if !it.is_ok() {
                 let mydata = MyData{a1: 11, a2: 22, a3: 33, a4: Uint256::new(44, 0), a5: 55.0, a6: a6_66};
-                it = mydb.store(&mydata, receiver);    
+                mydb.store(&mydata, receiver);    
             }
 
-            let mut it = mydb.find(111);
+            let it = mydb.find(111);
             if !it.is_ok() {
                 let mydata = MyData{a1: 111, a2: 222, a3: 333, a4: Uint256::new(444, 0), a5: 555.0, a6: a6_666};
-                it = mydb.store(&mydata, receiver);
+                mydb.store(&mydata, receiver);
             }
 
             let check_fn = |it: SecondaryIterator, checker: fn(data: &MyData) -> bool | -> bool {
