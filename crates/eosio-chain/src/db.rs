@@ -289,6 +289,7 @@ pub trait SecondaryValueInterface {
 
 pub trait AsAny {
     fn as_any(&self) -> &dyn core::any::Any;
+    fn as_any_mut(&mut self) -> &mut dyn core::any::Any;
 }
 
 ///

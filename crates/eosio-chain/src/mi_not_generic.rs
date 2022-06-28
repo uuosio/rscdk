@@ -62,6 +62,10 @@ impl<'a> Iterator<'a> {
         return self.db.get(self);
     }
 
+    pub fn get_value_mut(&mut self) -> Option<Box<dyn MultiIndexValue>> {
+        return self.db.get(self);
+    }
+
     ///
     pub fn set_primary(&mut self, primary: u64) {
         if !self.is_ok() {

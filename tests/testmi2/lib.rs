@@ -46,6 +46,10 @@ mod test {
         fn as_any(&self) -> &dyn core::any::Any {
             self
         }
+
+        fn as_any_mut(&mut self) -> &mut dyn core::any::Any {
+            self
+        }
     }
 
     impl PrimaryValueInterface for MyStruct {
@@ -96,12 +100,11 @@ mod test {
             let indexes: Vec<SecondaryType> = Vec::new();
             let mi = MultiIndex::new(code, scope, table, &indexes, unpacker);
             let it = mi.find(1);
-            if let Some(value) = it.get_value() {
-                if let Some(x) = value.as_any().downcast_ref::<MyStruct>() {
-                    let mut mystruct = x.clone();
-                    mystruct.amount += 1;
-                    mi.update(&it, &mystruct, self.receiver);
-                    eosio_println!("++++amount:", mystruct.amount);
+            if let Some(mut value) = it.get_value() {
+                if let Some(x) = value.as_any_mut().downcast_mut::<MyStruct>() {
+                    x.amount += 1;
+                    mi.update(&it, x, self.receiver);
+                    eosio_println!("++++amount:", x.amount);
                 }
             } else {
                 let mystruct = MyStruct{amount: 1, symbol: 1};
