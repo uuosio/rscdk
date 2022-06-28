@@ -1,5 +1,3 @@
-use core::ops::Mul;
-
 use crate::db::{
     Idx64DB,
     Idx128DB,

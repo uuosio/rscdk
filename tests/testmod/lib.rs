@@ -58,7 +58,7 @@ mod hello {
     pub struct MyData {
         #[chain(primary)]
         a1: u64,
-        #[chain(Idx64)]
+        #[chain(secondary)]
         a2: u64,
         mydata: MyData2,
         aa1: AA,

@@ -474,19 +474,12 @@ impl From<Float128> for SecondaryValue {
     }
 }
 
-
-
-
-
-
-
-
 impl From<SecondaryValue> for u64 {
     fn from(value: SecondaryValue) -> Self {
         if let SecondaryValue::Idx64(x) = value {
             x
         } else {
-            check(false, "From<SecondaryValue> for u128: Invalid SecondaryValue");
+            check(false, "From<SecondaryValue> for u64: Invalid SecondaryValue");
             Default::default()
         }
     }
@@ -748,7 +741,7 @@ pub trait IndexDB {
 pub struct IndexDBProxy<'a, T: From<SecondaryValue> + Into<SecondaryValue> + Printable + Default, const IDX_TYPE: usize> {
     ///
     pub db: &'a dyn IndexDB,
-    secondary_type: SecondaryType,
+    _secondary_type: SecondaryType,
     _marker: core::marker::PhantomData<T>,
 }
 
@@ -769,7 +762,7 @@ impl<'a, T: From<SecondaryValue> + Into<SecondaryValue> + Printable + Default, c
     pub fn new(db: &'a dyn IndexDB) -> Self {
         Self {
             db,
-            secondary_type: index_to_secondary_type(IDX_TYPE),
+            _secondary_type: index_to_secondary_type(IDX_TYPE),
             _marker: core::marker::PhantomData::<T>{},
         }
     }
