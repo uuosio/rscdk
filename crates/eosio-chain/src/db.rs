@@ -413,6 +413,12 @@ impl SecondaryIterator {
     }
 }
 
+impl Default for SecondaryIterator {
+    fn default() -> Self {
+        SecondaryIterator{ i: -1, primary: 0, db_index: usize::MAX }
+    }
+}
+
 ///
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SecondaryType {
@@ -849,7 +855,7 @@ impl IndexDB for Idx64DB {
             return SecondaryIterator{ i: ret, primary: key, db_index: self.db_index };    
         }
         check(false, "Idx64DB::store: bad secondary type");
-        return SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index }
+        return Default::default()
     }
 
     fn update(&self, iterator: SecondaryIterator, secondary: SecondaryValue, payer: Name) {
@@ -891,7 +897,7 @@ impl IndexDB for Idx64DB {
             return SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index };
         }
         check(false, "Idx64DB::find_secondary: bad secondary type");
-        return SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index };
+        return Default::default();
     }
 
     fn lowerbound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
@@ -902,7 +908,7 @@ impl IndexDB for Idx64DB {
             return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx64(value));    
         }
         check(false, "Idx64DB::lowerbound: bad secondary type");
-        return (SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index }, SecondaryValue::Idx64(0));
+        return (Default::default(), SecondaryValue::Idx64(0));
     }
 
     fn upperbound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
@@ -912,7 +918,7 @@ impl IndexDB for Idx64DB {
             return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx64(value));
         }
         check(false, "Idx64DB::upperbound: bad secondary type");
-        return (SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index }, SecondaryValue::Idx128(0));
+        return (Default::default(), SecondaryValue::Idx128(0));
     }
 
     fn end(&self) -> SecondaryIterator {
@@ -940,8 +946,7 @@ impl IndexDB for Idx128DB {
             return SecondaryIterator{ i: ret, primary: key, db_index: self.db_index };
         }
         check(false, "Idx128DB::store: bad secondary type");
-        return SecondaryIterator{ i: -1, primary: 0, db_index: 0 };
-        //return SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index };
+        return Default::default();
     }
 
     fn update(&self, iterator: SecondaryIterator, secondary: SecondaryValue, payer: Name) {
@@ -985,7 +990,7 @@ impl IndexDB for Idx128DB {
             return SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index };
         }
         check(false, "Idx128DB::find_secondary: bad secondary type");
-        return SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index };
+        return Default::default();
     }
 
     fn lowerbound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
@@ -998,7 +1003,7 @@ impl IndexDB for Idx128DB {
             return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx128(value));
         }
         check(false, "Idx128DB::lowerbound: bad secondary type");
-        return (SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index }, SecondaryValue::Idx128(0));
+        return (Default::default(), SecondaryValue::Idx128(0));
     }
 
     fn upperbound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
@@ -1013,7 +1018,7 @@ impl IndexDB for Idx128DB {
             },
             _ => {
                 check(false, "Idx128DB::upperbound: bad secondary type");
-                return (SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index }, SecondaryValue::Idx128(0));
+                return (Default::default(), SecondaryValue::Idx128(0));
             }
         }
     }
@@ -1042,7 +1047,7 @@ impl IndexDB for Idx256DB {
             return SecondaryIterator{ i: ret, primary: key, db_index: self.db_index };
         }
         check(false, "Idx256DB::store: bad secondary type");
-        return SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index };
+        return Default::default();
     }
 
     fn update(&self, iterator: SecondaryIterator, secondary: SecondaryValue, payer: Name) {
@@ -1083,7 +1088,7 @@ impl IndexDB for Idx256DB {
             return SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index };
         }
         check(false, "Idx256DB::find_secondary: bad secondary type");
-        return SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index };
+        return Default::default();
     }
 
     fn lowerbound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
@@ -1093,7 +1098,7 @@ impl IndexDB for Idx256DB {
             return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx256(value));
         }
         check(false, "Idx256DB::lowerbound: bad secondary type");
-        return (SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index }, SecondaryValue::Idx128(0));
+        return (Default::default(), SecondaryValue::Idx128(0));
     }
 
     fn upperbound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
@@ -1105,7 +1110,7 @@ impl IndexDB for Idx256DB {
             },
             _ => {
                 check(false, "Idx256DB::upperbound: bad secondary type");
-                return (SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index }, SecondaryValue::Idx128(0));
+                return (Default::default(), SecondaryValue::Idx128(0));
             }
         }
     }
@@ -1135,7 +1140,7 @@ impl IndexDB for IdxF64DB {
             return SecondaryIterator{ i: ret, primary: key, db_index: self.db_index };
         }
         check(false, "IdxF64DB::store: bad secondary type");
-        return SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index };
+        return Default::default();
     }
 
     fn update(&self, iterator: SecondaryIterator, secondary: SecondaryValue, payer: Name) {
@@ -1176,7 +1181,7 @@ impl IndexDB for IdxF64DB {
             return SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index };
         }
         check(false, "IdxF64DB::find_secondary: bad secondary type");
-        return SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index };
+        return Default::default();
     }
 
     fn lowerbound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
@@ -1186,7 +1191,7 @@ impl IndexDB for IdxF64DB {
             return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::IdxF64(value));
         }
         check(false, "IdxF64DB::lowerbound: bad secondary type");
-        return (SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index }, SecondaryValue::IdxF64(0.0));
+        return (Default::default(), SecondaryValue::IdxF64(0.0));
     }
 
     fn upperbound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
@@ -1198,7 +1203,7 @@ impl IndexDB for IdxF64DB {
             },
             _ => {
                 check(false, "IdxF64DB::upperbound: bad secondary type");
-                return (SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index }, SecondaryValue::IdxF64(0.0));
+                return (Default::default(), SecondaryValue::IdxF64(0.0));
             }
         }
     }
@@ -1228,7 +1233,7 @@ impl IndexDB for IdxF128DB {
             return SecondaryIterator{ i: ret, primary: key, db_index: self.db_index };
         }
         check(false, "IdxF128DB::store: bad secondary type");
-        return SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index };
+        return Default::default();
     }
 
     fn update(&self, iterator: SecondaryIterator, secondary: SecondaryValue, payer: Name) {
@@ -1269,7 +1274,7 @@ impl IndexDB for IdxF128DB {
             return SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index };
         }
         check(false, "IdxF128DB::find_secondary: bad secondary type");
-        return SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index };
+        return Default::default();
     }
 
     fn lowerbound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
@@ -1279,7 +1284,7 @@ impl IndexDB for IdxF128DB {
             return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::IdxF128(value));
         }
         check(false, "IdxF128DB::lowerbound: bad secondary type");
-        return (SecondaryIterator{ i: -1, primary: 0, db_index: self.db_index }, SecondaryValue::IdxF128(Float128::default()));
+        return (Default::default(), SecondaryValue::IdxF128(Float128::default()));
     }
 
     fn upperbound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
@@ -1289,7 +1294,7 @@ impl IndexDB for IdxF128DB {
             return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::IdxF128(value));    
         }
         check(false, "IdxF128DB::upperbound: bad secondary type");
-        return (SecondaryIterator{ i: -1, primary: 0, db_index: 0 }, SecondaryValue::None);   
+        return (Default::default(), SecondaryValue::None);   
     }
 
     fn end(&self) -> SecondaryIterator {
