@@ -681,8 +681,8 @@ impl Contract {
                     }
                     _ => {
                         return Err(format_err_spanned!(
-                            field,
-                            "invalid attribute"
+                            first_attr.ast,
+                            "invalid attribute argument"
                         ));
                     }
                 }

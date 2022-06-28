@@ -31,16 +31,16 @@ use crate::boxed::Box;
 
 
 ///
-pub struct IteratorNotGeneric<'a> {
+pub struct Iterator<'a> {
     ///
     pub i: i32,
     primary: Option<u64>,
-    db: &'a DBI64NotGeneric,
+    db: &'a DBI64,
 }
 
-impl<'a> IteratorNotGeneric<'a> {
+impl<'a> Iterator<'a> {
     ///
-    pub fn new(i: i32, primary: Option<u64>, db: &'a DBI64NotGeneric) -> Self {
+    pub fn new(i: i32, primary: Option<u64>, db: &'a DBI64) -> Self {
         Self { i, primary, db }
     }
 
@@ -91,7 +91,7 @@ impl<'a> IteratorNotGeneric<'a> {
 
 
 ///
-pub struct DBI64NotGeneric {
+pub struct DBI64 {
     ///
     pub code: u64,
     ///
@@ -101,10 +101,10 @@ pub struct DBI64NotGeneric {
     unpacker: fn(&[u8]) -> Box<dyn MultiIndexValue>,
 }
 
-impl DBI64NotGeneric {
+impl DBI64 {
     ///
     pub fn new(code: Name, scope: Name, table: Name, unpacker: fn(&[u8]) -> Box<dyn MultiIndexValue>) -> Self {
-        DBI64NotGeneric {
+        DBI64 {
             code: code.value(),
             scope: scope.value(),
             table: table.value(),
@@ -113,23 +113,23 @@ impl DBI64NotGeneric {
     }
 
     ///
-    pub fn store(&self, id: u64,  data: &[u8], payer: Name) -> IteratorNotGeneric {
+    pub fn store(&self, id: u64,  data: &[u8], payer: Name) -> Iterator {
         let it = db_store_i64(self.scope, self.table, payer.value(), id, data.as_ptr(), data.len() as u32);
-        IteratorNotGeneric { i: it, primary: Some(id), db: self }
+        Iterator { i: it, primary: Some(id), db: self }
     }
 
     ///
-    pub fn update(&self, iterator: &IteratorNotGeneric, data: &[u8], payer: Name) {
+    pub fn update(&self, iterator: &Iterator, data: &[u8], payer: Name) {
         db_update_i64(iterator.i, payer.value(), data.as_ptr(), data.len() as u32);
     }
 
     ///
-    pub fn remove(&self, iterator: &IteratorNotGeneric) {
+    pub fn remove(&self, iterator: &Iterator) {
         db_remove_i64(iterator.i);
     }
 
     ///
-    pub fn get(&self, iterator: &IteratorNotGeneric) -> Option<Box<dyn MultiIndexValue>> {
+    pub fn get(&self, iterator: &Iterator) -> Option<Box<dyn MultiIndexValue>> {
         if !iterator.is_ok() {
             return None;
         }
@@ -144,54 +144,54 @@ impl DBI64NotGeneric {
     }
 
     ///
-    pub fn next(&self, iterator: &IteratorNotGeneric) -> IteratorNotGeneric {
+    pub fn next(&self, iterator: &Iterator) -> Iterator {
         let mut primary = 0;
         let it = db_next_i64(iterator.i, &mut primary);
         if it >= 0 {
-            IteratorNotGeneric { i: it, primary: Some(primary), db: self }
+            Iterator { i: it, primary: Some(primary), db: self }
         } else {
-            IteratorNotGeneric { i: it, primary: None, db: self }
+            Iterator { i: it, primary: None, db: self }
         }
     }
 
     ///
-    pub fn previous(&self, iterator: &IteratorNotGeneric) -> IteratorNotGeneric {
+    pub fn previous(&self, iterator: &Iterator) -> Iterator {
         let mut primary = 0;
         let it = db_previous_i64(iterator.i, &mut primary);
         if it >= 0 {
-            IteratorNotGeneric { i: it, primary: Some(primary), db: self }
+            Iterator { i: it, primary: Some(primary), db: self }
         } else {
-            IteratorNotGeneric { i: it, primary: None, db: self }
+            Iterator { i: it, primary: None, db: self }
         }
     }
 
     ///
-    pub fn find(&self, primary_key: u64) -> IteratorNotGeneric {
+    pub fn find(&self, primary_key: u64) -> Iterator {
         let it = db_find_i64(self.code, self.scope, self.table, primary_key);
-        IteratorNotGeneric { i: it, primary: Some(primary_key), db: self }
+        Iterator { i: it, primary: Some(primary_key), db: self }
     }
 
     ///
-    pub fn lowerbound(&self, id: u64) -> IteratorNotGeneric {
+    pub fn lowerbound(&self, id: u64) -> Iterator {
         let it = db_lowerbound_i64(self.code, self.scope, self.table, id);
-        IteratorNotGeneric { i: it, primary: None, db: self }
+        Iterator { i: it, primary: None, db: self }
     }
 
     ///
-    pub fn upperbound(&self, id: u64) -> IteratorNotGeneric {
+    pub fn upperbound(&self, id: u64) -> Iterator {
         let it = db_upperbound_i64(self.code, self.scope, self.table, id);
-        IteratorNotGeneric { i: it, primary: None, db: self }
+        Iterator { i: it, primary: None, db: self }
     }
 
     ///
-    pub fn end(&self) -> IteratorNotGeneric {
+    pub fn end(&self) -> Iterator {
         let it = db_end_i64(self.code, self.scope, self.table);
-        IteratorNotGeneric { i: it, primary: None, db: self }
+        Iterator { i: it, primary: None, db: self }
     }
 }
 
 ///
-pub struct MultiIndexNotGeneric {
+pub struct MultiIndex {
     ///
     pub code: Name,
     ///
@@ -199,14 +199,14 @@ pub struct MultiIndexNotGeneric {
     ///
     pub table: Name,
     ///
-    pub db: DBI64NotGeneric,
+    pub db: DBI64,
     ///
     pub idxdbs: Vec<Box<dyn IndexDB>>,
     ///
     pub unpacker: fn(&[u8]) -> Box<dyn MultiIndexValue>,
 }
 
-impl MultiIndexNotGeneric {
+impl MultiIndex {
     ///
     pub fn new(code: Name, scope: Name, table: Name, indexes: &[SecondaryType], unpacker: fn(&[u8]) -> Box<dyn MultiIndexValue>) -> Self {
         let mut idxdbs: Vec<Box<dyn IndexDB>> = Vec::new();
@@ -227,18 +227,18 @@ impl MultiIndexNotGeneric {
             }
             i += 1;
         }
-        MultiIndexNotGeneric {
+        MultiIndex {
             code,
             scope,
             table,
-            db: DBI64NotGeneric::new(code, scope, table, unpacker),
+            db: DBI64::new(code, scope, table, unpacker),
             idxdbs,
             unpacker: unpacker,
         }
     }
 
     ///
-    pub fn store(&self, value: &dyn MultiIndexValue, payer: Name) -> IteratorNotGeneric {
+    pub fn store(&self, value: &dyn MultiIndexValue, payer: Name) -> Iterator {
         let primary = value.get_primary();
         for i in 0..self.idxdbs.len() {
             let v2 = value.get_secondary_value(i);
@@ -249,7 +249,7 @@ impl MultiIndexNotGeneric {
     }
 
     ///
-    pub fn update(&self, iterator: &IteratorNotGeneric, value: &dyn MultiIndexValue, payer: Name) {
+    pub fn update(&self, iterator: &Iterator, value: &dyn MultiIndexValue, payer: Name) {
         check(iterator.is_ok(), "update: invalid iterator");
         let primary = iterator.get_primary().unwrap();
         for i in 0..self.idxdbs.len() {
@@ -264,7 +264,7 @@ impl MultiIndexNotGeneric {
     }
 
     ///
-    pub fn remove(&self, iterator: &IteratorNotGeneric) {
+    pub fn remove(&self, iterator: &Iterator) {
         if !iterator.is_ok() {
             return;
         }
@@ -278,7 +278,7 @@ impl MultiIndexNotGeneric {
     }
 
     ///
-    pub fn get(&self, iterator: &IteratorNotGeneric) -> Option<Box<dyn MultiIndexValue>> {
+    pub fn get(&self, iterator: &Iterator) -> Option<Box<dyn MultiIndexValue>> {
         if !iterator.is_ok() {
             return None;
         }
@@ -293,32 +293,32 @@ impl MultiIndexNotGeneric {
     }
 
     ///
-    pub fn next(&self, iterator: &IteratorNotGeneric) -> IteratorNotGeneric {
+    pub fn next(&self, iterator: &Iterator) -> Iterator {
         return self.db.next(iterator);
     }
 
     ///
-    pub fn previous(&self, iterator: &IteratorNotGeneric) -> IteratorNotGeneric {
+    pub fn previous(&self, iterator: &Iterator) -> Iterator {
         return self.db.previous(iterator);
     }
 
     ///
-    pub fn find(&self, id: u64) -> IteratorNotGeneric {
+    pub fn find(&self, id: u64) -> Iterator {
         return self.db.find(id);
     }
 
     ///
-    pub fn lowerbound(&self, id: u64) -> IteratorNotGeneric {
+    pub fn lowerbound(&self, id: u64) -> Iterator {
         return self.db.lowerbound(id);
     }
 
     ///
-    pub fn upperbound(&self, id: u64) -> IteratorNotGeneric {
+    pub fn upperbound(&self, id: u64) -> Iterator {
         return self.db.upperbound(id);
     }
 
     ///
-    pub fn end(&self) -> IteratorNotGeneric {
+    pub fn end(&self) -> Iterator {
         return self.db.end();
     }
 
