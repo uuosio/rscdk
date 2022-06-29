@@ -1,0 +1,20 @@
+[package]
+name = "sender"
+version = "3.0.0-rc8"
+authors = [""]
+edition = "2021"
+
+[dependencies]
+eosio-chain = { path = "../../../crates/eosio-chain", default-features = false }
+
+[lib]
+name = "sender"
+path = "lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["std"]
+std = [
+    "eosio-chain/std",
+]
+

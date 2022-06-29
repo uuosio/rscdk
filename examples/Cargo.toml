@@ -5,6 +5,8 @@ members = [
     "counter2",
     "token",
     "inlineaction",
+    "notify/receiver",
+    "notify/sender",
 ]
 
 exclude = [
