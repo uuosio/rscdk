@@ -172,19 +172,10 @@ impl Contract {
                     let x_backup = x.clone();
                     x.attrs = other_attrs;
                     let length = x.fields.len();
-                    for (i, field) in &mut x.fields.iter_mut().enumerate() {
+                    for field in &mut x.fields {
                         let (_, other_attrs) = attrs::partition_attributes(field.attrs.clone())?;
                         field.attrs = other_attrs;
-                        if Self::is_binary_extension_type(&field.ty) {
-                            if i + 1 != length {
-                                return Err(format_err_spanned!(
-                                    field,
-                                    "BinaryExtension type can only appear at the last field of a struct",
-                                ));
-                            }
-                        }
                     }
-                    self.structs.push(x.clone());
 
                     if chain_attrs.len() == 0 {
                         continue;
@@ -211,6 +202,17 @@ impl Contract {
                             self.main_struct = Some(x.clone())
                         }
                         attrs::AttributeArg::Packer | attrs::AttributeArg::Table(_) => {
+                            let length = x.fields.len();
+                            for (i, field) in &mut x.fields.iter_mut().enumerate() {
+                                if Self::is_binary_extension_type(&field.ty) {
+                                    if i + 1 != length {
+                                        return Err(format_err_spanned!(
+                                            field,
+                                            "BinaryExtension type can only appear at the last field of a struct",
+                                        ));
+                                    }
+                                }
+                            }
                             self.packers.push(x.clone());
                             for field in &x.fields {
                                 let (type_name, _) = Self::extract_type(&field.ty)?;
@@ -258,55 +260,60 @@ impl Contract {
                     for impl_item in &mut x.items {
                         match impl_item {
                             syn::ImplItem::Method(method_item) => {
-                                let length = method_item.sig.inputs.len();
-                                for (i, arg) in method_item.sig.inputs.iter().enumerate() {
-                                    match arg {
-                                        syn::FnArg::Receiver(_) => {}
-                                        syn::FnArg::Typed(x) => {
-                                            if Self::is_binary_extension_type(&x.ty) {
-                                                if i + 1 != length {
-                                                    return Err(format_err_spanned!(
-                                                        x,
-                                                        "BinaryExtension type can only appear at the last argument of a method",
-                                                    ));
-                                                }
-                                            }
-                                            let (type_name, _) = Self::extract_type(&x.ty)?;
-                                            arg_types.insert(type_name.clone(), type_name);
-                                            if let syn::Pat::Ident(pat_ident) = &*x.pat {
-                                                pat_ident.ident.to_string();
-                                            }
-                                        }
-                                    }
-                                };
-
                                 let (chain_attrs, other_attrs) = attrs::partition_attributes(method_item.attrs.clone())?;
                                 method_item.attrs = other_attrs;
-                                if chain_attrs.len() > 0 {
-                                    let attr = &chain_attrs[0];
-                                    if let Some(name) = attr.action_name() {
-                                        if !is_name_valid(&name.str()) {
-                                            return Err(format_err_spanned!(
-                                                attr.args().next().unwrap().ast,
-                                                "action name contain invalid character(s), valid charaters are a-z & 1-5: {}", name.str()
-                                            ));
-                                        }
-                                        if self.actions.iter().any(|action| {
-                                            action.action_name == name
-                                        }) {
-                                            return Err(format_err_spanned!(
-                                                attr.args().next().unwrap().ast,
-                                                "dumplicated action name: {}", name.str()
-                                            ));
-                                        }
-                                        self.actions.push(
-                                            Action{
-                                                item: method_item.clone(),
-                                                is_notify: attr.is_notify(),
-                                                action_name: name,
-                                            }
-                                        )
+                                if chain_attrs.len() <= 0 {
+                                    continue;
+                                }
+                                if chain_attrs.len() > 1 {
+                                    return Err(format_err_spanned!(
+                                        chain_attrs[1].args().next().unwrap().ast,
+                                        "only one chain attribute supported"
+                                    ));
+                                }
+                                let attr = &chain_attrs[0];
+                                if let Some(name) = attr.action_name() {
+                                    if !is_name_valid(&name.str()) {
+                                        return Err(format_err_spanned!(
+                                            attr.args().next().unwrap().ast,
+                                            "action name contain invalid character(s), valid charaters are a-z & 1-5: {}", name.str()
+                                        ));
                                     }
+                                    if self.actions.iter().any(|action| {
+                                        action.action_name == name
+                                    }) {
+                                        return Err(format_err_spanned!(
+                                            attr.args().next().unwrap().ast,
+                                            "dumplicated action name: {}", name.str()
+                                        ));
+                                    }
+
+                                    let length = method_item.sig.inputs.len();
+                                    for (i, arg) in method_item.sig.inputs.iter().enumerate() {
+                                        match arg {
+                                            syn::FnArg::Receiver(_) => {}
+                                            syn::FnArg::Typed(x) => {
+                                                if Self::is_binary_extension_type(&x.ty) {
+                                                    if i + 1 != length {
+                                                        return Err(format_err_spanned!(
+                                                            x,
+                                                            "BinaryExtension type can only appear at the last argument of a method",
+                                                        ));
+                                                    }
+                                                }
+                                                let (type_name, _) = Self::extract_type(&x.ty)?;
+                                                arg_types.insert(type_name.clone(), type_name);
+                                            }
+                                        }
+                                    };
+
+                                    self.actions.push(
+                                        Action{
+                                            item: method_item.clone(),
+                                            is_notify: attr.is_notify(),
+                                            action_name: name,
+                                        }
+                                    )
                                 }
                             }
                             _ => {
@@ -411,6 +418,19 @@ impl Contract {
                     }) {
                         self.packers.push(x.clone());
                     }
+
+                    let length = x.fields.len();
+                    for (i, field) in x.fields.iter().enumerate() {
+                        if Self::is_binary_extension_type(&field.ty) {
+                            if i + 1 != length {
+                                return Err(format_err_spanned!(
+                                    field,
+                                    "BinaryExtension type can only appear at the last field of a struct",
+                                ));
+                            }
+                        }
+                    }
+
                     for field in &x.fields {
                         let name = Self::get_type_name(field)?;
                         names.insert(name, true);
