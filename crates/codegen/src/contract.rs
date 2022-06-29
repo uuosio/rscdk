@@ -130,6 +130,38 @@ impl Contract {
         return Ok(());
     }
 
+    pub fn has_trait(&self, s: &str, trait_: &str) -> bool {
+        for item in &self.items {
+            match item {
+                syn::Item::Impl(x) => {
+                    if let Some((_, trait_path, _)) = &x.trait_ {
+                        if let Some(segment) = trait_path.segments.last() {
+                            if trait_ == segment.ident.to_string() {
+                                if let syn::Type::Path(ty) = &*x.self_ty {
+                                    if let Some(segment) = ty.path.segments.last() {
+                                        if segment.ident.to_string() == s {
+                                            return true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+        return false;
+    }
+
+    pub fn has_primary_value_interface_trait(&self, s: &str) -> bool {
+        return self.has_trait(s, "PrimaryValueInterface");
+    }
+
+    pub fn has_secondary_value_interface_trait(&self, s: &str) -> bool {
+        return self.has_trait(s, "SecondaryValueInterface");
+    }
+
     pub fn analyze_items(&mut self) -> Result<(), syn::Error> {
         let mut arg_types: HashMap<String, String> = HashMap::new();
         for item in &mut self.items {
@@ -220,9 +252,7 @@ impl Contract {
                             syn::ImplItem::Method(method_item) => {
                                 method_item.sig.inputs.iter().for_each(|arg|{
                                     match arg {
-                                        syn::FnArg::Receiver(_x) => {
-                                            //
-                                        }
+                                        syn::FnArg::Receiver(_) => {}
                                         syn::FnArg::Typed(x) => {
                                             if let syn::Type::Path(type_path) = &*x.ty {
                                                 let path_seg = type_path.path.segments.last().unwrap();
@@ -627,9 +657,12 @@ impl Contract {
                                 "more than one primary field specified in {}", item.ident
                             ));
                         }
+
                         primary_impl = Some(quote_spanned!(span =>
-                            fn get_primary(&self) -> u64 {
-                                return self.#field_ident.to_primary_value();
+                            impl ::eosio_chain::db::PrimaryValueInterface for #table_ident {
+                                fn get_primary(&self) -> u64 {
+                                    return self.#field_ident.into();
+                                }
                             }
                         ))
                     }
@@ -690,53 +723,58 @@ impl Contract {
                 }
             };
 
-            let secondary_getter_impls = secondary_fields.iter()
-            .enumerate()
-            .map(|(index, (_, field))|{
-                let field_ident = field.ident.as_ref().unwrap();
-                return quote! {
-                    if i == #index {
-                        return self.#field_ident.into();
+            let secondary_impls;
+            if !self.has_secondary_value_interface_trait(&item.ident.to_string()) {
+                let secondary_getter_impls = secondary_fields.iter()
+                .enumerate()
+                .map(|(index, (_, field))|{
+                    let field_ident = field.ident.as_ref().unwrap();
+                    return quote! {
+                        if i == #index {
+                            return self.#field_ident.into();
+                        }
                     }
-                }
-            });
-
-            let secondary_setter_impls = secondary_fields.iter()
-            .enumerate()
-            .map(|(index, (_attr_arg, field))|{
-                let field_ident = field.ident.as_ref().unwrap();
-                return quote!{
-                    if i == #index {
-                        self.#field_ident = value.into();
+                });
+    
+                let secondary_setter_impls = secondary_fields.iter()
+                .enumerate()
+                .map(|(index, (_attr_arg, field))|{
+                    let field_ident = field.ident.as_ref().unwrap();
+                    return quote!{
+                        if i == #index {
+                            self.#field_ident = value.into();
+                        }
                     }
-                }
-            });
-
-            let secondary_impls = quote_spanned!(span =>    
-                #[allow(unused_variables, unused_mut)]
-                fn get_secondary_value(&self, i: usize) -> eosio_chain::db::SecondaryValue {
-                    #( #secondary_getter_impls )*
-                    return eosio_chain::db::SecondaryValue::None;
-                }
-
-                #[allow(unused_variables, unused_mut)]
-                fn set_secondary_value(&mut self, i: usize, value: eosio_chain::db::SecondaryValue) {
-                    #( #secondary_setter_impls )*
-                }
-            );
+                });
+    
+                secondary_impls = quote_spanned!(span =>
+                    impl ::eosio_chain::db::SecondaryValueInterface for #table_ident {
+                        #[allow(unused_variables, unused_mut)]
+                        fn get_secondary_value(&self, i: usize) -> eosio_chain::db::SecondaryValue {
+                            #( #secondary_getter_impls )*
+                            return eosio_chain::db::SecondaryValue::None;
+                        }
+        
+                        #[allow(unused_variables, unused_mut)]
+                        fn set_secondary_value(&mut self, i: usize, value: eosio_chain::db::SecondaryValue) {
+                            #( #secondary_setter_impls )*
+                        }
+                    }
+                );
+            } else {
+                secondary_impls = quote!{};
+            }
 
             let mi_impls = self.generate_mi_impls(table, &secondary_fields);
 
             if !table.singleton {
-                let primary_impl_code = primary_impl.unwrap();
-                action_structs_code.push(quote_spanned!(span =>
-                    impl ::eosio_chain::db::PrimaryValueInterface for #table_ident {
-                        #primary_impl_code
-                    }
+                if self.has_primary_value_interface_trait(&item.ident.to_string()) {
+                    primary_impl = None;
+                }
 
-                    impl ::eosio_chain::db::SecondaryValueInterface for #table_ident {
-                        #secondary_impls
-                    }
+                action_structs_code.push(quote_spanned!(span =>
+                    #primary_impl
+                    #secondary_impls
                     #mi_impls
                 ));
             } else {
@@ -1500,12 +1538,8 @@ impl Contract {
 
                 use eosio_chain::{
                     serializer::Packer as _,
-                    db::ToPrimaryValue as _,
                     db::SecondaryType as _,
                     print::Printable as _,
-                    db::FromSecondaryValue as _,
-                    db::ToSecondaryValue as _,
-                    db::TryFromSecondaryValue as _,
                 };
 
                 #[cfg(feature = "std")]
