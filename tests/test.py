@@ -317,3 +317,17 @@ def test_notify():
     r = chain.push_action('alice', 'test', args, {'alice': 'active'})
     logger.info('++++++elapsed: %s', r['elapsed'])
     chain.produce_block()
+
+
+@chain_test
+def test_destructor():
+    deploy_contract('testdestructor')
+
+    args = {}
+    r = chain.push_action('hello', 'inc', args, {'hello': 'active'})
+    logger.info('++++++elapsed: %s', r['elapsed'])
+    chain.produce_block()
+
+    r = chain.push_action('hello', 'inc', args, {'hello': 'active'})
+    logger.info('++++++elapsed: %s', r['elapsed'])
+    chain.produce_block()

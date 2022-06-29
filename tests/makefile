@@ -40,6 +40,9 @@ build_notify:
 	cd testnotify/receiver;rust-contract build 
 	cd testnotify/sender;rust-contract build 
 
+build_destructor:
+	cd testdestructor;rust-contract build 
+
 test_hello: build_hello
 	run-ipyeos -m pytest -s test.py -k test_hello
 
@@ -78,6 +81,9 @@ test_binaryextension: build_binaryextension
 
 test_notify: build_notify
 	run-ipyeos -m pytest -s test.py -k test_notify
+
+test_destructor: build_destructor
+	run-ipyeos -m pytest -s test.py -k test_destructor
 
 build_all: build_hello build_abi build_mi build_mi2 build_mod \
 	build_inline build_asset build_optional build_variant build_name \

@@ -17,6 +17,7 @@ members = [
     "testbinaryextension",
     "testnotify/receiver",
     "testnotify/sender",
+    "testdestructor",
 ]
 
 exclude = []

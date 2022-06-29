@@ -1,0 +1,23 @@
+[package]
+name = "testdestructor"
+version = "0.1.0"
+authors = [""]
+edition = "2021"
+
+[dependencies]
+eosio-chain = { version="0.1.0", default-features = false }
+
+[lib]
+name = "testdestructor"
+path = "lib.rs"
+crate-type = [
+    "cdylib", 
+    #Used by abigen, DO NOT remove it
+    "rlib"
+]
+
+[features]
+default = ["std"]
+std = [
+    "eosio-chain/std",
+]
