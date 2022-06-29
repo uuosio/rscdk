@@ -1,4 +1,4 @@
-ALL : build_all test_all
+ALL : test_all
 
 build_hello:
 	cd hello;rust-contract build
@@ -85,9 +85,9 @@ test_notify: build_notify
 test_destructor: build_destructor
 	run-ipyeos -m pytest -s test.py -k test_destructor
 
-build_all: build_hello build_abi build_mi build_mi2 build_mod \
+all_builds = build_hello build_abi build_mi build_mi2 build_mod \
 	build_inline build_asset build_optional build_variant build_name \
 	build_transaction build_binaryextension build_notify build_destructor
 
-test_all: build_all
+test_all: $(all_builds)
 	run-ipyeos -m pytest -s -x test.py
