@@ -47,17 +47,17 @@ jobs:
         id: cache-tests-target
         with:
           path: tests/target
-          key: ${{ runner.os }}-tests-target-1
+          key: ${{ runner.os }}-tests-target-2
       - name: Cache examples target
         uses: actions/cache@v2
         id: cache-examples-target
         with:
           path: examples/target
-          key: ${{ runner.os }}-examples-target-1
+          key: ${{ runner.os }}-examples-target-2
       - name: run unit tests
         working-directory: tests
         run: |
-          PYTHON_SHARED_LIB_PATH=${{ env.pythonLocation }}/lib/libpython3.9.so make
+          PYTHON_SHARED_LIB_PATH=${{ env.pythonLocation }}/lib/libpython3.9.so make -j3
       - name: run tests in examples
         working-directory: examples
         run: |
