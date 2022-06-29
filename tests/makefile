@@ -87,7 +87,7 @@ test_destructor: build_destructor
 
 build_all: build_hello build_abi build_mi build_mi2 build_mod \
 	build_inline build_asset build_optional build_variant build_name \
-	build_transaction build_binaryextension build_notify
+	build_transaction build_binaryextension build_notify build_destructor
 
 test_all: build_all
 	run-ipyeos -m pytest -s -x test.py
