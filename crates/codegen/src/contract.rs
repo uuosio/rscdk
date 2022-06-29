@@ -790,9 +790,7 @@ impl Contract {
                         }
                     }
 
-                    impl ::eosio_chain::db::SecondaryValueInterface for #table_ident {
-                        #secondary_impls
-                    }
+                    #secondary_impls
                     #mi_impls
                 ));
             }
