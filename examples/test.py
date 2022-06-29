@@ -230,3 +230,16 @@ def test_notify():
     r = chain.push_action('alice', 'test', args, {'alice': 'active'})
     logger.info('++++++elapsed: %s', r['elapsed'])
     chain.produce_block()
+
+@chain_test
+def test_globalstates():
+    deploy_contract('globalstates')
+    args = {}
+    r = chain.push_action('hello', 'inc', args)
+    logger.info('+++++++create elapsed: %s', r['elapsed'])
+    chain.produce_block()
+
+
+    r = chain.push_action('hello', 'inc', args)
+    logger.info('+++++++create elapsed: %s', r['elapsed'])
+    chain.produce_block()

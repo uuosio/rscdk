@@ -30,3 +30,12 @@ run example
 ```bash
 make test_inlineaction
 ```
+
+# Global States Example
+
+run example
+
+```bash
+make test_globalstates
+```
+
