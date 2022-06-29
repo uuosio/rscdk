@@ -1,6 +1,6 @@
 [package]
 name = "eosio-macro"
-version = "0.1.0"
+version = "0.1.1"
 authors = [""]
 edition = "2021"
 
@@ -16,7 +16,7 @@ include = ["Cargo.toml", "src/**/*.rs", "README.md", "LICENSE"]
 
 [dependencies]
 quote = "1"
-eosio-codegen = { version = "0.1.0", path = "../codegen", default-features = false }
+eosio-codegen = { version = "0.1.1", path = "../codegen", default-features = false }
 
 syn = "1"
 proc-macro2 = "1"
