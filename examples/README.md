@@ -22,3 +22,11 @@ run example
 ```bash
 make test_token
 ```
+
+# Inline Action Example
+
+run example
+
+```bash
+make test_inlineaction
+```

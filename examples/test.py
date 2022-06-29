@@ -197,3 +197,12 @@ def test_token():
 
     r = chain.get_table_rows(True, 'hello', 'helloworld11', 'accounts', "", "", 1)
     assert len(r['rows']) == 0
+
+@chain_test
+def test_inlineaction():
+    deploy_contract('inlineaction')
+
+    args = {'name': 'bob'}
+    r = chain.push_action('hello', 'sayhello', args)
+    logger.info('+++++++create elapsed: %s', r['elapsed'])
+    chain.produce_block()

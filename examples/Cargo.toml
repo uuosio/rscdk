@@ -4,6 +4,7 @@ members = [
     "counter",
     "counter2",
     "token",
+    "inlineaction",
 ]
 
 exclude = [
