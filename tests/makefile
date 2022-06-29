@@ -36,6 +36,10 @@ build_transaction:
 build_binaryextension:
 	cd testbinaryextension;rust-contract build 
 
+build_notify:
+	cd testnotify/receiver;rust-contract build 
+	cd testnotify/sender;rust-contract build 
+
 test_hello: build_hello
 	run-ipyeos -m pytest -s test.py -k test_hello
 
@@ -72,8 +76,12 @@ test_transaction: build_transaction
 test_binaryextension: build_binaryextension
 	run-ipyeos -m pytest -s test.py -k test_binaryextension
 
+test_notify: build_notify
+	run-ipyeos -m pytest -s test.py -k test_notify
+
 build_all: build_hello build_abi build_mi build_mi2 build_mod \
-	build_inline build_asset build_optional build_variant build_name build_transaction build_binaryextension
+	build_inline build_asset build_optional build_variant build_name \
+	build_transaction build_binaryextension build_notify
 
 test_all: build_all
 	run-ipyeos -m pytest -s -x test.py

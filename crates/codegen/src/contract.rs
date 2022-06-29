@@ -171,7 +171,6 @@ impl Contract {
                     let (chain_attrs, other_attrs) = attrs::partition_attributes(x.attrs.clone())?;
                     let x_backup = x.clone();
                     x.attrs = other_attrs;
-                    let length = x.fields.len();
                     for field in &mut x.fields {
                         let (_, other_attrs) = attrs::partition_attributes(field.attrs.clone())?;
                         field.attrs = other_attrs;

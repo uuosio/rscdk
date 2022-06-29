@@ -4,7 +4,6 @@
 mod test {
     use eosio_chain::{
         Name,
-        Asset,
         Float128,
         Uint256,
 
@@ -13,8 +12,6 @@ mod test {
         db::{
             SecondaryValue,
             SecondaryIterator,
-            PrimaryValueInterface,
-            SecondaryValueInterface,
         }
     };
 

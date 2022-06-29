@@ -293,3 +293,27 @@ def test_binaryextension():
     r = chain.push_action('hello', 'test', args, {'hello': 'active'})
     logger.info('++++++elapsed: %s', r['elapsed'])
     chain.produce_block()
+
+@chain_test
+def test_notify():
+    # info = chain.get_account('helloworld11')
+    # logger.info(info)
+    with open('./testnotify/sender/target/sender.wasm', 'rb') as f:
+        code = f.read()
+    with open('./testnotify/sender/target/sender.abi', 'rb') as f:
+        abi = f.read()
+    chain.deploy_contract('alice', code, abi, 0)
+
+    with open('./testnotify/receiver/target/receiver.wasm', 'rb') as f:
+        code = f.read()
+    with open('./testnotify/receiver/target/receiver.abi', 'rb') as f:
+        abi = f.read()
+    chain.deploy_contract('hello', code, abi, 0)
+
+    args = {
+        "name": "rust",
+    }
+
+    r = chain.push_action('alice', 'test', args, {'alice': 'active'})
+    logger.info('++++++elapsed: %s', r['elapsed'])
+    chain.produce_block()

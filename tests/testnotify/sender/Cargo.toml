@@ -1,14 +1,14 @@
 [package]
-name = "testmi"
-version = "0.1.0"
+name = "sender"
+version = "3.0.0-rc8"
 authors = [""]
 edition = "2021"
 
 [dependencies]
-eosio-chain = { version = "0.1.0", path = "../../crates/eosio-chain", default-features = false }
+eosio-chain = { path = "../../../crates/eosio-chain", default-features = false }
 
 [lib]
-name = "testmi"
+name = "sender"
 path = "lib.rs"
 crate-type = ["cdylib", "rlib"]
 
@@ -17,3 +17,4 @@ default = ["std"]
 std = [
     "eosio-chain/std",
 ]
+
