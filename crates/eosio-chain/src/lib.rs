@@ -168,6 +168,10 @@ pub mod utils;
 pub mod varint;
 
 ///
+pub mod binary_extension;
+pub use binary_extension::BinaryExtension;
+
+///
 pub mod intrinsic_abi_types;
 pub use intrinsic_abi_types::*;
 

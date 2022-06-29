@@ -171,10 +171,18 @@ impl Contract {
                     let (chain_attrs, other_attrs) = attrs::partition_attributes(x.attrs.clone())?;
                     let x_backup = x.clone();
                     x.attrs = other_attrs;
-
-                    for mut field in &mut x.fields {
+                    let length = x.fields.len();
+                    for (i, field) in &mut x.fields.iter_mut().enumerate() {
                         let (_, other_attrs) = attrs::partition_attributes(field.attrs.clone())?;
                         field.attrs = other_attrs;
+                        if Self::is_binary_extension_type(&field.ty) {
+                            if i + 1 != length {
+                                return Err(format_err_spanned!(
+                                    field,
+                                    "BinaryExtension type can only appear at the last field of a struct",
+                                ));
+                            }
+                        }
                     }
                     self.structs.push(x.clone());
 
@@ -250,32 +258,28 @@ impl Contract {
                     for impl_item in &mut x.items {
                         match impl_item {
                             syn::ImplItem::Method(method_item) => {
-                                method_item.sig.inputs.iter().for_each(|arg|{
+                                let length = method_item.sig.inputs.len();
+                                for (i, arg) in method_item.sig.inputs.iter().enumerate() {
                                     match arg {
                                         syn::FnArg::Receiver(_) => {}
                                         syn::FnArg::Typed(x) => {
-                                            if let syn::Type::Path(type_path) = &*x.ty {
-                                                let path_seg = type_path.path.segments.last().unwrap();
-                                                let name = path_seg.ident.to_string();
-                                                if name == "Option" {
-                                                    if let syn::PathArguments::AngleBracketed(x) = &type_path.path.segments.last().unwrap().arguments {
-                                                        if let syn::GenericArgument::Type(tp) = &x.args.last().unwrap() {
-                                                            if let syn::Type::Path(type_path) = tp {
-                                                                let name = type_path.path.segments.last().unwrap().ident.to_string();
-                                                                arg_types.insert(name.clone(), name);
-                                                            }
-                                                        }
-                                                    }
-                                                } else {
-                                                    arg_types.insert(name.clone(), name);
-                                                }        
+                                            if Self::is_binary_extension_type(&x.ty) {
+                                                if i + 1 != length {
+                                                    return Err(format_err_spanned!(
+                                                        x,
+                                                        "BinaryExtension type can only appear at the last argument of a method",
+                                                    ));
+                                                }
                                             }
+                                            let (type_name, _) = Self::extract_type(&x.ty)?;
+                                            arg_types.insert(type_name.clone(), type_name);
                                             if let syn::Pat::Ident(pat_ident) = &*x.pat {
                                                 pat_ident.ident.to_string();
                                             }
                                         }
                                     }
-                                });
+                                };
+
                                 let (chain_attrs, other_attrs) = attrs::partition_attributes(method_item.attrs.clone())?;
                                 method_item.attrs = other_attrs;
                                 if chain_attrs.len() > 0 {
@@ -1085,7 +1089,7 @@ impl Contract {
 
             let path_seg = &type_path.path.segments[0];
             let name = path_seg.ident.to_string();
-            if name == "Option" || name == "Vec" {
+            if name == "Option" || name == "Vec" || name == "BinaryExtension" {
                 if let syn::PathArguments::AngleBracketed(x) = &path_seg.arguments {
                     if x.args.len() != 1 {
                         return Err(format_err_spanned!(
@@ -1117,6 +1121,23 @@ impl Contract {
             ty,
             "unsupported type",
         ))
+    }
+
+    fn is_binary_extension_type(ty: &syn::Type) -> bool {
+        if let syn::Type::Path(type_path) = ty {
+            if type_path.path.segments.len() != 1 {
+                false;
+            }
+
+            let path_seg = &type_path.path.segments[0];
+            let name = path_seg.ident.to_string();
+            if name == "BinaryExtension" {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return false;
     }
 
     fn is_secondary_type(ty: &syn::Type) -> bool {

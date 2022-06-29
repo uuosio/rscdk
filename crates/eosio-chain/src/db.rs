@@ -3,7 +3,7 @@ use core::convert::{
     Into,
 };
 
-use crate::structs::{ Uint128, Uint256, Float128, Checksum256 };
+use crate::structs::{ Uint128, Uint256, Float128 };
 use crate::serializer::Packer;
 use crate::print;
 
@@ -11,10 +11,6 @@ use crate::vmapi::db::*;
 
 use crate::name::{
     Name,
-};
-
-use crate::vmapi::eosio::{
-    eosio_memcpy,
 };
 
 use crate::asset::Asset;
