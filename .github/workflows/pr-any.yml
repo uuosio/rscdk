@@ -42,6 +42,12 @@ jobs:
         working-directory: crates/codegen
         run: |
           cargo test contract_tests::tests::
+      - name: Cache tests target
+        uses: actions/cache@v2
+        id: cache-tests-target
+        with:
+          path: tests/target
+          key: ${{ runner.os }}-tests-target-1
       - name: run unit tests
         working-directory: tests
         run: |
