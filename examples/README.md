@@ -1,5 +1,10 @@
 
-# Counter Example
+# Get Ready for Test
+
+See [Setup Development Environment](https://uuosio.github.io/rscdk-book/env.html)
+
+# Examples
+## Counter Example
 
 run example
 
@@ -7,7 +12,7 @@ run example
 make test_counter
 ```
 
-# Counter Example with Singleton
+## Counter Example with Singleton
 
 run example
 
@@ -15,7 +20,7 @@ run example
 make test_counter2
 ```
 
-# Token Example
+## Token Example
 
 run example
 
@@ -23,7 +28,7 @@ run example
 make test_token
 ```
 
-# Inline Action Example
+## Inline Action Example
 
 run example
 
@@ -31,7 +36,7 @@ run example
 make test_inlineaction
 ```
 
-# Global States Example
+## Global States Example
 
 run example
 
