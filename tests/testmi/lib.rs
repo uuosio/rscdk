@@ -13,6 +13,8 @@ mod test {
         db::{
             SecondaryValue,
             SecondaryIterator,
+            PrimaryValueInterface,
+            SecondaryValueInterface,
         }
     };
 

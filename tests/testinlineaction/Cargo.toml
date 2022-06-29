@@ -17,5 +17,3 @@ default = ["std"]
 std = [
     "eosio-chain/std",
 ]
-ink-as-dependency = []
-
