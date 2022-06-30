@@ -8,7 +8,8 @@ members = [
     "notify/receiver",
     "notify/sender",
     "globalstates",
-    "secondaryindex"
+    "secondaryindex",
+    "helloworld",
 ]
 
 exclude = []

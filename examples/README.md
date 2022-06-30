@@ -5,13 +5,21 @@ See [Setup Development Environment](https://uuosio.github.io/rscdk-book/env.html
 
 # Examples
 
+## HelloWorld Example
+
+Run example:
+
+```bash
+make test_helloworld
+```
+
 ## Counter Example
 
 Example shows how to count number with on chain database.
 
 Run example:
 
-```
+```bash
 make test_counter
 ```
 

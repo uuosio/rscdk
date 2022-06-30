@@ -276,3 +276,11 @@ def test_secondaryindex():
     r = chain.push_action('hello', 'test2', args)
     logger.info('+++++++create elapsed: %s', r['elapsed'])
     chain.produce_block()
+
+@chain_test
+def test_helloworld():
+    deploy_contract('helloworld')
+    args = {}
+    r = chain.push_action('hello', 'sayhello', args)
+    logger.info('+++++++create elapsed: %s', r['elapsed'])
+    chain.produce_block()
