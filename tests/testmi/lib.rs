@@ -138,7 +138,7 @@ mod test {
                 //test for Idx64DB.previous
                 {
                     let it_secondary = idx.find(22 as u64);
-                    let it_secondary_previous = idx.previous(it_secondary);
+                    let it_secondary_previous = idx.previous(&it_secondary);
                     let ret = check_fn(it_secondary_previous, |data: &MyData| {
                         data.a1 == 1 && data.a2 == 2
                     });
@@ -148,7 +148,7 @@ mod test {
                 //test for Idx64DB.next
                 {
                     let it_secondary = idx.find(22 as u64);
-                    let it_secondary_next = idx.next(it_secondary);
+                    let it_secondary_next = idx.next(&it_secondary);
                     let ret = check_fn(it_secondary_next, |data: &MyData| {
                         data.a1 == 111 && data.a2 == 222
                     });
@@ -187,7 +187,7 @@ mod test {
                 //test for Idx128DB.previous
                 {
                     let it_secondary = idx.find(33u128);
-                    let it_secondary_previous = idx.previous(it_secondary);
+                    let it_secondary_previous = idx.previous(&it_secondary);
                     let ret = check_fn(it_secondary_previous, |data: &MyData| {
                         data.a1 == 1 && data.a2 == 2 && data.a3 == 3
                     });
@@ -197,7 +197,7 @@ mod test {
                 //test for Idx128DB.next
                 {
                     let it_secondary = idx.find(33u128);
-                    let it_secondary_next = idx.next(it_secondary);
+                    let it_secondary_next = idx.next(&it_secondary);
                     let ret = check_fn(it_secondary_next, |data: &MyData| {
                         data.a1 == 111 && data.a2 == 222 && data.a3 == 333
                     });
@@ -237,7 +237,7 @@ mod test {
                 //test for Idx256DB.previous
                 {
                     let it_secondary = idx.find(Uint256::new(44, 0));
-                    let it_secondary_previous = idx.previous(it_secondary);
+                    let it_secondary_previous = idx.previous(&it_secondary);
                     let ret = check_fn(it_secondary_previous, |data: &MyData| {
                         data.a1 == 1 && data.a2 == 2 && data.a3 == 3
                     });
@@ -247,7 +247,7 @@ mod test {
                 //test for Idx256DB.next
                 {
                     let it_secondary = idx.find(Uint256::new(44, 0));
-                    let it_secondary_next = idx.next(it_secondary);
+                    let it_secondary_next = idx.next(&it_secondary);
                     let ret = check_fn(it_secondary_next, |data: &MyData| {
                         data.a1 == 111 && data.a2 == 222 && data.a3 == 333 && data.a4 == Uint256::new(444, 0)
                     });
@@ -286,7 +286,7 @@ mod test {
                 //test for IdxF64DB.previous
                 {
                     let it_secondary = idx.find(55.0);
-                    let it_secondary_previous = idx.previous(it_secondary);
+                    let it_secondary_previous = idx.previous(&it_secondary);
                     let ret = check_fn(it_secondary_previous, |data: &MyData| {
                         data.a1 == 1 && data.a2 == 2 && data.a3 == 3 && data.a4 == Uint256::new(4, 0) && data.a5 == 5.0
                     });
@@ -296,7 +296,7 @@ mod test {
                 //test for IdxF64DB.next
                 {
                     let it_secondary = idx.find(55.0);
-                    let it_secondary_next = idx.next(it_secondary);
+                    let it_secondary_next = idx.next(&it_secondary);
                     let ret = check_fn(it_secondary_next, |data: &MyData| {
                         data.a1 == 111 && data.a2 == 222 && data.a3 == 333 && data.a4 == Uint256::new(444, 0) && data.a5 == 555.0
                     });
@@ -335,7 +335,7 @@ mod test {
                 //test for IdxF128DB.previous
                 {
                     let it_secondary = idx.find(a6_66);
-                    let it_secondary_previous = idx.previous(it_secondary);
+                    let it_secondary_previous = idx.previous(&it_secondary);
                     let ret = check_fn(it_secondary_previous, |data: &MyData| {
                         let a6_6: Float128 = Float128::new([0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0x01,0x40]);
                         eosio_println!("a6_6", a6_6);
@@ -348,7 +348,7 @@ mod test {
                 //test for IdxF128DB.next
                 {
                     let it_secondary = idx.find(a6_66);
-                    let it_secondary_next = idx.next(it_secondary);
+                    let it_secondary_next = idx.next(&it_secondary);
                     let ret = check_fn(it_secondary_next, |data: &MyData| -> bool {
                         let a6_666: Float128 = Float128::new([0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x4d,0x08,0x40]);
                         return data.a1 == 111 && data.a2 == 222 && data.a3 == 333 && data.a4 == Uint256::new(444, 0) && data.a5 == 555.0 && data.a6 == a6_666
@@ -392,7 +392,7 @@ mod test {
 
             if it_secondary.is_ok() {
                 eosio_println!("++++it_secondary:", it_secondary.i, it_secondary.primary);
-                mydb.idx_update(it_secondary, SecondaryValue::Idx64(3), receiver);    
+                mydb.idx_update(&it_secondary, SecondaryValue::Idx64(3), receiver);    
             }
 
             {
