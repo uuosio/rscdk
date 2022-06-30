@@ -199,7 +199,7 @@ def test_inlineaction():
 
 @chain_test
 def test_asset():
-    deploy_test_all_contract()
+    deploy_contract("testasset")
 
     MAX_AMOUNT = (1 << 62) - 1
 
@@ -209,37 +209,37 @@ def test_asset():
     test_cases = [
         #test basic
         {
-            'action': 'assettest',
+            'action': 'test',
             'args': {'a': '1.1234 EOS'},
             'err_msg': None,
         },
         #test Asset.unpack
         {
-            'action': 'assettest2',
+            'action': 'test2',
             'args': int.to_bytes(bad_max_amount, 8, 'little') + b'\x04EOS\x00\x00\x00\x00',
             'err_msg': "Asset.unpack: bad asset amount",
         },
         #test Asset.unpack
         {
-            'action': 'assettest2',
+            'action': 'test2',
             'args': int.to_bytes(bad_mini_amount & 0xffffffffffffffff, 8, 'little') + b'\x04EOS\x00\x00\x00\x00',
             'err_msg': "Asset.unpack: bad asset amount",
         },
         #test Asset.unpack
         {
-            'action': 'assettest2',
+            'action': 'test2',
             'args': int.to_bytes(MAX_AMOUNT, 8, 'little') + b'\x04EOS\x00\x00\x00E',
             'err_msg': "Symbol.unpack: bad symbol value",
         },
         #test Asset.from_string
         {
-            'action': 'assettest3',
+            'action': 'test3',
             'args': {'error_asset': "1123A.0 EOS"},
             'err_msg': "Asset.from_string: bad amount",
         },
         #test Asset.from_string
         {
-            'action': 'assettest3',
+            'action': 'test3',
             'args': {'error_asset': "11234.A EOS"},
             'err_msg': "Asset.from_string: bad amount",
         },
