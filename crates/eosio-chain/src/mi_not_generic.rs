@@ -267,7 +267,7 @@ impl MultiIndex {
             if secondary_value == v2 {
                 continue;
             }
-            self.idxdbs[i].update(it_secondary, v2, payer);
+            self.idxdbs[i].update(&it_secondary, v2, payer);
         }
         self.db.update(iterator, value, payer);
     }
@@ -281,7 +281,7 @@ impl MultiIndex {
 
         for i in 0..self.idxdbs.len() {
             let (it_secondary, _) = self.idxdbs[i].find_primary(primary);
-            self.idxdbs[i].remove(it_secondary);
+            self.idxdbs[i].remove(&it_secondary);
         }
         self.db.remove(iterator);
     }
@@ -337,7 +337,7 @@ impl MultiIndex {
     }
 
     ///
-    pub fn idx_update(&self, it: SecondaryIterator, value: SecondaryValue, payer: Name) {
+    pub fn idx_update(&self, it: &SecondaryIterator, value: SecondaryValue, payer: Name) {
         check(it.is_ok(), "idx_update: invalid iterator");
 
         let it_primary = self.find(it.primary);

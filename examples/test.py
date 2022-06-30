@@ -243,3 +243,36 @@ def test_globalstates():
     r = chain.push_action('hello', 'inc', args)
     logger.info('+++++++create elapsed: %s', r['elapsed'])
     chain.produce_block()
+
+@chain_test
+def test_secondaryindex():
+    deploy_contract('secondaryindex')
+    args = {
+        'key': 1,
+        'value': 11,
+    }
+    r = chain.push_action('hello', 'test1', args)
+    logger.info('+++++++create elapsed: %s', r['elapsed'])
+    chain.produce_block()
+
+    args = {
+        'key': 2,
+        'value': 22,
+    }
+    r = chain.push_action('hello', 'test1', args)
+    logger.info('+++++++create elapsed: %s', r['elapsed'])
+    chain.produce_block()
+
+    args = {
+        'value': 22,
+    }
+    r = chain.push_action('hello', 'test2', args)
+    logger.info('+++++++create elapsed: %s', r['elapsed'])
+    chain.produce_block()
+
+    args = {
+        'value': 23,
+    }
+    r = chain.push_action('hello', 'test2', args)
+    logger.info('+++++++create elapsed: %s', r['elapsed'])
+    chain.produce_block()

@@ -7,8 +7,8 @@ members = [
     "inlineaction",
     "notify/receiver",
     "notify/sender",
-    "globalstates"
+    "globalstates",
+    "secondaryindex"
 ]
 
-exclude = [
-]
+exclude = []

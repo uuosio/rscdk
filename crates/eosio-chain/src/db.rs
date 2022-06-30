@@ -496,13 +496,13 @@ pub trait IndexDB {
     ///
     fn store(&self, key: u64, secondary: SecondaryValue, payer: Name) -> SecondaryIterator;
     ///
-    fn update(&self, iterator: SecondaryIterator, secondary: SecondaryValue, payer: Name);
+    fn update(&self, iterator: &SecondaryIterator, secondary: SecondaryValue, payer: Name);
     ///
-    fn remove(&self, iterator: SecondaryIterator);
+    fn remove(&self, iterator: &SecondaryIterator);
     ///
-    fn next(&self, iterator: SecondaryIterator) -> SecondaryIterator;
+    fn next(&self, iterator: &SecondaryIterator) -> SecondaryIterator;
     ///
-    fn previous(&self, iterator: SecondaryIterator) -> SecondaryIterator;
+    fn previous(&self, iterator: &SecondaryIterator) -> SecondaryIterator;
     ///
     fn find_primary(&self, primary: u64) -> (SecondaryIterator, SecondaryValue);
     ///
@@ -556,22 +556,22 @@ impl<'a, T: From<SecondaryValue> + Into<SecondaryValue> + Printable + Default, c
     }
 
     ///
-    pub fn update(&self, iterator: SecondaryIterator, value: T, payer: Name) {
+    pub fn update(&self, iterator: &SecondaryIterator, value: T, payer: Name) {
         self.db.update(iterator, value.into(), payer);
     }
 
     ///
-    pub fn remove(&self, iterator: SecondaryIterator) {
+    pub fn remove(&self, iterator: &SecondaryIterator) {
         self.db.remove(iterator);
     }
 
     ///
-    pub fn next(&self, iterator: SecondaryIterator) -> SecondaryIterator {
+    pub fn next(&self, iterator: &SecondaryIterator) -> SecondaryIterator {
         return self.db.next(iterator);
     }
 
     ///
-    pub fn previous(&self, iterator: SecondaryIterator) -> SecondaryIterator {
+    pub fn previous(&self, iterator: &SecondaryIterator) -> SecondaryIterator {
         return self.db.previous(iterator);
     }
 
@@ -629,7 +629,7 @@ impl IndexDB for Idx64DB {
         return Default::default()
     }
 
-    fn update(&self, iterator: SecondaryIterator, secondary: SecondaryValue, payer: Name) {
+    fn update(&self, iterator: &SecondaryIterator, secondary: SecondaryValue, payer: Name) {
         if let SecondaryValue::Idx64(value) = secondary {
             db_idx64_update(iterator.i, payer.value(), &value);
             return;
@@ -639,17 +639,17 @@ impl IndexDB for Idx64DB {
         }
     }
 
-    fn remove(&self, iterator: SecondaryIterator) {
+    fn remove(&self, iterator: &SecondaryIterator) {
         db_idx64_remove(iterator.i);
     }
 
-    fn next(&self, iterator: SecondaryIterator) -> SecondaryIterator {
+    fn next(&self, iterator: &SecondaryIterator) -> SecondaryIterator {
         let mut primary = 0;
         let ret = db_idx64_next(iterator.i, &mut primary);
         return SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index };
     }
 
-    fn previous(&self, iterator: SecondaryIterator) -> SecondaryIterator {
+    fn previous(&self, iterator: &SecondaryIterator) -> SecondaryIterator {
         let mut primary = 0;
         let ret = db_idx64_previous(iterator.i, &mut primary);
         return SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index };
@@ -720,7 +720,7 @@ impl IndexDB for Idx128DB {
         return Default::default();
     }
 
-    fn update(&self, iterator: SecondaryIterator, secondary: SecondaryValue, payer: Name) {
+    fn update(&self, iterator: &SecondaryIterator, secondary: SecondaryValue, payer: Name) {
         if let SecondaryValue::Idx128(value) = secondary {
             let _secondary = Uint128{lo: (value & 0xffffffffffffffff) as u64, hi: (value >> 64) as u64};
             db_idx128_update(iterator.i, payer.value(), &_secondary);
@@ -729,17 +729,17 @@ impl IndexDB for Idx128DB {
         }
     }
 
-    fn remove(&self, iterator: SecondaryIterator) {
+    fn remove(&self, iterator: &SecondaryIterator) {
         db_idx128_remove(iterator.i);
     }
 
-    fn next(&self, iterator: SecondaryIterator) -> SecondaryIterator {
+    fn next(&self, iterator: &SecondaryIterator) -> SecondaryIterator {
         let mut primary = 0;
         let ret = db_idx128_next(iterator.i, &mut primary);
         return SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index };
     }
 
-    fn previous(&self, iterator: SecondaryIterator) -> SecondaryIterator {
+    fn previous(&self, iterator: &SecondaryIterator) -> SecondaryIterator {
         let mut primary = 0;
         let ret = db_idx128_previous(iterator.i, &mut primary);
         return SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index };
@@ -821,7 +821,7 @@ impl IndexDB for Idx256DB {
         return Default::default();
     }
 
-    fn update(&self, iterator: SecondaryIterator, secondary: SecondaryValue, payer: Name) {
+    fn update(&self, iterator: &SecondaryIterator, secondary: SecondaryValue, payer: Name) {
         if let SecondaryValue::Idx256(value) = secondary {
             db_idx256_update(iterator.i, payer.value(), value.data.as_ptr() as *mut Uint128, 2);
         } else {
@@ -829,17 +829,17 @@ impl IndexDB for Idx256DB {
         }
     }
 
-    fn remove(&self, iterator: SecondaryIterator) {
+    fn remove(&self, iterator: &SecondaryIterator) {
         db_idx256_remove(iterator.i);
     }
 
-    fn next(&self, iterator: SecondaryIterator) -> SecondaryIterator {
+    fn next(&self, iterator: &SecondaryIterator) -> SecondaryIterator {
         let mut primary = 0;
         let ret = db_idx256_next(iterator.i, &mut primary);
         return SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index };
     }
 
-    fn previous(&self, iterator: SecondaryIterator) -> SecondaryIterator {
+    fn previous(&self, iterator: &SecondaryIterator) -> SecondaryIterator {
         let mut primary = 0;
         let ret = db_idx256_previous(iterator.i, &mut primary);
         return SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index };
@@ -914,7 +914,7 @@ impl IndexDB for IdxF64DB {
         return Default::default();
     }
 
-    fn update(&self, iterator: SecondaryIterator, secondary: SecondaryValue, payer: Name) {
+    fn update(&self, iterator: &SecondaryIterator, secondary: SecondaryValue, payer: Name) {
         if let SecondaryValue::IdxF64(value) = secondary {
             db_idx_double_update(iterator.i, payer.value(), &value);
         } else {
@@ -922,17 +922,17 @@ impl IndexDB for IdxF64DB {
         }
     }
 
-    fn remove(&self, iterator: SecondaryIterator) {
+    fn remove(&self, iterator: &SecondaryIterator) {
         db_idx_double_remove(iterator.i);
     }
 
-    fn next(&self, iterator: SecondaryIterator) -> SecondaryIterator {
+    fn next(&self, iterator: &SecondaryIterator) -> SecondaryIterator {
         let mut primary = 0;
         let ret = db_idx_double_next(iterator.i, &mut primary);
         return SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index };
     }
 
-    fn previous(&self, iterator: SecondaryIterator) -> SecondaryIterator {
+    fn previous(&self, iterator: &SecondaryIterator) -> SecondaryIterator {
         let mut primary = 0;
         let ret = db_idx_double_previous(iterator.i, &mut primary);
         return SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index };
@@ -1007,7 +1007,7 @@ impl IndexDB for IdxF128DB {
         return Default::default();
     }
 
-    fn update(&self, iterator: SecondaryIterator, secondary: SecondaryValue, payer: Name) {
+    fn update(&self, iterator: &SecondaryIterator, secondary: SecondaryValue, payer: Name) {
         if let SecondaryValue::IdxF128(value) = secondary {
             db_idx_long_double_update(iterator.i, payer.value(), &value);
         } else {
@@ -1015,17 +1015,17 @@ impl IndexDB for IdxF128DB {
         }
     }
 
-    fn remove(&self, iterator: SecondaryIterator) {
+    fn remove(&self, iterator: &SecondaryIterator) {
         db_idx_long_double_remove(iterator.i);
     }
 
-    fn next(&self, iterator: SecondaryIterator) -> SecondaryIterator {
+    fn next(&self, iterator: &SecondaryIterator) -> SecondaryIterator {
         let mut primary = 0;
         let ret = db_idx_long_double_next(iterator.i, &mut primary);
         return SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index };
     }
 
-    fn previous(&self, iterator: SecondaryIterator) -> SecondaryIterator {
+    fn previous(&self, iterator: &SecondaryIterator) -> SecondaryIterator {
         let mut primary = 0;
         let ret = db_idx_long_double_previous(iterator.i, &mut primary);
         return SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index };

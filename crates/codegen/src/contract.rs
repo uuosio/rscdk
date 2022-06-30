@@ -1003,7 +1003,7 @@ impl Contract {
                         return self.mi.idxdbs[i].as_ref();
                     }
                 
-                    pub fn idx_update(&self, it: ::eosio_chain::db::SecondaryIterator, value: ::eosio_chain::db::SecondaryValue, payer: eosio_chain::Name) {
+                    pub fn idx_update(&self, it: &::eosio_chain::db::SecondaryIterator, value: ::eosio_chain::db::SecondaryValue, payer: eosio_chain::Name) {
                         self.mi.idx_update(it, value, payer);
                     }
 

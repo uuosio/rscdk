@@ -53,3 +53,12 @@ run example
 make test_globalstates
 ```
 
+## Secondary Index Example
+
+Database secondary index example
+
+run example
+
+```bash
+make test_globalstates
+```

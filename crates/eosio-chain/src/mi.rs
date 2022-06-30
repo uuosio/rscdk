@@ -1,3 +1,8 @@
+use core::convert::{
+    From,
+    Into,
+};
+
 use crate::db::*;
 use crate::name::{
     Name,
@@ -120,7 +125,7 @@ where T: PrimaryValueInterface + SecondaryValueInterface + Packer + Default
             if secondary_value == v2 {
                 continue;
             }
-            self.idxdbs[i].update(it_secondary, v2, payer);
+            self.idxdbs[i].update(&it_secondary, v2, payer);
         }
         self.db.update(&iterator, value, payer);
     }
@@ -131,7 +136,7 @@ where T: PrimaryValueInterface + SecondaryValueInterface + Packer + Default
         let primary = iterator.get_primary().unwrap();
         for i in 0..self.idxdbs.len() {
             let (it_secondary, _) = self.idxdbs[i].find_primary(primary);
-            self.idxdbs[i].remove(it_secondary);
+            self.idxdbs[i].remove(&it_secondary);
         }
         self.db.remove(&iterator);
     }
@@ -181,15 +186,14 @@ where T: PrimaryValueInterface + SecondaryValueInterface + Packer + Default
     }
 
     ///
-    pub fn idx_update(&self, it: SecondaryIterator, value: SecondaryValue, payer: Name) {
-        let it_primary = self.find(it.primary);
+    pub fn idx_update(&self, it: &SecondaryIterator, value: SecondaryValue, payer: Name) {
+        let it_primary = self.find(it.primary).expect("idx_update: invalid primary");
         if let Some(mut db_value) = it_primary.get_value() {
             let idx_db = self.idxdbs[it.db_index].as_ref();
             db_value.set_secondary_value(idx_db.get_db_index(), value);
             self.update(&it_primary, &db_value, payer);
             idx_db.update(it, value, payer);    
         } else {
-
         }
     }
 }
