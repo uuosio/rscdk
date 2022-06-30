@@ -129,6 +129,21 @@ impl Contract {
         }
         return Ok(());
     }
+    
+    pub fn has_apply_func(&self) -> bool {
+        for item in &self.items {
+            match item {
+                syn::Item::Fn(x) => {
+                    println!("++++x.sig.ident.to_string():{}", x.sig.ident.to_string());
+                    if x.sig.ident.to_string() == "apply" {
+                        return true;
+                    }
+                }
+                _ => {}
+            }
+        }
+        false
+    }
 
     pub fn has_trait(&self, s: &str, trait_: &str) -> bool {
         for item in &self.items {
@@ -1510,7 +1525,13 @@ impl Contract {
     pub fn generate_code(&self) -> Result<TokenStream2, syn::Error> {
         let action_structs_code = self.generate_action_structs();
         let tables_code = self.generate_tables_code()?;
-        let apply_code = self.generate_apply_code();
+        let apply_code;
+        if !self.has_apply_func() {
+            apply_code = self.generate_apply_code();
+        } else {
+            apply_code = quote!{};
+        }
+
         let packers_code = self.generate_code_for_packers();
         let variants_code = self.generate_variants_code()?;
         let scale_info: Option<TokenStream2>;
