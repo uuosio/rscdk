@@ -1,16 +1,13 @@
 ALL : test_all
 
+build_all:
+	rust-contract build
+
 build_hello:
 	cd hello;rust-contract build
 
 build_abi:
 	cd testabi;rust-contract build 
-
-build_mi:
-	cd testmi;rust-contract build 
-
-build_mi2:
-	cd testmi2;rust-contract build 
 
 build_mod:
 	cd testmod;rust-contract build 
@@ -30,18 +27,9 @@ build_variant:
 build_name:
 	cd testname;rust-contract build 
 
-build_transaction:
-	cd testtransaction;rust-contract build 
-
-build_binaryextension:
-	cd testbinaryextension;rust-contract build 
-
 build_notify:
 	cd testnotify/receiver;rust-contract build 
 	cd testnotify/sender;rust-contract build 
-
-build_destructor:
-	cd testdestructor;rust-contract build 
 
 test_hello: build_hello
 	run-ipyeos -m pytest -s test.py -k test_hello
@@ -49,10 +37,10 @@ test_hello: build_hello
 test_abi: build_abi
 	run-ipyeos -m pytest -s test.py -k test_abi
 
-test_mi: build_mi
+test_mi: build_all
 	run-ipyeos -m pytest -s test.py -k test_mi
 
-test_mi2: build_mi2
+test_mi2: build_all
 	run-ipyeos -m pytest -s test.py -k test_2mi
 
 test_mod: build_mod
@@ -70,24 +58,24 @@ test_optional: build_optional
 test_variant: build_variant
 	run-ipyeos -m pytest -s test.py -k test_variant
 
-test_name: build_name
+test_name: build_all
 	run-ipyeos -m pytest -s test.py -k test_name
 
-test_transaction: build_transaction
+test_transaction: build_all
 	run-ipyeos -m pytest -s test.py -k test_transaction
 
-test_binaryextension: build_binaryextension
+test_binaryextension: build_all
 	run-ipyeos -m pytest -s test.py -k test_binaryextension
 
 test_notify: build_notify
 	run-ipyeos -m pytest -s test.py -k test_notify
 
-test_destructor: build_destructor
+test_destructor: build_all
 	run-ipyeos -m pytest -s test.py -k test_destructor
 
-all_builds = build_hello build_abi build_mi build_mi2 build_mod \
+all_builds = build_hello build_abi build_mod \
 	build_inline build_asset build_optional build_variant build_name \
-	build_transaction build_binaryextension build_notify build_destructor
+	build_notify
 
 test_all: $(all_builds)
 	run-ipyeos -m pytest -s -x test.py

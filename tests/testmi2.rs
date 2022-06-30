@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[eosio_chain::contract]
-mod test {
+pub mod test {
     use eosio_chain::{
         Name,
         Asset,
@@ -27,9 +27,8 @@ mod test {
         eosio_println,
     };
 
-    #[chain(main)]
     #[allow(dead_code)]
-    pub struct TestSerialzier {
+    pub struct TestMI2 {
         receiver: Name,
         first_receiver: Name,
         action: Name,
@@ -75,7 +74,7 @@ mod test {
     impl MultiIndexValue for MyStruct {}
     
 
-    impl TestSerialzier {
+    impl TestMI2 {
 
         pub fn new(receiver: Name, first_receiver: Name, action: Name) -> Self {
             Self {

@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[eosio_chain::contract]
-mod hello {
+pub mod test {
     use eosio_chain::{
         Name,
         name,
@@ -11,15 +11,14 @@ mod hello {
         Transaction,
     };
 
-    #[chain(main)]
     #[allow(dead_code)]
-    pub struct Hello {
+    pub struct TestTransaction {
         receiver: Name,
         first_receiver: Name,
         action: Name,
     }
 
-    impl Hello {
+    impl TestTransaction {
 
         pub fn new(receiver: Name, first_receiver: Name, action: Name) -> Self {
             Self {
@@ -38,7 +37,7 @@ mod hello {
             let actions = tx.actions();
             check(actions.len() == 1, "bad actions");
             check(actions[0].account == name!("hello"), "bad action account");
-            check(actions[0].name == name!("test"), "bad action name");
+            check(actions[0].name == name!("trxtest"), "bad action name");
         }
     }
 }

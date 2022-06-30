@@ -69,10 +69,19 @@ def deploy_contract(package_name):
         abi = f.read()
     chain.deploy_contract('hello', code, abi)
 
+def deploy_test_all_contract():
+    with open(f'{test_dir}/target/testall.wasm', 'rb') as f:
+        code = f.read()
+    with open(f'{test_dir}/target/testall.abi', 'rb') as f:
+        abi = f.read()
+    chain.deploy_contract('hello', code, abi)
+
+
 def check_error_message(ex, err_msg):
     assert ex.value.args[0]['except']['stack'][0]['data']['s'] == err_msg
 
 def run_test(action, args, err_msg=None, permission = None):
+    logger.info("+++run_test: %s, %s", action, args)
     if not permission:
         permission = {'hello': 'active'}
 
@@ -144,26 +153,26 @@ def test_abi():
 
 @chain_test
 def test_mi():
-    deploy_contract('testmi')
+    deploy_test_all_contract()
 
     args = {}
-    r = chain.push_action('hello', 'test1', args, {'hello': 'active'})
+    r = chain.push_action('hello', 'mitest1', args, {'hello': 'active'})
     logger.info('++++++elapsed: %s', r['elapsed'])
     chain.produce_block()
 
-    r = chain.push_action('hello', 'test2', args, {'hello': 'active'})
+    r = chain.push_action('hello', 'mitest2', args, {'hello': 'active'})
     logger.info('++++++elapsed: %s', r['elapsed'])
     chain.produce_block()
 
 @chain_test
 def test_2mi():
-    deploy_contract('testmi2')
+    deploy_test_all_contract()
     args = {}
-    r = chain.push_action('hello', 'test', args, {'hello': 'active'})
+    r = chain.push_action('hello', 'mi2test', args, {'hello': 'active'})
     logger.info('++++++elapsed: %s', r['elapsed'])
     chain.produce_block()
 
-    r = chain.push_action('hello', 'test', args, {'hello': 'active'})
+    r = chain.push_action('hello', 'mi2test', args, {'hello': 'active'})
     logger.info('++++++elapsed: %s', r['elapsed'])
     chain.produce_block()
 
@@ -190,7 +199,7 @@ def test_inlineaction():
 
 @chain_test
 def test_asset():
-    deploy_contract('testasset')
+    deploy_test_all_contract()
 
     MAX_AMOUNT = (1 << 62) - 1
 
@@ -200,37 +209,37 @@ def test_asset():
     test_cases = [
         #test basic
         {
-            'action': 'test',
+            'action': 'assettest',
             'args': {'a': '1.1234 EOS'},
             'err_msg': None,
         },
         #test Asset.unpack
         {
-            'action': 'test2',
+            'action': 'assettest2',
             'args': int.to_bytes(bad_max_amount, 8, 'little') + b'\x04EOS\x00\x00\x00\x00',
             'err_msg': "Asset.unpack: bad asset amount",
         },
         #test Asset.unpack
         {
-            'action': 'test2',
+            'action': 'assettest2',
             'args': int.to_bytes(bad_mini_amount & 0xffffffffffffffff, 8, 'little') + b'\x04EOS\x00\x00\x00\x00',
             'err_msg': "Asset.unpack: bad asset amount",
         },
         #test Asset.unpack
         {
-            'action': 'test2',
+            'action': 'assettest2',
             'args': int.to_bytes(MAX_AMOUNT, 8, 'little') + b'\x04EOS\x00\x00\x00E',
             'err_msg': "Symbol.unpack: bad symbol value",
         },
         #test Asset.from_string
         {
-            'action': 'test3',
+            'action': 'assettest3',
             'args': {'error_asset': "1123A.0 EOS"},
             'err_msg': "Asset.from_string: bad amount",
         },
         #test Asset.from_string
         {
-            'action': 'test3',
+            'action': 'assettest3',
             'args': {'error_asset': "11234.A EOS"},
             'err_msg': "Asset.from_string: bad amount",
         },
@@ -263,7 +272,7 @@ def test_variant():
 
 @chain_test
 def test_name():
-    deploy_contract('testname')
+    deploy_test_all_contract()
 
     args = {
         "a11": "hello1",
@@ -272,25 +281,25 @@ def test_name():
         "a22": "aaaaaaaaaaaaj",
     }
 
-    r = chain.push_action('hello', 'test', args, {'hello': 'active'})
+    r = chain.push_action('hello', 'nametest', args, {'hello': 'active'})
     logger.info('++++++elapsed: %s', r['elapsed'])
     chain.produce_block()
 
 @chain_test
 def test_transaction():
-    deploy_contract('testtransaction')
+    deploy_test_all_contract()
 
     args = {}
-    r = chain.push_action('hello', 'test', args, {'hello': 'active'})
+    r = chain.push_action('hello', 'trxtest', args, {'hello': 'active'})
     logger.info('++++++elapsed: %s', r['elapsed'])
     chain.produce_block()
 
 @chain_test
 def test_binaryextension():
-    deploy_contract('testbinaryextension')
+    deploy_test_all_contract()
 
     args = {'a': 123}
-    r = chain.push_action('hello', 'test', args, {'hello': 'active'})
+    r = chain.push_action('hello', 'binexttest', args, {'hello': 'active'})
     logger.info('++++++elapsed: %s', r['elapsed'])
     chain.produce_block()
 
@@ -321,13 +330,13 @@ def test_notify():
 
 @chain_test
 def test_destructor():
-    deploy_contract('testdestructor')
+    deploy_test_all_contract()
 
     args = {}
-    r = chain.push_action('hello', 'inc', args, {'hello': 'active'})
+    r = chain.push_action('hello', 'destructtest', args, {'hello': 'active'})
     logger.info('++++++elapsed: %s', r['elapsed'])
     chain.produce_block()
 
-    r = chain.push_action('hello', 'inc', args, {'hello': 'active'})
+    r = chain.push_action('hello', 'destructtest', args, {'hello': 'active'})
     logger.info('++++++elapsed: %s', r['elapsed'])
     chain.produce_block()

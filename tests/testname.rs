@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[eosio_chain::contract]
-mod hello {
+pub mod test {
     use eosio_chain::{
         Name,
         name,
@@ -9,14 +9,13 @@ mod hello {
         eosio_println,
     };
 
-    #[chain(main)]
-    pub struct Hello {
+    pub struct NameTest {
         receiver: Name,
         first_receiver: Name,
         action: Name,
     }
 
-    impl Hello {
+    impl NameTest {
 
         pub fn new(receiver: Name, first_receiver: Name, action: Name) -> Self {
             Self {

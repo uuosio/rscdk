@@ -1,9 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use eosio_chain as chain;
-
-#[chain::contract]
-mod hello {
+#[eosio_chain::contract]
+pub mod test {
     use eosio_chain::action::{
         PermissionLevel,
         Action,
@@ -21,13 +19,13 @@ mod hello {
     }
 
     #[chain(main)]
-    pub struct Hello {
+    pub struct TestInlineAction {
         receiver: Name,
         first_receiver: Name,
         action: Name,
     }
 
-    impl Hello {
+    impl TestInlineAction {
 
         pub fn new(receiver: Name, first_receiver: Name, action: Name) -> Self {
             Self {

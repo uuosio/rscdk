@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[eosio_chain::contract]
-mod test {
+pub mod test {
     use eosio_chain::{
         Name,
         Float128,
@@ -31,9 +31,8 @@ mod test {
         a6: Float128,
     }
 
-    #[chain(main)]
     #[allow(dead_code)]
-    pub struct TestSerialzier {
+    pub struct TestMI {
         receiver: Name,
         first_receiver: Name,
         action: Name,
@@ -46,7 +45,7 @@ mod test {
         symbol: u64,
     }
 
-    impl TestSerialzier {
+    impl TestMI {
 
         pub fn new(receiver: Name, first_receiver: Name, action: Name) -> Self {
             Self {
@@ -403,5 +402,4 @@ mod test {
             eosio_println!("test2 done!");
         }
     }
-
 }

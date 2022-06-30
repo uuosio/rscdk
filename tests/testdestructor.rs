@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[eosio_chain::contract]
-mod test {
+pub mod test {
     use eosio_chain::{
         Name,
         eosio_println,
@@ -12,9 +12,8 @@ mod test {
         count: u64
     }
 
-    #[chain(main)]
     #[allow(dead_code)]
-    pub struct Contract {
+    pub struct TestDestructor {
         receiver: Name,
         first_receiver: Name,
         action: Name,
@@ -22,7 +21,7 @@ mod test {
         states_db: Box<StatesMultiIndex>,
     }
 
-    impl Contract {
+    impl TestDestructor {
         pub fn new(receiver: Name, first_receiver: Name, action: Name) -> Self {
             let states_db = States::new_mi(receiver, receiver);
             let states = states_db.get().unwrap_or(States{count: 1});
@@ -42,7 +41,7 @@ mod test {
         }
     }
 
-    impl Drop for Contract {
+    impl Drop for TestDestructor {
         fn drop(&mut self) {
             self.states_db.set(&self.states, self.receiver);
             eosio_println!("++++drop");

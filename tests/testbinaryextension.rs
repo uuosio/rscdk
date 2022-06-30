@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[eosio_chain::contract]
-mod testbinaryextension {
+pub mod test {
     use eosio_chain::{
         Name,
         BinaryExtension,
@@ -10,15 +10,14 @@ mod testbinaryextension {
         eosio_println,
     };
 
-    #[chain(main)]
     #[allow(dead_code)]
-    pub struct Contract {
+    pub struct TestBinaryExtension {
         receiver: Name,
         first_receiver: Name,
         action: Name,
     }
 
-    impl Contract {
+    impl TestBinaryExtension {
         pub fn new(receiver: Name, first_receiver: Name, action: Name) -> Self {
             Self {
                 receiver: receiver,
@@ -31,6 +30,7 @@ mod testbinaryextension {
         pub fn test(&self, a: BinaryExtension<u64>) {
             check(a.value().is_some(), "bad value");
             check(*a.value().unwrap() == 123, "bad value");
+            eosio_println!("test BinaryExtension done!");
         }
     }
 }
