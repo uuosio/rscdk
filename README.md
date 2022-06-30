@@ -4,6 +4,6 @@ Rust Smart Contracts Development Kit
 
 ## Getting Started
 
-- [Read the Book](https://uuosio.github.io/rscdk-book)
-- [Try Examples](https://github.com/uuosio/rscdk/tree/main/examples)
+- [read the book](https://uuosio.github.io/rscdk-book)
+- [try examples](https://github.com/uuosio/rscdk/tree/main/examples)
 

@@ -77,7 +77,7 @@ pub struct Action {
 }
 
 impl Action {
-    ///
+    /// Creates an action by specifying contract account, action name, authorization and data.
     pub fn new(account: Name, name: Name, authorization: &Vec<PermissionLevel>, data: &dyn Packer) -> Self {
         Self {
             account,
@@ -86,7 +86,8 @@ impl Action {
             data: data.pack(),
         }
     }
-    ///
+
+    /// Send inline action to contract.
     pub fn send(&self) {
         let raw = self.pack();
         send_inline(&raw);
