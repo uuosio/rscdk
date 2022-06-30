@@ -60,5 +60,5 @@ Database secondary index example
 run example
 
 ```bash
-make test_globalstates
+make test_secondaryindex
 ```
