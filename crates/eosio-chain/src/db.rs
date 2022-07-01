@@ -712,7 +712,7 @@ impl IndexDB for Idx128DB {
 
     fn store(&self, key: u64, secondary: SecondaryValue, payer: Name) -> SecondaryIterator {
         if let SecondaryValue::Idx128(value) = secondary {
-            let _secondary = Uint128{lo: (value & 0xffffffffffffffff) as u64, hi: (value >> 64) as u64};
+            let _secondary = Uint128{lo: (value & u64::MAX as u128) as u64, hi: (value >> 64) as u64};
             let ret = db_idx128_store(self.scope, self.table, payer.value(), key, &_secondary);
             return SecondaryIterator{ i: ret, primary: key, db_index: self.db_index };
         }
@@ -722,7 +722,7 @@ impl IndexDB for Idx128DB {
 
     fn update(&self, iterator: &SecondaryIterator, secondary: SecondaryValue, payer: Name) {
         if let SecondaryValue::Idx128(value) = secondary {
-            let _secondary = Uint128{lo: (value & 0xffffffffffffffff) as u64, hi: (value >> 64) as u64};
+            let _secondary = Uint128{lo: (value & u64::MAX as u128) as u64, hi: (value >> 64) as u64};
             db_idx128_update(iterator.i, payer.value(), &_secondary);
         } else {
             check(false, "Idx128DB::update: bad secondary type");
@@ -756,7 +756,7 @@ impl IndexDB for Idx128DB {
     fn find(&self, secondary: SecondaryValue) -> SecondaryIterator {
         if let SecondaryValue::Idx128(value) = secondary {
             let mut primary = 0;
-            let mut _secondary = Uint128{lo: (value & 0xffffffffffffffff) as u64, hi: (value >> 64) as u64};
+            let mut _secondary = Uint128{lo: (value & u64::MAX as u128) as u64, hi: (value >> 64) as u64};
             let ret = db_idx128_find_secondary(self.code, self.scope, self.table, &mut _secondary, &mut primary);
             return SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index };
         }
@@ -768,7 +768,7 @@ impl IndexDB for Idx128DB {
         if let SecondaryValue::Idx128(mut value) = secondary {
             let mut primary = 0;
             // let _secondary: SecondaryValue = secondary;
-            let mut _secondary = Uint128{lo: (value & 0xffffffffffffffff) as u64, hi: (value >> 64) as u64};
+            let mut _secondary = Uint128{lo: (value & u64::MAX as u128) as u64, hi: (value >> 64) as u64};
             let ret = db_idx128_lowerbound(self.code, self.scope, self.table, &mut _secondary, &mut primary);
             value = ((_secondary.hi as u128) << 64) + _secondary.lo as u128;
             return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx128(value));
@@ -782,7 +782,7 @@ impl IndexDB for Idx128DB {
             SecondaryValue::Idx128(mut value) => {
                 let mut primary = 0;
                 // let _secondary = secondary;
-                let mut _secondary = Uint128{lo: (value & 0xffffffffffffffff) as u64, hi: (value >> 64) as u64};
+                let mut _secondary = Uint128{lo: (value & u64::MAX as u128) as u64, hi: (value >> 64) as u64};
                 let ret = db_idx128_upperbound(self.code, self.scope, self.table, &mut _secondary, &mut primary);
                 value = ((_secondary.hi as u128) << 64) + _secondary.lo as u128;
                 return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx128(value));
