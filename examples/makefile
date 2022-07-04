@@ -1,5 +1,5 @@
 ALL : test_counter test_counter2 test_token test_inlineaction \
-test_notify test_globalstates test_secondaryindex test_helloworld
+test_notify test_globalstates test_secondaryindex test_helloworld test_dbi64
 
 test_counter:
 	cd counter;rust-contract build 
@@ -33,3 +33,7 @@ test_secondaryindex:
 test_helloworld:
 	cd helloworld;rust-contract build 
 	run-ipyeos -m pytest -s test.py -k test_helloworld
+
+test_dbi64:
+	cd dbi64;rust-contract build 
+	run-ipyeos -m pytest -s test.py -k test_dbi64

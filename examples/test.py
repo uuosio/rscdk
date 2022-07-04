@@ -284,3 +284,15 @@ def test_helloworld():
     r = chain.push_action('hello', 'sayhello', args)
     logger.info('+++++++create elapsed: %s', r['elapsed'])
     chain.produce_block()
+
+@chain_test
+def test_dbi64():
+    deploy_contract('dbi64')
+    args = {}
+    r = chain.push_action('hello', 'inc', args)
+    logger.info('+++++++create elapsed: %s', r['elapsed'])
+    chain.produce_block()
+
+    r = chain.push_action('hello', 'inc', args)
+    logger.info('+++++++create elapsed: %s', r['elapsed'])
+    chain.produce_block()
