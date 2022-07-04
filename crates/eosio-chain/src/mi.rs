@@ -111,9 +111,9 @@ where T: PrimaryValueInterface + SecondaryValueInterface + Packer + Default
 
     ///
     pub fn update(&self, iterator: &Iterator<T>, value: &T, payer: Name) {
-        check(iterator.is_ok(), "update:invalid iterator");
+        check(iterator.is_ok(), "MultiIndex::update: invalid iterator");
         let primary = iterator.get_primary().unwrap();
-        check(primary == value.get_primary(), "can not change primary value during update!");
+        self.db.update(&iterator, value, payer);
         for i in 0..self.idxdbs.len() {
             let v2 = value.get_secondary_value(i);
             let (it_secondary, secondary_value) = self.idxdbs[i].find_primary(primary);
@@ -122,7 +122,6 @@ where T: PrimaryValueInterface + SecondaryValueInterface + Packer + Default
             }
             self.idxdbs[i].update(&it_secondary, v2, payer);
         }
-        self.db.update(&iterator, value, payer);
     }
 
     ///

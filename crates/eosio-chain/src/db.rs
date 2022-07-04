@@ -354,6 +354,8 @@ where T: Packer + PrimaryValueInterface + Default,
 
     ///
     pub fn update(&self, iterator: &Iterator<T>, value: &T, payer: Name) {
+        check(iterator.is_ok(), "DBI64::update:invalid iterator");
+        check(iterator.get_primary().unwrap() == value.get_primary(), "DBI64::update: can not change primary value during update!");
         let data = value.pack();
         db_update_i64(iterator.i, payer.value(), data.as_ptr(), data.len() as u32);
     }
