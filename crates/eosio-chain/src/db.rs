@@ -321,8 +321,9 @@ where
     _marker: core::marker::PhantomData<T>,
 }
 
-impl<T> DBI64<T> 
-where T: Packer + PrimaryValueInterface + Default,
+impl<T> DBI64<T>
+where
+    T: Packer + PrimaryValueInterface + Default,
 {
     /// Creates a new DBI64 instance
     pub fn new(code: Name, scope: Name, table: Name) -> Self {
@@ -335,12 +336,12 @@ where T: Packer + PrimaryValueInterface + Default,
     }
 
     ///
-    pub fn store(&self, key: u64,  value: &T, payer: Name) -> Iterator<T> {
+    pub fn store(&self, value: &T, payer: Name) -> Iterator<T> {
+        let key = value.get_primary();
         let data = value.pack();
         let it = db_store_i64(self.scope, self.table, payer.value(), key, data.as_ptr(), data.len() as u32);
         Iterator::<T> { i: it, primary: Some(key), db: self }
     }
-
 
     ///
     pub fn find(&self, key: u64) -> Iterator<T> {

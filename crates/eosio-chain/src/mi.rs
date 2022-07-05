@@ -84,23 +84,13 @@ where T: PrimaryValueInterface + SecondaryValueInterface + Packer + Default
     }
 
     ///
-    pub fn set(&self, key: u64, value: &T, payer: Name) -> Iterator<T> {
-        for i in 0..self.idxdbs.len() {
-            let v2 = value.get_secondary_value(i);
-            self.idxdbs[i].store(key, v2, payer);
-        }
-        let it = self.db.store(key, &value, payer);
-        return it;
-    }
-
-    ///
     pub fn store(&self, value: &T, payer: Name) -> Iterator<T> {
         let primary = value.get_primary();
         for i in 0..self.idxdbs.len() {
             let v2 = value.get_secondary_value(i);
             self.idxdbs[i].store(primary, v2, payer);
         }
-        let it = self.db.store(primary, &value, payer);
+        let it = self.db.store(&value, payer);
         return it;
     }
 
