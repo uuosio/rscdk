@@ -1,6 +1,6 @@
 [package]
 name = "eosio-chain"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["learnforpractice@gmail.com"]
 edition = "2021"
 
@@ -19,7 +19,7 @@ cfg-if = "1.0"
 serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
 serde_json = {version = "1.0.32", features = ["preserve_order"]}
 
-eosio-macro = { version = "0.1.1", path = "../macro", default-features = false }
+eosio-macro = { version = "0.1.2", path = "../macro", default-features = false }
 eosio-scale-info = { version="2.1.3",  default-features = false, features = ["derive"], optional = true }
 
 [features]
