@@ -60,11 +60,11 @@ jobs:
       - name: run unit tests
         working-directory: tests
         run: |
-          PYTHON_SHARED_LIB_PATH=${{ env.pythonLocation }}/lib/libpython3.9.so make -j3
+          PYTHON_SHARED_LIB_PATH=${{ env.pythonLocation }}/lib/libpython3.9.so make -j3 -S
       - name: run tests in examples
         working-directory: examples
         run: |
-          PYTHON_SHARED_LIB_PATH=${{ env.pythonLocation }}/lib/libpython3.9.so make -j3
+          PYTHON_SHARED_LIB_PATH=${{ env.pythonLocation }}/lib/libpython3.9.so make -j3 -S
       - name: rm all wasm files and abi files
         run: |
           find examples -name "*.wasm" | xargs rm
