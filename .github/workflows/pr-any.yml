@@ -31,7 +31,7 @@ jobs:
             ~/.cargo
             tests/target
             examples/target
-          key: ${{ runner.os }}-results-2
+          key: ${{ runner.os }}-results-3
       - name: Install latest nightly
         if: steps.cache-results.outputs.cache-hit != 'true'
         uses: actions-rs/toolchain@v1
