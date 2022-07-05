@@ -62,10 +62,10 @@ pub mod test {
 
             let receiver = self.receiver;
 
-            // let mydb2 = MyData2::new_mi(receiver, receiver);
+            // let mydb2 = MyData2::new_table(receiver, receiver);
 
             // let mydb = mi::MultiIndex::<MyData>::new(receiver, receiver, Name::new("hello"), &[SecondaryType::Idx64], unpacker);
-            let mydb = MyData::new_mi(receiver, receiver);
+            let mydb = MyData::new_table(receiver, receiver);
 
             let a6_6: Float128 = Float128::new([0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0x01,0x40]);
 
@@ -82,7 +82,7 @@ pub mod test {
             eosio_println!("+++++test2");
             let receiver = self.receiver;
 
-            let mydb = MyData::new_mi(receiver, receiver);
+            let mydb = MyData::new_table(receiver, receiver);
 
             let it = mydb.find(1);
             // 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0x01,0x40,

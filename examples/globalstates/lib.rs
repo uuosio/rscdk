@@ -24,7 +24,7 @@ mod test {
 
     impl Contract {
         pub fn new(receiver: Name, first_receiver: Name, action: Name) -> Self {
-            let states_db = States::new_mi(receiver, receiver);
+            let states_db = States::new_table(receiver, receiver);
             let states = states_db.get().unwrap_or(States{count: 1});
             Self {
                 receiver: receiver,

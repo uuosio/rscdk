@@ -30,7 +30,7 @@ mod token {
 
         #[chain(action = "inc")]
         pub fn inc_count(&self) {
-            let db = Counter::new_mi(self.receiver, self.receiver);
+            let db = Counter::new_table(self.receiver, self.receiver);
             let mut value = db.get().unwrap_or(Counter{count: 1});
             eosio_println!("+++++count2:", value.count);
             value.count += 1;

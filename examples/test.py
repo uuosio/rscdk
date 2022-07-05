@@ -292,7 +292,10 @@ def test_dbi64():
     r = chain.push_action('hello', 'inc', args)
     logger.info('+++++++create elapsed: %s', r['elapsed'])
     chain.produce_block()
+    rows = chain.get_table_rows(True, 'hello', 'hello', 'counter', '', '', 10)
+    logger.error("+++++++rows: %s", rows)
 
     r = chain.push_action('hello', 'inc', args)
     logger.info('+++++++create elapsed: %s', r['elapsed'])
     chain.produce_block()
+    logger.error("+++++++rows: %s", rows)

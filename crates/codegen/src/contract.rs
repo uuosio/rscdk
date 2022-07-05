@@ -941,14 +941,14 @@ impl Contract {
                             if it.is_ok() {
                                 self.mi.update(&it, value, payer);
                             } else {
-                                self.mi.set(eosio_chain::Name::new(#table_name).value(), value, payer);
+                                self.mi.store(value, payer);
                             }
                         }
                     }
 
                     impl #table_ident {
                         #[allow(dead_code)]
-                        fn new_mi(code: eosio_chain::Name, scope: eosio_chain::Name) -> Box<#mi_ident> {
+                        fn new_table(code: eosio_chain::Name, scope: eosio_chain::Name) -> Box<#mi_ident> {
                             return Box::new(#mi_ident::new(code, scope, eosio_chain::Name::new(#table_name)));
                         }
                     }
@@ -1027,7 +1027,7 @@ impl Contract {
 
                 impl #table_ident {
                     #[allow(dead_code)]
-                    fn new_mi(code: eosio_chain::Name, scope: eosio_chain::Name) -> Box<#mi_ident> {
+                    fn new_table(code: eosio_chain::Name, scope: eosio_chain::Name) -> Box<#mi_ident> {
                         let indexes: [eosio_chain::db::SecondaryType; #len_secondary] = [#( #secondary_types ),*];
                         return Box::new(#mi_ident::new(code, scope, eosio_chain::Name::new(#table_name), &indexes));
                     }

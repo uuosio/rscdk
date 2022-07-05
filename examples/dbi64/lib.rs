@@ -46,7 +46,7 @@ mod dbi64 {
                 eosio_println!("+++count:", value.count);
             } else {
                 let value = Counter{key: 1, count: 1};
-                db.store(1, &value, payer);
+                db.store(&value, payer);
                 eosio_println!("+++count:", value.count);
             }
         }

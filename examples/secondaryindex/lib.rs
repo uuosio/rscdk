@@ -34,7 +34,7 @@ mod secondaryindex {
 
         #[chain(action = "test1")]
         pub fn test1(&self, key: u64, value: u64) {
-            let db = MyData::new_mi(self.receiver, self.receiver);
+            let db = MyData::new_table(self.receiver, self.receiver);
             let it = db.find(key);
             if let Some(mut data) = it.get_value() {
                 data.value = value;
@@ -50,7 +50,7 @@ mod secondaryindex {
         #[chain(action = "test2")]
         pub fn test2(&self, value: u64) {
             eosio_println!("+++value:", value);
-            let db = MyData::new_mi(self.receiver, self.receiver);
+            let db = MyData::new_table(self.receiver, self.receiver);
             let idx = db.get_idx_by_value();
             let (it_secondary, mut secondary_value) = idx.lowerbound(value);
             if it_secondary.is_ok() {
