@@ -905,8 +905,8 @@ impl Contract {
                             let method_ident = syn::Ident::new(&method_name, span);
                             return quote_spanned!(span =>
                                 #[allow(dead_code)]
-                                fn #method_ident(&self) -> ::eosio_chain::db::IndexDBProxy<#ty, #idx_type> {
-                                    return ::eosio_chain::db::IndexDBProxy::<#ty, #idx_type>::new(self.mi.idxdbs[#i].as_ref());
+                                fn #method_ident(&self) -> ::eosio_chain::db::IdxTableProxy<#ty, #idx_type> {
+                                    return ::eosio_chain::db::IdxTableProxy::<#ty, #idx_type>::new(self.mi.idxdbs[#i].as_ref());
                                 }
                             )
                         }
@@ -1014,7 +1014,7 @@ impl Contract {
                         return self.mi.db.end();
                     }
                 
-                    pub fn get_idx_db(&self, i: usize) -> &dyn ::eosio_chain::db::IndexDB {
+                    pub fn get_idx_db(&self, i: usize) -> &dyn ::eosio_chain::db::IdxTable {
                         return self.mi.idxdbs[i].as_ref();
                     }
                 

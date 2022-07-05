@@ -18,7 +18,7 @@ pub mod test {
         },
 
         mi_not_generic::{
-            DBI64,
+            TableI64,
             MultiIndex,
         },
 

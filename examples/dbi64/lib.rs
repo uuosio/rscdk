@@ -6,7 +6,7 @@ mod dbi64 {
         name,
         Name,
         db::{
-            DBI64,
+            TableI64,
         },
         eosio_println,
     };
@@ -37,7 +37,7 @@ mod dbi64 {
 
         #[chain(action = "inc")]
         pub fn inc_count(&self) {
-            let db = DBI64::<Counter>::new(self.receiver, self.receiver, name!("counter"));
+            let db = TableI64::<Counter>::new(self.receiver, self.receiver, name!("counter"));
             let it = db.find(1);
             let payer = self.receiver;
             if let Some(mut value) = it.get_value() {

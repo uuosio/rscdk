@@ -28,9 +28,9 @@ where T: PrimaryValueInterface + SecondaryValueInterface + Packer + Default
     ///
     pub table: Name,
     ///
-    pub db: DBI64<T>,
+    pub db: TableI64<T>,
     ///
-    pub idxdbs: Vec<Box<dyn IndexDB>>,
+    pub idxdbs: Vec<Box<dyn IdxTable>>,
     _marker: core::marker::PhantomData<T>,
 }
 
@@ -39,34 +39,34 @@ where T: PrimaryValueInterface + SecondaryValueInterface + Packer + Default
 {
     ///
     pub fn new(code: Name, scope: Name, table: Name, indexes: &[SecondaryType]) -> Self {
-        let mut idxdbs: Vec<Box<dyn IndexDB>> = Vec::new();
+        let mut idxdbs: Vec<Box<dyn IdxTable>> = Vec::new();
         let mut i: usize = 0;
         let idx_table = table.value() & 0xfffffffffffffff0;
         for idx in indexes {
             match idx {
                 SecondaryType::Idx64 => idxdbs.push(
                     Box::new(
-                        Idx64DB::new(i, code, scope, Name::from_u64(idx_table + i as u64))
+                        Idx64Table::new(i, code, scope, Name::from_u64(idx_table + i as u64))
                     )
                 ),
                 SecondaryType::Idx128 => idxdbs.push(
                     Box::new(
-                        Idx128DB::new(i, code, scope, Name::from_u64(idx_table + i as u64))
+                        Idx128Table::new(i, code, scope, Name::from_u64(idx_table + i as u64))
                     )
                 ),
                 SecondaryType::Idx256 => idxdbs.push(
                     Box::new(
-                        Idx256DB::new(i, code, scope, Name::from_u64(idx_table + i as u64))
+                        Idx256Table::new(i, code, scope, Name::from_u64(idx_table + i as u64))
                     )
                 ),
                 SecondaryType::IdxF64 => idxdbs.push(
                     Box::new(
-                        IdxF64DB::new(i, code, scope, Name::from_u64(idx_table + i as u64))
+                        IdxF64Table::new(i, code, scope, Name::from_u64(idx_table + i as u64))
                     )
                 ),
                 SecondaryType::IdxF128 => idxdbs.push(
                     Box::new(
-                        IdxF128DB::new(i, code, scope, Name::from_u64(idx_table + i as u64))
+                        IdxF128Table::new(i, code, scope, Name::from_u64(idx_table + i as u64))
                     )
                 ),
                 // _ => check(false, "unsupported secondary index type"),
@@ -77,7 +77,7 @@ where T: PrimaryValueInterface + SecondaryValueInterface + Packer + Default
             code,
             scope,
             table,
-            db: DBI64::new(code, scope, table),
+            db: TableI64::new(code, scope, table),
             idxdbs,
             _marker: core::marker::PhantomData::<T>{},
         }
@@ -165,7 +165,7 @@ where T: PrimaryValueInterface + SecondaryValueInterface + Packer + Default
     }
 
     ///
-    pub fn get_idx_db(&self, i: usize) -> &dyn IndexDB {
+    pub fn get_idx_db(&self, i: usize) -> &dyn IdxTable {
         return self.idxdbs[i].as_ref();
     }
 

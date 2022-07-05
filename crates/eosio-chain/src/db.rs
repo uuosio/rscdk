@@ -34,7 +34,7 @@ use crate::string::{
 
 ///
 #[derive(Clone, Debug, Default)]
-pub struct DBError {
+pub struct TableError {
     ///
     pub message: String,
 }
@@ -69,7 +69,7 @@ pub trait MultiIndexValue: PrimaryValueInterface + SecondaryValueInterface + Pac
 }
 
 ///
-pub trait DBValue {
+pub trait TableValue {
     ///
 	fn get_primary(&self) -> u64;
     ///
@@ -79,15 +79,6 @@ pub trait DBValue {
 }
 
 
-///
-pub struct IdxTable {
-    ///
-    pub code: u64,
-    ///
-    pub scope: u64,
-    ///
-    pub table: u64,
-}
 
 ///
 pub struct Iterator<'a, T> 
@@ -96,19 +87,19 @@ where T: Packer + PrimaryValueInterface + Default
     ///
     pub(crate) i: i32,
     pub(crate) primary: Option<u64>,
-    db: &'a DBI64<T>,
+    db: &'a TableI64<T>,
 }
 
 impl<'a, T> Iterator<'a, T> 
 where T: Packer + PrimaryValueInterface + Default
 {
     ///
-    pub fn new(i: i32, primary: Option<u64>, db: &'a DBI64<T>) -> Self {
+    pub fn new(i: i32, primary: Option<u64>, db: &'a TableI64<T>) -> Self {
         Self { i, primary, db }
     }
 
     /// get primary key of iterator
-    /// access `DBI64` to extract primary key from value if primary key is not cached
+    /// access `TableI64` to extract primary key from value if primary key is not cached
     pub fn get_primary(&self) -> Option<u64> {
         if !self.is_ok() {
             return None;
@@ -144,7 +135,7 @@ where T: Packer + PrimaryValueInterface + Default
     }
 
     /// return `true` if it's an end iterator, else `false`
-    /// use this method to check the return value of `MultiIndex.end` or `DBI64.end`
+    /// use this method to check the return value of `MultiIndex.end` or `TableI64.end`
     pub fn is_end(&self) -> bool {
         return self.i < -1;
     }
@@ -308,7 +299,7 @@ impl From<SecondaryValue> for Float128 {
 }
 
 ///
-pub struct DBI64<T> 
+pub struct TableI64<T> 
 where
     T: Packer + PrimaryValueInterface + Default,
 {
@@ -321,13 +312,13 @@ where
     _marker: core::marker::PhantomData<T>,
 }
 
-impl<T> DBI64<T>
+impl<T> TableI64<T>
 where
     T: Packer + PrimaryValueInterface + Default,
 {
-    /// Creates a new DBI64 instance
+    /// Creates a new TableI64 instance
     pub fn new(code: Name, scope: Name, table: Name) -> Self {
-        DBI64 {
+        TableI64 {
             code: code.value(),
             scope: scope.value(),
             table: table.value(),
@@ -355,8 +346,8 @@ where
 
     ///
     pub fn update(&self, iterator: &Iterator<T>, value: &T, payer: Name) {
-        check(iterator.is_ok(), "DBI64::update:invalid iterator");
-        check(iterator.get_primary().unwrap() == value.get_primary(), "DBI64::update: can not change primary value during update!");
+        check(iterator.is_ok(), "TableI64::update:invalid iterator");
+        check(iterator.get_primary().unwrap() == value.get_primary(), "TableI64::update: can not change primary value during update!");
         let data = value.pack();
         db_update_i64(iterator.i, payer.value(), data.as_ptr(), data.len() as u32);
     }
@@ -416,7 +407,7 @@ where
     }
 
     /// Return an end iterator, Iterator.is_end() return true if it's a valid end iterator.
-    /// This method is often used with `DBI64.previous` to get the last iterator.
+    /// This method is often used with `TableI64.previous` to get the last iterator.
 
     /// ```rust
     /// let mut it = db.end();
@@ -432,7 +423,7 @@ where
 }
 
 ///
-pub struct Idx64DB {
+pub struct Idx64Table {
     ///
     pub db_index: usize,
     ///
@@ -444,7 +435,7 @@ pub struct Idx64DB {
 }
 
 ///
-pub struct Idx128DB {
+pub struct Idx128Table {
     ///
     pub db_index: usize,
     ///
@@ -456,7 +447,7 @@ pub struct Idx128DB {
 }
 
 ///
-pub struct Idx256DB {
+pub struct Idx256Table {
     ///
     pub db_index: usize,
     ///
@@ -468,7 +459,7 @@ pub struct Idx256DB {
 }
 
 ///
-pub struct IdxF64DB {
+pub struct IdxF64Table {
     ///
     pub db_index: usize,
     ///
@@ -480,7 +471,7 @@ pub struct IdxF64DB {
 }
 
 ///
-pub struct IdxF128DB {
+pub struct IdxF128Table {
     ///
     pub db_index: usize,
     ///
@@ -492,7 +483,7 @@ pub struct IdxF128DB {
 }
 
 ///
-pub trait IndexDB {
+pub trait IdxTable {
     // fn new(code: u64, scope: u64, table: u64) -> Self;
     ///
     fn get_db_index(&self) -> usize;
@@ -519,9 +510,9 @@ pub trait IndexDB {
 }
 
 ///
-pub struct IndexDBProxy<'a, T: From<SecondaryValue> + Into<SecondaryValue> + Printable + Default, const IDX_TYPE: usize> {
+pub struct IdxTableProxy<'a, T: From<SecondaryValue> + Into<SecondaryValue> + Printable + Default, const IDX_TYPE: usize> {
     ///
-    pub db: &'a dyn IndexDB,
+    pub db: &'a dyn IdxTable,
     _secondary_type: SecondaryType,
     _marker: core::marker::PhantomData<T>,
 }
@@ -537,10 +528,10 @@ fn index_to_secondary_type(i: usize) -> SecondaryType {
     }
 }
 
-impl<'a, T: From<SecondaryValue> + Into<SecondaryValue> + Printable + Default, const IDX_TYPE: usize> IndexDBProxy<'a, T, IDX_TYPE>
+impl<'a, T: From<SecondaryValue> + Into<SecondaryValue> + Printable + Default, const IDX_TYPE: usize> IdxTableProxy<'a, T, IDX_TYPE>
 {
     ///
-    pub fn new(db: &'a dyn IndexDB) -> Self {
+    pub fn new(db: &'a dyn IdxTable) -> Self {
         Self {
             db,
             _secondary_type: index_to_secondary_type(IDX_TYPE),
@@ -610,14 +601,14 @@ impl<'a, T: From<SecondaryValue> + Into<SecondaryValue> + Printable + Default, c
 
 }
 
-impl Idx64DB {
+impl Idx64Table {
     ///
     pub fn new(db_index: usize, code: Name, scope: Name, table: Name) -> Self {
-        Idx64DB { db_index: db_index, code: code.value(), scope: scope.value(), table: table.value() }
+        Idx64Table { db_index: db_index, code: code.value(), scope: scope.value(), table: table.value() }
     }
 }
 
-impl IndexDB for Idx64DB {
+impl IdxTable for Idx64Table {
     fn get_db_index(&self) -> usize {
         return self.db_index;
     }
@@ -628,7 +619,7 @@ impl IndexDB for Idx64DB {
             let ret = db_idx64_store(self.scope, self.table, payer.value(), key, &value);
             return SecondaryIterator{ i: ret, primary: key, db_index: self.db_index };    
         }
-        check(false, "Idx64DB::store: bad secondary type");
+        check(false, "Idx64Table::store: bad secondary type");
         return Default::default()
     }
 
@@ -637,7 +628,7 @@ impl IndexDB for Idx64DB {
             db_idx64_update(iterator.i, payer.value(), &value);
             return;
         } else {
-            check(false, "Idx64DB::update: bad secondary type");
+            check(false, "Idx64Table::update: bad secondary type");
             return;
         }
     }
@@ -670,7 +661,7 @@ impl IndexDB for Idx64DB {
             let ret = db_idx64_find_secondary(self.code, self.scope, self.table, &value, &mut primary);
             return SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index };
         }
-        check(false, "Idx64DB::find_secondary: bad secondary type");
+        check(false, "Idx64Table::find_secondary: bad secondary type");
         return Default::default();
     }
 
@@ -681,7 +672,7 @@ impl IndexDB for Idx64DB {
             
             return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx64(value));    
         }
-        check(false, "Idx64DB::lowerbound: bad secondary type");
+        check(false, "Idx64Table::lowerbound: bad secondary type");
         return (Default::default(), SecondaryValue::Idx64(0));
     }
 
@@ -691,7 +682,7 @@ impl IndexDB for Idx64DB {
             let ret = db_idx64_upperbound(self.code, self.scope, self.table, &mut value, &mut primary);            
             return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx64(value));
         }
-        check(false, "Idx64DB::upperbound: bad secondary type");
+        check(false, "Idx64Table::upperbound: bad secondary type");
         return (Default::default(), SecondaryValue::Idx128(0));
     }
 
@@ -701,14 +692,14 @@ impl IndexDB for Idx64DB {
     }
 }
 
-impl Idx128DB {
+impl Idx128Table {
     ///
     pub fn new(db_index: usize, code: Name, scope: Name, table: Name) -> Self {
-        Idx128DB { db_index: db_index, code: code.value(), scope: scope.value(), table: table.value() }
+        Idx128Table { db_index: db_index, code: code.value(), scope: scope.value(), table: table.value() }
     }
 }
 
-impl IndexDB for Idx128DB {
+impl IdxTable for Idx128Table {
     fn get_db_index(&self) -> usize {
         return self.db_index;
     }
@@ -719,7 +710,7 @@ impl IndexDB for Idx128DB {
             let ret = db_idx128_store(self.scope, self.table, payer.value(), key, &_secondary);
             return SecondaryIterator{ i: ret, primary: key, db_index: self.db_index };
         }
-        check(false, "Idx128DB::store: bad secondary type");
+        check(false, "Idx128Table::store: bad secondary type");
         return Default::default();
     }
 
@@ -728,7 +719,7 @@ impl IndexDB for Idx128DB {
             let _secondary = Uint128{lo: (value & u64::MAX as u128) as u64, hi: (value >> 64) as u64};
             db_idx128_update(iterator.i, payer.value(), &_secondary);
         } else {
-            check(false, "Idx128DB::update: bad secondary type");
+            check(false, "Idx128Table::update: bad secondary type");
         }
     }
 
@@ -763,7 +754,7 @@ impl IndexDB for Idx128DB {
             let ret = db_idx128_find_secondary(self.code, self.scope, self.table, &mut _secondary, &mut primary);
             return SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index };
         }
-        check(false, "Idx128DB::find_secondary: bad secondary type");
+        check(false, "Idx128Table::find_secondary: bad secondary type");
         return Default::default();
     }
 
@@ -776,7 +767,7 @@ impl IndexDB for Idx128DB {
             value = ((_secondary.hi as u128) << 64) + _secondary.lo as u128;
             return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx128(value));
         }
-        check(false, "Idx128DB::lowerbound: bad secondary type");
+        check(false, "Idx128Table::lowerbound: bad secondary type");
         return (Default::default(), SecondaryValue::Idx128(0));
     }
 
@@ -791,7 +782,7 @@ impl IndexDB for Idx128DB {
                 return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx128(value));
             },
             _ => {
-                check(false, "Idx128DB::upperbound: bad secondary type");
+                check(false, "Idx128Table::upperbound: bad secondary type");
                 return (Default::default(), SecondaryValue::Idx128(0));
             }
         }
@@ -803,14 +794,14 @@ impl IndexDB for Idx128DB {
     }
 }
 
-impl Idx256DB {
+impl Idx256Table {
     ///
     pub fn new(db_index: usize, code: Name, scope: Name, table: Name) -> Self {
-        Idx256DB { db_index: db_index, code: code.value(), scope: scope.value(), table: table.value() }
+        Idx256Table { db_index: db_index, code: code.value(), scope: scope.value(), table: table.value() }
     }
 }
 
-impl IndexDB for Idx256DB {
+impl IdxTable for Idx256Table {
     fn get_db_index(&self) -> usize {
         return self.db_index;
     }
@@ -820,7 +811,7 @@ impl IndexDB for Idx256DB {
             let ret = db_idx256_store(self.scope, self.table, payer.value(), key, value.data.as_ptr() as *mut Uint128, 2);
             return SecondaryIterator{ i: ret, primary: key, db_index: self.db_index };
         }
-        check(false, "Idx256DB::store: bad secondary type");
+        check(false, "Idx256Table::store: bad secondary type");
         return Default::default();
     }
 
@@ -828,7 +819,7 @@ impl IndexDB for Idx256DB {
         if let SecondaryValue::Idx256(value) = secondary {
             db_idx256_update(iterator.i, payer.value(), value.data.as_ptr() as *mut Uint128, 2);
         } else {
-            check(false, "Idx256DB::update: bad secondary type");
+            check(false, "Idx256Table::update: bad secondary type");
         }
     }
 
@@ -861,7 +852,7 @@ impl IndexDB for Idx256DB {
             let ret = db_idx256_find_secondary(self.code, self.scope, self.table, value.data.as_mut_ptr() as *mut Uint128, 2, &mut primary);
             return SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index };
         }
-        check(false, "Idx256DB::find_secondary: bad secondary type");
+        check(false, "Idx256Table::find_secondary: bad secondary type");
         return Default::default();
     }
 
@@ -871,7 +862,7 @@ impl IndexDB for Idx256DB {
             let ret = db_idx256_lowerbound(self.code, self.scope, self.table, value.data.as_mut_ptr() as *mut u8 as *mut Uint128, 2, &mut primary);
             return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx256(value));
         }
-        check(false, "Idx256DB::lowerbound: bad secondary type");
+        check(false, "Idx256Table::lowerbound: bad secondary type");
         return (Default::default(), SecondaryValue::Idx128(0));
     }
 
@@ -883,7 +874,7 @@ impl IndexDB for Idx256DB {
                 return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx256(value));
             },
             _ => {
-                check(false, "Idx256DB::upperbound: bad secondary type");
+                check(false, "Idx256Table::upperbound: bad secondary type");
                 return (Default::default(), SecondaryValue::Idx128(0));
             }
         }
@@ -896,14 +887,14 @@ impl IndexDB for Idx256DB {
 }
 
 
-impl IdxF64DB {
+impl IdxF64Table {
     ///
     pub fn new(db_index: usize, code: Name, scope: Name, table: Name) -> Self {
-        IdxF64DB { db_index: db_index, code: code.value(), scope: scope.value(), table: table.value() }
+        IdxF64Table { db_index: db_index, code: code.value(), scope: scope.value(), table: table.value() }
     }
 }
 
-impl IndexDB for IdxF64DB {
+impl IdxTable for IdxF64Table {
     fn get_db_index(&self) -> usize {
         return self.db_index;
     }
@@ -913,7 +904,7 @@ impl IndexDB for IdxF64DB {
             let ret = db_idx_double_store(self.scope, self.table, payer.value(), key, &value);
             return SecondaryIterator{ i: ret, primary: key, db_index: self.db_index };
         }
-        check(false, "IdxF64DB::store: bad secondary type");
+        check(false, "IdxF64Table::store: bad secondary type");
         return Default::default();
     }
 
@@ -921,7 +912,7 @@ impl IndexDB for IdxF64DB {
         if let SecondaryValue::IdxF64(value) = secondary {
             db_idx_double_update(iterator.i, payer.value(), &value);
         } else {
-            check(false, "IdxF64DB::update: bad secondary type")
+            check(false, "IdxF64Table::update: bad secondary type")
         }
     }
 
@@ -954,7 +945,7 @@ impl IndexDB for IdxF64DB {
             let ret = db_idx_double_find_secondary(self.code, self.scope, self.table, &mut value, &mut primary);
             return SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index };
         }
-        check(false, "IdxF64DB::find_secondary: bad secondary type");
+        check(false, "IdxF64Table::find_secondary: bad secondary type");
         return Default::default();
     }
 
@@ -964,7 +955,7 @@ impl IndexDB for IdxF64DB {
             let ret = db_idx_double_lowerbound(self.code, self.scope, self.table, &mut value, &mut primary);
             return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::IdxF64(value));
         }
-        check(false, "IdxF64DB::lowerbound: bad secondary type");
+        check(false, "IdxF64Table::lowerbound: bad secondary type");
         return (Default::default(), SecondaryValue::IdxF64(0.0));
     }
 
@@ -976,7 +967,7 @@ impl IndexDB for IdxF64DB {
                 return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::IdxF64(value));    
             },
             _ => {
-                check(false, "IdxF64DB::upperbound: bad secondary type");
+                check(false, "IdxF64Table::upperbound: bad secondary type");
                 return (Default::default(), SecondaryValue::IdxF64(0.0));
             }
         }
@@ -989,14 +980,14 @@ impl IndexDB for IdxF64DB {
 }
 
 
-impl IdxF128DB {
+impl IdxF128Table {
     ///
     pub fn new(db_index: usize, code: Name, scope: Name, table: Name) -> Self {
-        IdxF128DB { db_index: db_index, code: code.value(), scope: scope.value(), table: table.value() }
+        IdxF128Table { db_index: db_index, code: code.value(), scope: scope.value(), table: table.value() }
     }
 }
 
-impl IndexDB for IdxF128DB {
+impl IdxTable for IdxF128Table {
     fn get_db_index(&self) -> usize {
         return self.db_index;
     }
@@ -1006,7 +997,7 @@ impl IndexDB for IdxF128DB {
             let ret = db_idx_long_double_store(self.scope, self.table, payer.value(), key, &value);
             return SecondaryIterator{ i: ret, primary: key, db_index: self.db_index };
         }
-        check(false, "IdxF128DB::store: bad secondary type");
+        check(false, "IdxF128Table::store: bad secondary type");
         return Default::default();
     }
 
@@ -1014,7 +1005,7 @@ impl IndexDB for IdxF128DB {
         if let SecondaryValue::IdxF128(value) = secondary {
             db_idx_long_double_update(iterator.i, payer.value(), &value);
         } else {
-            check(false, "IdxF128DB::update: bad secondary type")
+            check(false, "IdxF128Table::update: bad secondary type")
         }
     }
 
@@ -1047,7 +1038,7 @@ impl IndexDB for IdxF128DB {
             let ret = db_idx_long_double_find_secondary(self.code, self.scope, self.table, &mut value, &mut primary);
             return SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index };
         }
-        check(false, "IdxF128DB::find_secondary: bad secondary type");
+        check(false, "IdxF128Table::find_secondary: bad secondary type");
         return Default::default();
     }
 
@@ -1057,7 +1048,7 @@ impl IndexDB for IdxF128DB {
             let ret = db_idx_long_double_lowerbound(self.code, self.scope, self.table, &mut value, &mut primary);
             return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::IdxF128(value));
         }
-        check(false, "IdxF128DB::lowerbound: bad secondary type");
+        check(false, "IdxF128Table::lowerbound: bad secondary type");
         return (Default::default(), SecondaryValue::IdxF128(Float128::default()));
     }
 
@@ -1067,7 +1058,7 @@ impl IndexDB for IdxF128DB {
             let ret = db_idx_long_double_upperbound(self.code, self.scope, self.table, &mut value, &mut primary);
             return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::IdxF128(value));    
         }
-        check(false, "IdxF128DB::upperbound: bad secondary type");
+        check(false, "IdxF128Table::upperbound: bad secondary type");
         return (Default::default(), SecondaryValue::None);   
     }
 

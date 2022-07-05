@@ -1,12 +1,12 @@
 use crate::db::{
-    Idx64DB,
-    Idx128DB,
-    Idx256DB,
-    // IdxF128DB,
+    Idx64Table,
+    Idx128Table,
+    Idx256Table,
+    // IdxF128Table,
     SecondaryType,
     SecondaryValue,
     SecondaryIterator,
-    IndexDB,
+    IdxTable,
     MultiIndexValue,
 };
 
@@ -35,12 +35,12 @@ pub struct Iterator<'a> {
     ///
     pub i: i32,
     primary: Option<u64>,
-    db: &'a DBI64,
+    db: &'a TableI64,
 }
 
 impl<'a> Iterator<'a> {
     ///
-    pub fn new(i: i32, primary: Option<u64>, db: &'a DBI64) -> Self {
+    pub fn new(i: i32, primary: Option<u64>, db: &'a TableI64) -> Self {
         Self { i, primary, db }
     }
 
@@ -99,7 +99,7 @@ impl<'a> Iterator<'a> {
 
 
 ///
-pub struct DBI64 {
+pub struct TableI64 {
     ///
     pub code: u64,
     ///
@@ -109,10 +109,10 @@ pub struct DBI64 {
     unpacker: fn(&[u8]) -> Box<dyn MultiIndexValue>,
 }
 
-impl DBI64 {
+impl TableI64 {
     ///
     pub fn new(code: Name, scope: Name, table: Name, unpacker: fn(&[u8]) -> Box<dyn MultiIndexValue>) -> Self {
-        DBI64 {
+        TableI64 {
             code: code.value(),
             scope: scope.value(),
             table: table.value(),
@@ -208,9 +208,9 @@ pub struct MultiIndex {
     ///
     pub table: Name,
     ///
-    pub db: DBI64,
+    pub db: TableI64,
     ///
-    pub idxdbs: Vec<Box<dyn IndexDB>>,
+    pub idxdbs: Vec<Box<dyn IdxTable>>,
     ///
     pub unpacker: fn(&[u8]) -> Box<dyn MultiIndexValue>,
 }
@@ -218,19 +218,19 @@ pub struct MultiIndex {
 impl MultiIndex {
     ///
     pub fn new(code: Name, scope: Name, table: Name, indexes: &[SecondaryType], unpacker: fn(&[u8]) -> Box<dyn MultiIndexValue>) -> Self {
-        let mut idxdbs: Vec<Box<dyn IndexDB>> = Vec::new();
+        let mut idxdbs: Vec<Box<dyn IdxTable>> = Vec::new();
         let mut i: usize = 0;
         let idx_table = table.value() & 0xfffffffffffffff0;
         for idx in indexes {
             match idx {
                 SecondaryType::Idx64 => idxdbs.push(
-                    Box::new(Idx64DB::new(i, code, scope, Name::from_u64(idx_table + i as u64)))
+                    Box::new(Idx64Table::new(i, code, scope, Name::from_u64(idx_table + i as u64)))
                 ),
                 SecondaryType::Idx128 => idxdbs.push(
-                    Box::new(Idx128DB::new(i, code, scope, Name::from_u64(idx_table + i as u64)))
+                    Box::new(Idx128Table::new(i, code, scope, Name::from_u64(idx_table + i as u64)))
                 ),
                 SecondaryType::Idx256 => idxdbs.push(
-                    Box::new(Idx256DB::new(i, code, scope, Name::from_u64(idx_table + i as u64)))
+                    Box::new(Idx256Table::new(i, code, scope, Name::from_u64(idx_table + i as u64)))
                 ),
                 _ => panic!("unsupported secondary index type"),
             }
@@ -240,7 +240,7 @@ impl MultiIndex {
             code,
             scope,
             table,
-            db: DBI64::new(code, scope, table, unpacker),
+            db: TableI64::new(code, scope, table, unpacker),
             idxdbs,
             unpacker: unpacker,
         }
@@ -332,7 +332,7 @@ impl MultiIndex {
     }
 
     ///
-    pub fn get_idx_db(&self, i: usize) -> &dyn IndexDB {
+    pub fn get_idx_db(&self, i: usize) -> &dyn IdxTable {
         return self.idxdbs[i].as_ref();
     }
 
