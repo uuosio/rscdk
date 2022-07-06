@@ -217,11 +217,11 @@ pub struct MultiIndex {
 
 impl MultiIndex {
     ///
-    pub fn new(code: Name, scope: Name, table: Name, indexes: &[SecondaryType], unpacker: fn(&[u8]) -> Box<dyn MultiIndexValue>) -> Self {
+    pub fn new(code: Name, scope: Name, table: Name, indices: &[SecondaryType], unpacker: fn(&[u8]) -> Box<dyn MultiIndexValue>) -> Self {
         let mut idxdbs: Vec<Box<dyn IdxTable>> = Vec::new();
         let mut i: usize = 0;
         let idx_table = table.value() & 0xfffffffffffffff0;
-        for idx in indexes {
+        for idx in indices {
             match idx {
                 SecondaryType::Idx64 => idxdbs.push(
                     Box::new(Idx64Table::new(i, code, scope, Name::from_u64(idx_table + i as u64)))

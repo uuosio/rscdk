@@ -52,7 +52,7 @@ mod token {
             check(maximum_supply.is_valid(), "invalid supply");
             check(maximum_supply.amount() > 0, "max_supply must be positive");
             let sym_code = maximum_supply.symbol().code().value();
-            let db = CurrencyStats::new_table(self.receiver, Name{n: sym_code});
+            let db = CurrencyStats::new_table_with_scope(self.receiver, Name{n: sym_code});
             db.find(sym_code).expect_not_ok("token with symbol already exists");
 
             let stats = CurrencyStats{
@@ -68,7 +68,7 @@ mod token {
             check(quantity.is_valid(), "invalid symbol name");
             check(memo.len() <= 256, "memo has more than 256 bytes");
             let sym_code = quantity.symbol().code().value();
-            let db = CurrencyStats::new_table(self.receiver, Name{n: sym_code});
+            let db = CurrencyStats::new_table_with_scope(self.receiver, Name{n: sym_code});
             let it = db
                 .find(sym_code)
                 .expect("token with symbol does not exist, create token before issue");
@@ -90,7 +90,7 @@ mod token {
             check(quantity.symbol().is_valid(), "invalid symbol name");
             check(memo.len() <= 256, "memo has more than 256 bytes");
             let sym_code = quantity.symbol().code().value();
-            let db = CurrencyStats::new_table(self.receiver, Name{n: sym_code});
+            let db = CurrencyStats::new_table_with_scope(self.receiver, Name{n: sym_code});
             let it = db
                 .find(sym_code)
                 .expect("token with symbol does not exist");
@@ -110,7 +110,7 @@ mod token {
             require_auth(from);
             check(is_account(to), "to account does not exist");
             let sym_code = quantity.symbol().code().value();
-            let db = CurrencyStats::new_table(self.receiver, Name::from_u64(sym_code));
+            let db = CurrencyStats::new_table_with_scope(self.receiver, Name::from_u64(sym_code));
             let it = db
                 .find(sym_code)
                 .expect("token with symbol does not exist");
@@ -138,13 +138,13 @@ mod token {
         pub fn open(&self, owner: Name, symbol: Symbol, ram_payer: Name) {
             require_auth(ram_payer);
             check(is_account(owner), "owner account does not exist");
-            let db = CurrencyStats::new_table(self.receiver, Name::from_u64(symbol.code().value()));
+            let db = CurrencyStats::new_table_with_scope(self.receiver, Name::from_u64(symbol.code().value()));
             let it = db
                 .find(symbol.code().value())
                 .expect("symbol does not exist");
             let stat = it.get_value().unwrap();
             check(stat.supply.symbol() == symbol, "symbol precision mismatch");
-            let accounts = Account::new_table(self.receiver, owner);
+            let accounts = Account::new_table_with_scope(self.receiver, owner);
             let it_account = accounts.find(symbol.code().value());
             if !it_account.is_ok() {
                 let account = Account{
@@ -157,7 +157,7 @@ mod token {
         #[chain(action = "close")]
         pub fn close(&self, owner: Name, symbol: Symbol) {
             require_auth(owner);
-            let accounts = Account::new_table(self.receiver, owner);
+            let accounts = Account::new_table_with_scope(self.receiver, owner);
             let it = accounts
                 .find(symbol.code().value())
                 .expect("balance row already deleted or never existed. Action won't have any effect.");
@@ -167,7 +167,7 @@ mod token {
         }
 
         fn add_balance(&self, owner: Name, value: &Asset, payer: Name) {
-            let accounts = Account::new_table(self.receiver, owner);
+            let accounts = Account::new_table_with_scope(self.receiver, owner);
             let it = accounts.find(value.symbol().code().value());
             if !it.is_ok() {
                 accounts.store(&Account{balance: *value}, payer);
@@ -179,7 +179,7 @@ mod token {
         }
 
         fn sub_balance(&self, owner: Name, quantity: &Asset) {
-            let accounts = Account::new_table(self.receiver, owner);
+            let accounts = Account::new_table_with_scope(self.receiver, owner);
             let it = accounts
                 .find(quantity.symbol().code().value())
                 .expect("no balance object found");

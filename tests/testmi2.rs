@@ -96,8 +96,8 @@ pub mod test {
             let code = self.receiver;
             let scope = self.receiver;
             let table = name!("hello");
-            let indexes: Vec<SecondaryType> = Vec::new();
-            let mi = MultiIndex::new(code, scope, table, &indexes, unpacker);
+            let indices: Vec<SecondaryType> = Vec::new();
+            let mi = MultiIndex::new(code, scope, table, &indices, unpacker);
             let it = mi.find(1);
             if let Some(mut value) = it.get_value() {
                 if let Some(x) = value.as_any_mut().downcast_mut::<MyStruct>() {

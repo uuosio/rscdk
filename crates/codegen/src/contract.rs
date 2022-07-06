@@ -948,8 +948,13 @@ impl Contract {
 
                     impl #table_ident {
                         #[allow(dead_code)]
-                        fn new_table(code: eosio_chain::Name, scope: eosio_chain::Name) -> Box<#mi_ident> {
+                        fn new_table_with_scope(code: eosio_chain::Name, scope: eosio_chain::Name) -> Box<#mi_ident> {
                             return Box::new(#mi_ident::new(code, scope, eosio_chain::Name::new(#table_name)));
+                        }
+
+                        #[allow(dead_code)]
+                        fn new_table(code: eosio_chain::Name) -> Box<#mi_ident> {
+                            #table_ident::new_table_with_scope(code, eosio_chain::Name{n: 0})
                         }
                     }
                 );
@@ -964,9 +969,9 @@ impl Contract {
                 #[allow(dead_code)]
                 impl #mi_ident {
 
-                    pub fn new(code: eosio_chain::Name, scope: eosio_chain::Name, table: eosio_chain::Name, indexes: &[eosio_chain::db::SecondaryType]) -> Self {
+                    pub fn new(code: eosio_chain::Name, scope: eosio_chain::Name, table: eosio_chain::Name, indices: &[eosio_chain::db::SecondaryType]) -> Self {
                         Self {
-                            mi: ::eosio_chain::mi::MultiIndex::<#table_ident>::new(code, scope, table, indexes),
+                            mi: ::eosio_chain::mi::MultiIndex::<#table_ident>::new(code, scope, table, indices),
                         }
                     }
 
@@ -1027,9 +1032,14 @@ impl Contract {
 
                 impl #table_ident {
                     #[allow(dead_code)]
-                    fn new_table(code: eosio_chain::Name, scope: eosio_chain::Name) -> Box<#mi_ident> {
-                        let indexes: [eosio_chain::db::SecondaryType; #len_secondary] = [#( #secondary_types ),*];
-                        return Box::new(#mi_ident::new(code, scope, eosio_chain::Name::new(#table_name), &indexes));
+                    fn new_table_with_scope(code: eosio_chain::Name, scope: eosio_chain::Name) -> Box<#mi_ident> {
+                        let indices: [eosio_chain::db::SecondaryType; #len_secondary] = [#( #secondary_types ),*];
+                        return Box::new(#mi_ident::new(code, scope, eosio_chain::Name::new(#table_name), &indices));
+                    }
+
+                    #[allow(dead_code)]
+                    fn new_table(code: eosio_chain::Name) -> Box<#mi_ident> {
+                        #table_ident::new_table_with_scope(code, eosio_chain::Name{n: 0})
                     }
                 }
             );

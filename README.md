@@ -4,12 +4,12 @@ Rust Smart Contracts Development Kit
 
 ## Getting Started
 
-- [Read the gscdk book](https://uuosio.github.io/rscdk-book)
-- [Try examples yourself](https://github.com/uuosio/rscdk/tree/main/examples)
-- [Try it online](https://colab.research.google.com/github/uuosio/rscdk/blob/master/quickstart/quick-start.ipynb)
+- [Try Rust Contracts in One Minute](https://colab.research.google.com/github/uuosio/rscdk/blob/master/quickstart/quick-start.ipynb)
+- [Try Examples](https://github.com/uuosio/rscdk/tree/main/examples)
+- [Read the RSCDK Book](https://uuosio.github.io/rscdk-book)
 
 ## Getting involved
 
-- [Submit an issue](https://github.com/uuosio/rscdk/issues)
-- [Create a new pull request](https://github.com/uuosio/rscdk/pulls)
-- [Help Improving the rscdk book](https://github.com/uuosio/rscdk-book)
+- [Submit an Issue](https://github.com/uuosio/rscdk/issues)
+- [Create a New Pull Request](https://github.com/uuosio/rscdk/pulls)
+- [Help Improving the RSCDK Book](https://github.com/uuosio/rscdk-book)
