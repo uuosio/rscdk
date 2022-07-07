@@ -24,9 +24,6 @@ build_optional:
 build_variant:
 	cd testvariant;rust-contract build 
 
-build_name:
-	cd testname;rust-contract build 
-
 build_notify:
 	cd testnotify/receiver;rust-contract build 
 	cd testnotify/sender;rust-contract build 
@@ -74,7 +71,7 @@ test_destructor: build_all
 	run-ipyeos -m pytest -s test.py -k test_destructor
 
 all_builds = build_hello build_abi build_mod \
-	build_inline build_asset build_optional build_variant build_name \
+	build_inline build_asset build_optional build_variant \
 	build_notify
 
 test_all: $(all_builds)

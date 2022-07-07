@@ -218,7 +218,7 @@ pub mod test {
 
                 //test for Idx128Table.upper_boundddd
                 {
-                    let (it_secondary, secondary) = idx.upper_boundd(33);
+                    let (it_secondary, secondary) = idx.upper_bound(33);
                     check(it_secondary.primary == 111, "upper_bound: bad primary value!");
                     eosio_println!("+++++++secondary:", secondary);
                     check(secondary == 333, "Idx128Table.upper_bound: bad secondary value!");
