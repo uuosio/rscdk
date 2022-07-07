@@ -75,4 +75,5 @@ all_builds = build_hello build_abi build_mod \
 	build_notify
 
 test_all: $(all_builds)
+	rust-contract build
 	run-ipyeos -m pytest -s -x test.py
