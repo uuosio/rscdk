@@ -92,7 +92,6 @@ pub mod test {
                 value.unpack(raw);
                 Box::new(value)
             };
-
             let code = self.receiver;
             let scope = self.receiver;
             let table = name!("hello");

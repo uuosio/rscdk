@@ -356,7 +356,7 @@ where
         db_remove_i64(iterator.i);
     }
 
-    /// get value by iterator. use `iterator.get_value()` for a more convenient way.
+    /// get value by iterator. use [Iterator](crate::db::Iterator)::get_value for a more convenient way.
     pub fn get(&self, iterator: &Iterator<T>) -> Option<T> {
         if !iterator.is_ok() {
             return None;
@@ -394,13 +394,13 @@ where
     }
 
     /// return a iterator with a key >= `key`
-    pub fn lowerbound(&self, key: u64) -> Iterator<T> {
+    pub fn lower_bound(&self, key: u64) -> Iterator<T> {
         let it = db_lowerbound_i64(self.code, self.scope, self.table, key);
         Iterator::<T> { i: it, primary: None, db: self }
     }
 
     /// return a iterator with a key > `key`
-    pub fn upperbound(&self, key: u64) -> Iterator<T> {
+    pub fn upper_bound(&self, key: u64) -> Iterator<T> {
         let it = db_upperbound_i64(self.code, self.scope, self.table, key);
         Iterator::<T> { i: it, primary: None, db: self }
     }
@@ -501,9 +501,9 @@ pub trait IdxTable {
     ///
     fn find(&self, secondary: SecondaryValue) -> SecondaryIterator;
     ///
-    fn lowerbound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue);
+    fn lower_bound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue);
     ///
-    fn upperbound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue);
+    fn upper_bound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue);
     ///
     fn end(&self) -> SecondaryIterator;
 }
@@ -580,15 +580,15 @@ impl<'a, T: From<SecondaryValue> + Into<SecondaryValue> + Printable + Default, c
     }
 
     ///
-    pub fn lowerbound(&self, secondary: T) -> (SecondaryIterator, T) {
-        let (it, value) = self.db.lowerbound(secondary.into());
+    pub fn lower_bound(&self, secondary: T) -> (SecondaryIterator, T) {
+        let (it, value) = self.db.lower_bound(secondary.into());
         return (it, value.into());
     }
 
     ///
-    pub fn upperbound(&self, secondary: T) -> (SecondaryIterator, T) {
+    pub fn upper_bound(&self, secondary: T) -> (SecondaryIterator, T) {
         let _secondary = secondary.into();
-        let (it, value) = self.db.upperbound(_secondary);
+        let (it, value) = self.db.upper_bound(_secondary);
         let _value = value.into();
         return (it, _value);
     }
@@ -663,24 +663,24 @@ impl IdxTable for Idx64Table {
         return Default::default();
     }
 
-    fn lowerbound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
+    fn lower_bound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
         if let SecondaryValue::Idx64(mut value) = secondary {
             let mut primary = 0;
             let ret = db_idx64_lowerbound(self.code, self.scope, self.table, &mut value, &mut primary);
             
             return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx64(value));    
         }
-        check(false, "Idx64Table::lowerbound: bad secondary type");
+        check(false, "Idx64Table::lower_bound: bad secondary type");
         return (Default::default(), SecondaryValue::Idx64(0));
     }
 
-    fn upperbound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
+    fn upper_bound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
         if let SecondaryValue::Idx64(mut value) = secondary {
             let mut primary = 0;
             let ret = db_idx64_upperbound(self.code, self.scope, self.table, &mut value, &mut primary);            
             return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx64(value));
         }
-        check(false, "Idx64Table::upperbound: bad secondary type");
+        check(false, "Idx64Table::upper_bounddd: bad secondary type");
         return (Default::default(), SecondaryValue::Idx128(0));
     }
 
@@ -756,7 +756,7 @@ impl IdxTable for Idx128Table {
         return Default::default();
     }
 
-    fn lowerbound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
+    fn lower_bound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
         if let SecondaryValue::Idx128(mut value) = secondary {
             let mut primary = 0;
             // let _secondary: SecondaryValue = secondary;
@@ -765,11 +765,11 @@ impl IdxTable for Idx128Table {
             value = ((_secondary.hi as u128) << 64) + _secondary.lo as u128;
             return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx128(value));
         }
-        check(false, "Idx128Table::lowerbound: bad secondary type");
+        check(false, "Idx128Table::lower_bound: bad secondary type");
         return (Default::default(), SecondaryValue::Idx128(0));
     }
 
-    fn upperbound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
+    fn upper_bound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
         match secondary {
             SecondaryValue::Idx128(mut value) => {
                 let mut primary = 0;
@@ -780,7 +780,7 @@ impl IdxTable for Idx128Table {
                 return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx128(value));
             },
             _ => {
-                check(false, "Idx128Table::upperbound: bad secondary type");
+                check(false, "Idx128Table::upper_bound: bad secondary type");
                 return (Default::default(), SecondaryValue::Idx128(0));
             }
         }
@@ -854,17 +854,17 @@ impl IdxTable for Idx256Table {
         return Default::default();
     }
 
-    fn lowerbound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
+    fn lower_bound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
         if let SecondaryValue::Idx256(mut value) = secondary {
             let mut primary = 0;
             let ret = db_idx256_lowerbound(self.code, self.scope, self.table, value.data.as_mut_ptr() as *mut u8 as *mut Uint128, 2, &mut primary);
             return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx256(value));
         }
-        check(false, "Idx256Table::lowerbound: bad secondary type");
+        check(false, "Idx256Table::lower_bound: bad secondary type");
         return (Default::default(), SecondaryValue::Idx128(0));
     }
 
-    fn upperbound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
+    fn upper_bound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
         match secondary {
             SecondaryValue::Idx256(mut value) => {
                 let mut primary = 0;
@@ -872,7 +872,7 @@ impl IdxTable for Idx256Table {
                 return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx256(value));
             },
             _ => {
-                check(false, "Idx256Table::upperbound: bad secondary type");
+                check(false, "Idx256Table::upper_boundd: bad secondary type");
                 return (Default::default(), SecondaryValue::Idx128(0));
             }
         }
@@ -947,17 +947,17 @@ impl IdxTable for IdxF64Table {
         return Default::default();
     }
 
-    fn lowerbound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
+    fn lower_bound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
         if let SecondaryValue::IdxF64(mut value) = secondary {
             let mut primary = 0;
             let ret = db_idx_double_lowerbound(self.code, self.scope, self.table, &mut value, &mut primary);
             return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::IdxF64(value));
         }
-        check(false, "IdxF64Table::lowerbound: bad secondary type");
+        check(false, "IdxF64Table::lower_bound: bad secondary type");
         return (Default::default(), SecondaryValue::IdxF64(0.0));
     }
 
-    fn upperbound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
+    fn upper_bound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
         match secondary {
             SecondaryValue::IdxF64(mut value) => {
                 let mut primary = 0;
@@ -965,7 +965,7 @@ impl IdxTable for IdxF64Table {
                 return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::IdxF64(value));    
             },
             _ => {
-                check(false, "IdxF64Table::upperbound: bad secondary type");
+                check(false, "IdxF64Table::upper_boundddd: bad secondary type");
                 return (Default::default(), SecondaryValue::IdxF64(0.0));
             }
         }
@@ -1040,23 +1040,23 @@ impl IdxTable for IdxF128Table {
         return Default::default();
     }
 
-    fn lowerbound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
+    fn lower_bound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
         if let SecondaryValue::IdxF128(mut value) = secondary {
             let mut primary = 0;
             let ret = db_idx_long_double_lowerbound(self.code, self.scope, self.table, &mut value, &mut primary);
             return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::IdxF128(value));
         }
-        check(false, "IdxF128Table::lowerbound: bad secondary type");
+        check(false, "IdxF128Table::lower_bound: bad secondary type");
         return (Default::default(), SecondaryValue::IdxF128(Float128::default()));
     }
 
-    fn upperbound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
+    fn upper_bound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
         if let SecondaryValue::IdxF128(mut value) = secondary {
             let mut primary = 0;
             let ret = db_idx_long_double_upperbound(self.code, self.scope, self.table, &mut value, &mut primary);
             return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::IdxF128(value));    
         }
-        check(false, "IdxF128Table::upperbound: bad secondary type");
+        check(false, "IdxF128Table::upper_bound: bad secondary type");
         return (Default::default(), SecondaryValue::None);   
     }
 

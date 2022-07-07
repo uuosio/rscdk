@@ -154,11 +154,11 @@ pub mod test {
                     check(ret, "bad secondary next value");
                 }
 
-                //test for Idx64Table.lowerbound
+                //test for Idx64Table.lower_bound
                 {
-                    let (it_secondary, secondary) = idx.lowerbound(22);
+                    let (it_secondary, secondary) = idx.lower_bound(22);
                     check(it_secondary.primary == 11, "bad primary value!");
-                    check(secondary == 22, "Idx64Table.lowerbound: bad secondary value!");
+                    check(secondary == 22, "Idx64Table.lower_bound: bad secondary value!");
 
                     let ret = check_fn(it_secondary, |data: &MyData| {
                         data.a1 == 11 && data.a2 == 22
@@ -166,12 +166,12 @@ pub mod test {
                     check(ret, "bad secondary next value");
                 }
 
-                //test for Idx64Table.upperbound
+                //test for Idx64Table.upper_bound
                 {
-                    let (it_secondary, secondary) = idx.upperbound(22);
-                    check(it_secondary.primary == 111, "upperbound: bad primary value!");
+                    let (it_secondary, secondary) = idx.upper_bound(22);
+                    check(it_secondary.primary == 111, "upper_bound: bad primary value!");
                     eosio_println!("+++++++secondary:", secondary);
-                    check(secondary == 222, "Id64Table.upperbound: bad secondary value!");
+                    check(secondary == 222, "Id64Table.upper_boundd: bad secondary value!");
 
                     let ret = check_fn(it_secondary, |data: &MyData| {
                         data.a1 == 111 && data.a2 == 222
@@ -203,12 +203,12 @@ pub mod test {
                     check(ret, "bad secondary next value");
                 }
 
-                //test for Idx128Table.lowerbound
+                //test for Idx128Table.lower_bound
                 {
-                    let (it_secondary, secondary) = idx.lowerbound(33);
+                    let (it_secondary, secondary) = idx.lower_bound(33);
                     check(it_secondary.primary == 11, "bad primary value!");
                     eosio_println!(it_secondary.primary, secondary);
-                    check(secondary == 33, "Idx128Table.lowerbound: bad secondary value!");
+                    check(secondary == 33, "Idx128Table.lower_bound: bad secondary value!");
 
                     let ret = check_fn(it_secondary, |data: &MyData| {
                         data.a1 == 11 && data.a2 == 22 && data.a3 == 33
@@ -216,12 +216,12 @@ pub mod test {
                     check(ret, "bad secondary next value");
                 }
 
-                //test for Idx128Table.upperbound
+                //test for Idx128Table.upper_boundddd
                 {
-                    let (it_secondary, secondary) = idx.upperbound(33);
-                    check(it_secondary.primary == 111, "upperbound: bad primary value!");
+                    let (it_secondary, secondary) = idx.upper_boundd(33);
+                    check(it_secondary.primary == 111, "upper_bound: bad primary value!");
                     eosio_println!("+++++++secondary:", secondary);
-                    check(secondary == 333, "Idx128Table.upperbound: bad secondary value!");
+                    check(secondary == 333, "Idx128Table.upper_bound: bad secondary value!");
 
                     let ret = check_fn(it_secondary, |data: &MyData| {
                         data.a1 == 111 && data.a2 == 222 && data.a3 == 333
@@ -253,11 +253,11 @@ pub mod test {
                     check(ret, "bad secondary next value");
                 }
 
-                //test for Idx256Table.lowerbound
+                //test for Idx256Table.lower_bound
                 {
-                    let (it_secondary, secondary) = idx.lowerbound(Uint256::new(44, 0));
+                    let (it_secondary, secondary) = idx.lower_bound(Uint256::new(44, 0));
                     check(it_secondary.primary == 11, "bad primary value!");
-                    check(secondary == Uint256::new(44, 0), "Idx256Table.lowerbound: bad secondary value!");
+                    check(secondary == Uint256::new(44, 0), "Idx256Table.lower_bound: bad secondary value!");
 
                     let ret = check_fn(it_secondary, |data: &MyData| {
                         data.a1 == 11 && data.a2 == 22 && data.a3 == 33 && data.a4 == Uint256::new(44, 0)
@@ -265,12 +265,12 @@ pub mod test {
                     check(ret, "bad secondary next value");
                 }
 
-                //test for Idx256Table.upperbound
+                //test for Idx256Table.upper_bound
                 {
-                    let (it_secondary, secondary) = idx.upperbound(Uint256::new(44, 0));
-                    check(it_secondary.primary == 111, "upperbound: bad primary value!");
+                    let (it_secondary, secondary) = idx.upper_bound(Uint256::new(44, 0));
+                    check(it_secondary.primary == 111, "upper_bound: bad primary value!");
                     eosio_println!("+++++++secondary:", secondary);
-                    check(secondary == Uint256::new(444, 0), "Idx256Table.upperbound: bad secondary value!");
+                    check(secondary == Uint256::new(444, 0), "Idx256Table.upper_bound: bad secondary value!");
 
                     let ret = check_fn(it_secondary, |data: &MyData| {
                         data.a1 == 111 && data.a2 == 222 && data.a3 == 333 && data.a4 == Uint256::new(444, 0)
@@ -302,11 +302,11 @@ pub mod test {
                     check(ret, "bad secondary next value");
                 }
 
-                //test for IdxF64Table.lowerbound
+                //test for IdxF64Table.lower_bound
                 {
-                    let (it_secondary, secondary) = idx.lowerbound(55.0);
+                    let (it_secondary, secondary) = idx.lower_bound(55.0);
                     check(it_secondary.primary == 11, "bad primary value!");
-                    check(secondary == 55.0, "IdxF64Table.lowerbound: bad secondary value!");
+                    check(secondary == 55.0, "IdxF64Table.lower_bound: bad secondary value!");
 
                     let ret = check_fn(it_secondary, |data: &MyData| {
                         data.a1 == 11 && data.a2 == 22 && data.a3 == 33 && data.a4 == Uint256::new(44, 0) && data.a5 == 55.0
@@ -314,12 +314,12 @@ pub mod test {
                     check(ret, "bad secondary next value");
                 }
 
-                //test for IdxF64Table.upperbound
+                //test for IdxF64Table.upper_bound
                 {
-                    let (it_secondary, secondary) = idx.upperbound(55.0);
-                    check(it_secondary.primary == 111, "upperbound: bad primary value!");
+                    let (it_secondary, secondary) = idx.upper_bound(55.0);
+                    check(it_secondary.primary == 111, "upper_bound: bad primary value!");
                     eosio_println!("+++++++secondary:", secondary);
-                    check(secondary == 555.0, "IdxF64Table.upperbound: bad secondary value!");
+                    check(secondary == 555.0, "IdxF64Table.upper_bound: bad secondary value!");
 
                     let ret = check_fn(it_secondary, |data: &MyData| {
                         data.a1 == 111 && data.a2 == 222 && data.a3 == 333 && data.a4 == Uint256::new(444, 0) && data.a5 == 555.0
@@ -355,31 +355,31 @@ pub mod test {
                     check(ret, "IdxF128Table: bad secondary next value");
                 }
 
-                //test for IdxF128Table.lowerbound
+                //test for IdxF128Table.lower_bound
                 {
-                    let (it_secondary, secondary) = idx.lowerbound(a6_66);
+                    let (it_secondary, secondary) = idx.lower_bound(a6_66);
                     check(it_secondary.primary == 11, "bad primary value!");
-                    check(secondary == a6_66, "IdxF128Db.lowerbound: bad secondary value!");
+                    check(secondary == a6_66, "IdxF128Db.lower_bound: bad secondary value!");
 
                     let ret = check_fn(it_secondary, |data: &MyData| {
                         let a6_66: Float128 = Float128::new([0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x08,0x05,0x40]);
                         data.a1 == 11 && data.a2 == 22 && data.a3 == 33 && data.a4 == Uint256::new(44, 0) && data.a5 == 55.0 && data.a6 == a6_66
                     });
-                    check(ret, "IdxF128Table.lowerbound: bad secondary value");
+                    check(ret, "IdxF128Table.lower_bound: bad secondary value");
                 }
 
-                //test for IdxF128Table.upperbound
+                //test for IdxF128Table.upper_bound
                 {
-                    let (it_secondary, secondary) = idx.upperbound(a6_66);
-                    check(it_secondary.primary == 111, "upperbound: bad primary value!");
+                    let (it_secondary, secondary) = idx.upper_bound(a6_66);
+                    check(it_secondary.primary == 111, "upper_bound: bad primary value!");
                     eosio_println!("+++++++secondary:", secondary);
-                    check(secondary == a6_666, "IdxF128Table.upperbound: bad secondary value!");
+                    check(secondary == a6_666, "IdxF128Table.upper_bound: bad secondary value!");
 
                     let ret = check_fn(it_secondary, |data: &MyData| {
                         let a6_666: Float128 = Float128::new([0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x4d,0x08,0x40]);
                         data.a1 == 111 && data.a2 == 222 && data.a3 == 333 && data.a4 == Uint256::new(444, 0) && data.a5 == 555.0 && data.a6 == a6_666
                     });
-                    check(ret, "IdxF128Db.upperbound: bad secondary value");
+                    check(ret, "IdxF128Db.upper_bound: bad secondary value");
                 }
             }
             // eosio_println!("+++++MyDataIdx::a2:", MyDataIdx::a2 as usize);

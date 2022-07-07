@@ -150,13 +150,13 @@ where T: PrimaryValueInterface + SecondaryValueInterface + Packer + Default
     }
 
     ///
-    pub fn lowerbound(&self, id: u64) -> Iterator<T> {
-        return self.db.lowerbound(id);
+    pub fn lower_bound(&self, id: u64) -> Iterator<T> {
+        return self.db.lower_bound(id);
     }
 
     ///
-    pub fn upperbound(&self, id: u64) -> Iterator<T> {
-        return self.db.upperbound(id);
+    pub fn upper_bound(&self, id: u64) -> Iterator<T> {
+        return self.db.upper_bound(id);
     }
 
     ///

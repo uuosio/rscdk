@@ -1007,12 +1007,12 @@ impl Contract {
                         return self.mi.db.find(id);
                     }
                 
-                    pub fn lowerbound(&self, id: u64) -> ::eosio_chain::db::Iterator<#table_ident> {
-                        return self.mi.db.lowerbound(id);
+                    pub fn lower_bound(&self, id: u64) -> ::eosio_chain::db::Iterator<#table_ident> {
+                        return self.mi.db.lower_bound(id);
                     }
                 
-                    pub fn upperbound(&self, id: u64) -> ::eosio_chain::db::Iterator<#table_ident> {
-                        return self.mi.db.upperbound(id);
+                    pub fn upper_bound(&self, id: u64) -> ::eosio_chain::db::Iterator<#table_ident> {
+                        return self.mi.db.upper_bound(id);
                     }
                 
                     pub fn end(&self) -> ::eosio_chain::db::Iterator<#table_ident> {

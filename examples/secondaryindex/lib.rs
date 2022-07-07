@@ -52,7 +52,7 @@ mod secondaryindex {
             eosio_println!("+++value:", value);
             let db = MyData::new_table(self.receiver);
             let idx = db.get_idx_by_value();
-            let (it_secondary, mut secondary_value) = idx.lowerbound(value);
+            let (it_secondary, mut secondary_value) = idx.lower_bound(value);
             if it_secondary.is_ok() {
                 eosio_println!("++++primary value", it_secondary.primary, "secondary value:", secondary_value);
                 // update secondary value

@@ -181,13 +181,13 @@ impl TableI64 {
     }
 
     ///
-    pub fn lowerbound(&self, id: u64) -> Iterator {
+    pub fn lower_bound(&self, id: u64) -> Iterator {
         let it = db_lowerbound_i64(self.code, self.scope, self.table, id);
         Iterator { i: it, primary: None, db: self }
     }
 
     ///
-    pub fn upperbound(&self, id: u64) -> Iterator {
+    pub fn upper_bound(&self, id: u64) -> Iterator {
         let it = db_upperbound_i64(self.code, self.scope, self.table, id);
         Iterator { i: it, primary: None, db: self }
     }
@@ -317,13 +317,13 @@ impl MultiIndex {
     }
 
     ///
-    pub fn lowerbound(&self, id: u64) -> Iterator {
-        return self.db.lowerbound(id);
+    pub fn lower_bound(&self, id: u64) -> Iterator {
+        return self.db.lower_bound(id);
     }
 
     ///
-    pub fn upperbound(&self, id: u64) -> Iterator {
-        return self.db.upperbound(id);
+    pub fn upper_bound(&self, id: u64) -> Iterator {
+        return self.db.upper_bound(id);
     }
 
     ///
