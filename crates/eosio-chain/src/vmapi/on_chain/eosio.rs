@@ -220,12 +220,16 @@ pub fn current_receiver() -> Name {
 
 ///
 pub fn eosio_assert(test: bool, msg: &str) {
-	system::eosio_assert_message(test as u32, msg.as_ptr(), msg.len() as u32);
+	if !test {
+		system::eosio_assert_message(test as u32, msg.as_ptr(), msg.len() as u32);
+	}
 }
 
 ///
 pub fn check(test: bool, msg: &str) {
-	system::eosio_assert_message(test as u32, msg.as_ptr(), msg.len() as u32);
+	if !test {
+		system::eosio_assert_message(0 as u32, msg.as_ptr(), msg.len() as u32);
+	}
 }
 
 ///
