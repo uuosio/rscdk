@@ -5,7 +5,6 @@ use core::convert::{
 
 use crate::structs::{ Uint128, Uint256, Float128 };
 use crate::serializer::Packer;
-use crate::print;
 
 use crate::vmapi::db::*;
 
@@ -615,7 +614,6 @@ impl IdxTable for Idx64Table {
 
     fn store(&self, key: u64, secondary: SecondaryValue, payer: Name) -> SecondaryIterator {
         if let SecondaryValue::Idx64(value) = secondary {
-            print::printui(value);
             let ret = db_idx64_store(self.scope, self.table, payer.value(), key, &value);
             return SecondaryIterator{ i: ret, primary: key, db_index: self.db_index };    
         }
