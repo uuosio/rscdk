@@ -1,5 +1,5 @@
 [package]
-name = "chaintester"
+name = "eosio-chaintester"
 version = "0.1.2"
 authors = ["learnforpractice@gmail.com"]
 edition = "2021"
@@ -20,3 +20,4 @@ bitflags = "1.3.2"
 thrift = "0.16.0"
 log = "0.4"
 threadpool = "1"
+lazy_static = "1.4.0"

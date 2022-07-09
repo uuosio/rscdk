@@ -1418,8 +1418,18 @@ impl Contract {
                         #notify_handle_code
                         _ => {}
                     }
-                }                
+                }
             }
+
+            #[cfg(feature = "std")]
+            const _: () = {
+                use eosio_chain::eosio_chaintester::chaintester::TApplySyncClient;
+                #[no_mangle]
+                fn native_apply(receiver: u64, first_receiver: u64, action: u64) {
+                    apply(receiver, first_receiver, action);
+                    eosio_chain::eosio_chaintester::get_vm_api_client().end_apply().unwrap();
+                }
+            };
         }
     }
 

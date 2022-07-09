@@ -17,4 +17,11 @@
 
 pub mod chaintester;
 pub mod client;
+pub use client::{
+    new_vm_api_client,
+    ChainTester,
+    get_vm_api_client,
+};
+
 pub mod server;
+

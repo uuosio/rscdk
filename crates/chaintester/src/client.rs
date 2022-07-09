@@ -1,4 +1,5 @@
 use std::{thread, time::Duration};
+use std::ops::{Deref, DerefMut};
 
 use clap::{clap_app, value_t};
 
@@ -38,43 +39,125 @@ use thrift::transport::{
 use crate::chaintester::{ApplyRequestSyncHandler, ApplyRequestSyncProcessor};
 use crate::chaintester::{Uint64};
 
+use lazy_static::lazy_static; // 1.4.0
+use std::sync::{
+    Mutex,
+    MutexGuard
+};
 
-fn new_client(
-    host: &str,
-    port: u16,
-) -> thrift::Result<IPCChainTesterSyncClient<ClientInputProtocol, ClientOutputProtocol>> {
-    let mut c = TTcpChannel::new();
-
-    // open the underlying TCP stream
-    println!("connecting to chaintester server on {}:{}", host, port);
-    c.open(&format!("{}:{}", host, port))?;
-
-    // clone the TCP channel into two halves, one which
-    // we'll use for reading, the other for writing
-    let (i_chan, o_chan) = c.split()?;
-
-    // wrap the raw sockets (slow) with a buffered transport of some kind
-    let i_tran = TBufferedReadTransport::new(i_chan);
-    let o_tran = TBufferedWriteTransport::new(o_chan);
-
-    // now create the protocol implementations
-    let i_prot = TBinaryInputProtocol::new(i_tran, false);
-    let o_prot = TBinaryOutputProtocol::new(o_tran, true);
-
-    // we're done!
-    Ok(IPCChainTesterSyncClient::new(i_prot, o_prot))
+lazy_static! {
+    static ref VM_API_CLIENT: Mutex<VMAPIClient> = Mutex::new(VMAPIClient::new());
 }
 
-pub fn run(port: u16, i: usize) -> thrift::Result<()> {
-    // build our client and connect to the host:port
-    let mut client = new_client("127.0.0.1", port)?;
+// 
 
-    println!("push_action return: {}", client.push_action(1, String::from("hello") + &i.to_string())?);
-
-    Ok(())
+pub fn get_vm_api_client() -> MutexGuard<'static, VMAPIClient> {
+    let mut ret = VM_API_CLIENT.lock().unwrap();
+    if ret.vm_api_client.is_none() {
+        ret.init();
+    }
+    return ret;
 }
 
-fn new_vm_api_client(
+// pub fn get_vm_api_client<'a>() -> Option<&'a mut ApplySyncClient<ClientInputProtocol, ClientOutputProtocol>> {
+//     let mut ret = VM_API_CLIENT.lock().unwrap();
+//     if ret.vm_api_client.is_none() {
+//         ret.init();
+//     }
+//     return ret.vm_api_client.as_mut();
+// }
+
+pub struct VMAPIClient {
+    vm_api_client: Option<ApplySyncClient<ClientInputProtocol, ClientOutputProtocol>>,
+}
+
+impl VMAPIClient {
+    fn new() -> Self {
+        VMAPIClient{vm_api_client: None}
+    }
+
+    fn init(&mut self) {
+        if self.vm_api_client.is_none() {
+            println!("+++++++++++VMAPIClient.init");
+            let client = new_vm_api_client("127.0.0.1", 9092).unwrap();
+            self.vm_api_client = Some(client);
+            println!("+++++++++++VMAPIClient.end");
+        }
+    }
+
+    pub fn client(&mut self) -> &mut ApplySyncClient<ClientInputProtocol, ClientOutputProtocol> {
+        self.vm_api_client.as_mut().unwrap()
+    }
+}
+
+impl Deref for VMAPIClient {
+    type Target = ApplySyncClient<ClientInputProtocol, ClientOutputProtocol>;
+
+    fn deref(&self) -> &ApplySyncClient<ClientInputProtocol, ClientOutputProtocol>
+    {
+        self.vm_api_client.as_ref().unwrap()
+    }
+}
+
+impl DerefMut for VMAPIClient {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.vm_api_client.as_mut().unwrap()
+    }
+}
+
+extern "Rust" {
+	fn native_apply(receiver: u64, first_receiver: u64, action: u64);
+}
+
+pub struct ChainTester {
+    id: i32,
+    client: IPCChainTesterSyncClient<ClientInputProtocol, ClientOutputProtocol>,
+}
+
+impl ChainTester {
+    pub fn new() -> Self {
+        Self { client: Self::new_client(), id: 0 }
+    }
+
+    fn new_client() -> IPCChainTesterSyncClient<ClientInputProtocol, ClientOutputProtocol> {
+        let host = "127.0.0.1";
+        let port = 9090;
+
+        let mut c = TTcpChannel::new();
+    
+        // open the underlying TCP stream
+        println!("connecting to chaintester server on {}:{}", host, port);
+        c.open(&format!("{}:{}", host, port)).unwrap();    
+        
+        // clone the TCP channel into two halves, one which
+        // we'll use for reading, the other for writing
+        let (i_chan, o_chan) = c.split().unwrap();
+    
+        // wrap the raw sockets (slow) with a buffered transport of some kind
+        let i_tran = TBufferedReadTransport::new(i_chan);
+        let o_tran = TBufferedWriteTransport::new(o_chan);
+    
+        // now create the protocol implementations
+        let i_prot = TBinaryInputProtocol::new(i_tran, false);
+        let o_prot = TBinaryOutputProtocol::new(o_tran, true);
+    
+        IPCChainTesterSyncClient::new(i_prot, o_prot)
+    }
+
+    pub fn new_chain(&mut self) {
+        self.id = self.client.new_chain().unwrap();
+    }
+
+    pub fn free_chain(&mut self) {
+        self.client.free_chain(self.id).unwrap();
+    }
+
+    pub fn push_action(&mut self, account: &str) {
+        self.client.push_action(self.id, String::from(account)).unwrap();
+    }
+}
+
+pub fn new_vm_api_client(
     host: &str,
     port: u16,
 ) -> thrift::Result<ApplySyncClient<ClientInputProtocol, ClientOutputProtocol>> {
@@ -96,6 +179,7 @@ fn new_vm_api_client(
             }
         }
     }
+    println!("+++++++++go here");
 
     // clone the TCP channel into two halves, one which
     // we'll use for reading, the other for writing
@@ -112,12 +196,6 @@ fn new_vm_api_client(
     Ok(ApplySyncClient::new(i_prot, o_prot))
 }
 
-pub fn run_vm_api() -> thrift::Result<()> {
-    let mut client = new_vm_api_client("127.0.0.1", 9092)?;
-    println!("ok here!");
-    client.prints(String::from("hello, worlddddd"))?;
-    Ok(())
-}
 
 pub fn run_apply_request_server(port: u16)  -> thrift::Result<()> {
     let listen_address = format!("127.0.0.1:{}", port);
@@ -158,14 +236,21 @@ impl Default for ApplyRequestHandler {
     }
 }
 
+fn to_u64(value: Uint64) -> u64 {
+    value.lo.unwrap_or(0) as u64 | ((value.hi.unwrap_or(0) as u64) << 32)
+}
+
 impl ApplyRequestSyncHandler for ApplyRequestHandler {
     fn handle_apply_request(&self, receiver: Uint64, first_receiver: Uint64, action: Uint64) -> thrift::Result<i32> {
-        match run_vm_api() {
-            Ok(()) => {}
-            Err(err) => {
-                panic!("{}", err);
-            }
+        println!("ok here!");
+        let _receiver = to_u64(receiver);
+        let _first_receiver = to_u64(first_receiver);
+        let _action = to_u64(action);
+        println!("+++++++++handle_apply_request");
+        unsafe {
+            native_apply(_receiver, _first_receiver, _action);
         }
+
         Ok(1)
     }
 
