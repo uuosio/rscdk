@@ -214,7 +214,7 @@ impl Default for Uint64 {
 pub trait TIPCChainTesterSyncClient {
   fn new_chain(&mut self) -> thrift::Result<i32>;
   fn free_chain(&mut self, id: i32) -> thrift::Result<i32>;
-  fn push_action(&mut self, id: i32, account: String) -> thrift::Result<i32>;
+  fn push_action(&mut self, id: i32, account: String, action: String, arguments: String, permissions: String) -> thrift::Result<i32>;
 }
 
 pub trait TIPCChainTesterSyncClientMarker {}
@@ -295,12 +295,12 @@ impl <C: TThriftClient + TIPCChainTesterSyncClientMarker> TIPCChainTesterSyncCli
       result.ok_or()
     }
   }
-  fn push_action(&mut self, id: i32, account: String) -> thrift::Result<i32> {
+  fn push_action(&mut self, id: i32, account: String, action: String, arguments: String, permissions: String) -> thrift::Result<i32> {
     (
       {
         self.increment_sequence_number();
         let message_ident = TMessageIdentifier::new("push_action", TMessageType::Call, self.sequence_number());
-        let call_args = IPCChainTesterPushActionArgs { id, account };
+        let call_args = IPCChainTesterPushActionArgs { id, account, action, arguments, permissions };
         self.o_prot_mut().write_message_begin(&message_ident)?;
         call_args.write_to_out_protocol(self.o_prot_mut())?;
         self.o_prot_mut().write_message_end()?;
@@ -332,7 +332,7 @@ impl <C: TThriftClient + TIPCChainTesterSyncClientMarker> TIPCChainTesterSyncCli
 pub trait IPCChainTesterSyncHandler {
   fn handle_new_chain(&self) -> thrift::Result<i32>;
   fn handle_free_chain(&self, id: i32) -> thrift::Result<i32>;
-  fn handle_push_action(&self, id: i32, account: String) -> thrift::Result<i32>;
+  fn handle_push_action(&self, id: i32, account: String, action: String, arguments: String, permissions: String) -> thrift::Result<i32>;
 }
 
 pub struct IPCChainTesterSyncProcessor<H: IPCChainTesterSyncHandler> {
@@ -435,7 +435,7 @@ impl TIPCChainTesterProcessFunctions {
   }
   pub fn process_push_action<H: IPCChainTesterSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     let args = IPCChainTesterPushActionArgs::read_from_in_protocol(i_prot)?;
-    match handler.handle_push_action(args.id, args.account) {
+    match handler.handle_push_action(args.id, args.account, args.action, args.arguments, args.permissions) {
       Ok(handler_return) => {
         let message_ident = TMessageIdentifier::new("push_action", TMessageType::Reply, incoming_sequence_number);
         o_prot.write_message_begin(&message_ident)?;
@@ -718,6 +718,9 @@ impl IPCChainTesterFreeChainResult {
 struct IPCChainTesterPushActionArgs {
   id: i32,
   account: String,
+  action: String,
+  arguments: String,
+  permissions: String,
 }
 
 impl IPCChainTesterPushActionArgs {
@@ -725,6 +728,9 @@ impl IPCChainTesterPushActionArgs {
     i_prot.read_struct_begin()?;
     let mut f_1: Option<i32> = None;
     let mut f_2: Option<String> = None;
+    let mut f_3: Option<String> = None;
+    let mut f_4: Option<String> = None;
+    let mut f_5: Option<String> = None;
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -740,6 +746,18 @@ impl IPCChainTesterPushActionArgs {
           let val = i_prot.read_string()?;
           f_2 = Some(val);
         },
+        3 => {
+          let val = i_prot.read_string()?;
+          f_3 = Some(val);
+        },
+        4 => {
+          let val = i_prot.read_string()?;
+          f_4 = Some(val);
+        },
+        5 => {
+          let val = i_prot.read_string()?;
+          f_5 = Some(val);
+        },
         _ => {
           i_prot.skip(field_ident.field_type)?;
         },
@@ -749,9 +767,15 @@ impl IPCChainTesterPushActionArgs {
     i_prot.read_struct_end()?;
     verify_required_field_exists("IPCChainTesterPushActionArgs.id", &f_1)?;
     verify_required_field_exists("IPCChainTesterPushActionArgs.account", &f_2)?;
+    verify_required_field_exists("IPCChainTesterPushActionArgs.action", &f_3)?;
+    verify_required_field_exists("IPCChainTesterPushActionArgs.arguments", &f_4)?;
+    verify_required_field_exists("IPCChainTesterPushActionArgs.permissions", &f_5)?;
     let ret = IPCChainTesterPushActionArgs {
       id: f_1.expect("auto-generated code should have checked for presence of required fields"),
       account: f_2.expect("auto-generated code should have checked for presence of required fields"),
+      action: f_3.expect("auto-generated code should have checked for presence of required fields"),
+      arguments: f_4.expect("auto-generated code should have checked for presence of required fields"),
+      permissions: f_5.expect("auto-generated code should have checked for presence of required fields"),
     };
     Ok(ret)
   }
@@ -763,6 +787,15 @@ impl IPCChainTesterPushActionArgs {
     o_prot.write_field_end()?;
     o_prot.write_field_begin(&TFieldIdentifier::new("account", TType::String, 2))?;
     o_prot.write_string(&self.account)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("action", TType::String, 3))?;
+    o_prot.write_string(&self.action)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("arguments", TType::String, 4))?;
+    o_prot.write_string(&self.arguments)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("permissions", TType::String, 5))?;
+    o_prot.write_string(&self.permissions)?;
     o_prot.write_field_end()?;
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
@@ -1559,6 +1592,7 @@ impl ApplyRequestApplyEndResult {
 
 pub trait TApplySyncClient {
   fn prints(&mut self, cstr: String) -> thrift::Result<i32>;
+  fn read_action_data(&mut self, len: i32) -> thrift::Result<Vec<u8>>;
   fn end_apply(&mut self) -> thrift::Result<i32>;
 }
 
@@ -1613,6 +1647,33 @@ impl <C: TThriftClient + TApplySyncClientMarker> TApplySyncClient for C {
       result.ok_or()
     }
   }
+  fn read_action_data(&mut self, len: i32) -> thrift::Result<Vec<u8>> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("read_action_data", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyReadActionDataArgs { len };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("read_action_data", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyReadActionDataResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
   fn end_apply(&mut self) -> thrift::Result<i32> {
     (
       {
@@ -1648,6 +1709,7 @@ impl <C: TThriftClient + TApplySyncClientMarker> TApplySyncClient for C {
 
 pub trait ApplySyncHandler {
   fn handle_prints(&self, cstr: String) -> thrift::Result<i32>;
+  fn handle_read_action_data(&self, len: i32) -> thrift::Result<Vec<u8>>;
   fn handle_end_apply(&self) -> thrift::Result<i32>;
 }
 
@@ -1663,6 +1725,9 @@ impl <H: ApplySyncHandler> ApplySyncProcessor<H> {
   }
   fn process_prints(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TApplyProcessFunctions::process_prints(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_read_action_data(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_read_action_data(&self.handler, incoming_sequence_number, i_prot, o_prot)
   }
   fn process_end_apply(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TApplyProcessFunctions::process_end_apply(&self.handler, incoming_sequence_number, i_prot, o_prot)
@@ -1700,6 +1765,43 @@ impl TApplyProcessFunctions {
               )
             };
             let message_ident = TMessageIdentifier::new("prints", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_read_action_data<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyReadActionDataArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_read_action_data(args.len) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("read_action_data", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyReadActionDataResult { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("read_action_data", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("read_action_data", TMessageType::Exception, incoming_sequence_number);
             o_prot.write_message_begin(&message_ident)?;
             thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
             o_prot.write_message_end()?;
@@ -1754,6 +1856,9 @@ impl <H: ApplySyncHandler> TProcessor for ApplySyncProcessor<H> {
     let res = match &*message_ident.name {
       "prints" => {
         self.process_prints(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "read_action_data" => {
+        self.process_read_action_data(message_ident.sequence_number, i_prot, o_prot)
       },
       "end_apply" => {
         self.process_end_apply(message_ident.sequence_number, i_prot, o_prot)
@@ -1877,6 +1982,117 @@ impl ApplyPrintsResult {
           ApplicationError::new(
             ApplicationErrorKind::MissingResult,
             "no result received for ApplyPrints"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// ApplyReadActionDataArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyReadActionDataArgs {
+  len: i32,
+}
+
+impl ApplyReadActionDataArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyReadActionDataArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<i32> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_i32()?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyReadActionDataArgs.len", &f_1)?;
+    let ret = ApplyReadActionDataArgs {
+      len: f_1.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("read_action_data_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("len", TType::I32, 1))?;
+    o_prot.write_i32(self.len)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyReadActionDataResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyReadActionDataResult {
+  result_value: Option<Vec<u8>>,
+}
+
+impl ApplyReadActionDataResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyReadActionDataResult> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<Vec<u8>> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = i_prot.read_bytes()?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyReadActionDataResult {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyReadActionDataResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(ref fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::String, 0))?;
+      o_prot.write_bytes(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<Vec<u8>> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for ApplyReadActionData"
           )
         )
       )

@@ -59,14 +59,6 @@ pub fn get_vm_api_client() -> MutexGuard<'static, VMAPIClient> {
     return ret;
 }
 
-// pub fn get_vm_api_client<'a>() -> Option<&'a mut ApplySyncClient<ClientInputProtocol, ClientOutputProtocol>> {
-//     let mut ret = VM_API_CLIENT.lock().unwrap();
-//     if ret.vm_api_client.is_none() {
-//         ret.init();
-//     }
-//     return ret.vm_api_client.as_mut();
-// }
-
 pub struct VMAPIClient {
     vm_api_client: Option<ApplySyncClient<ClientInputProtocol, ClientOutputProtocol>>,
 }
@@ -85,9 +77,9 @@ impl VMAPIClient {
         }
     }
 
-    pub fn client(&mut self) -> &mut ApplySyncClient<ClientInputProtocol, ClientOutputProtocol> {
-        self.vm_api_client.as_mut().unwrap()
-    }
+    // pub fn client(&mut self) -> &mut ApplySyncClient<ClientInputProtocol, ClientOutputProtocol> {
+    //     self.vm_api_client.as_mut().unwrap()
+    // }
 }
 
 impl Deref for VMAPIClient {
@@ -152,8 +144,12 @@ impl ChainTester {
         self.client.free_chain(self.id).unwrap();
     }
 
-    pub fn push_action(&mut self, account: &str) {
-        self.client.push_action(self.id, String::from(account)).unwrap();
+    pub fn push_action(&mut self, account: &str, action: &str, arguments: &str, permissions: &str) {
+        let _account = String::from(account);
+        let _action = String::from(action);
+        let _arguments = String::from(arguments);
+        let _permissions = String::from(permissions);
+        self.client.push_action(self.id, _account, _action, _arguments, _permissions).unwrap();
     }
 }
 

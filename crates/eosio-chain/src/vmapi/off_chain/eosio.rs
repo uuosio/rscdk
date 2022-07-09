@@ -9,9 +9,26 @@ use crate::{
 	vec::Vec,
 };
 
+use core::slice;
+
+use eosio_chaintester::{
+    get_vm_api_client,
+	chaintester::{
+		TApplySyncClient,
+	}
+};
+
 ///
-pub fn memcpy( _dst: *const u8, _src: *const u8, _length: usize) -> *mut u8 {
-	return 0 as *mut u8;
+pub fn memcpy( dst: *mut u8, src: *const u8, length: usize) -> *mut u8 {
+    let mut _dst = unsafe {
+        slice::from_raw_parts_mut(dst, length)
+    };
+
+    let _src = unsafe {
+        slice::from_raw_parts(src, length)
+    };
+	_dst.copy_from_slice(_src);
+	dst
 }
 
 ///
@@ -36,7 +53,7 @@ pub fn get_account_creation_time( _account: Name ) -> TimePoint {
 
 ///
 pub fn read_action_data() -> Vec<u8> {
-	return Vec::new();
+	return get_vm_api_client().read_action_data(64*1024).unwrap();
 }
 
 ///

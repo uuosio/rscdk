@@ -30,8 +30,7 @@ mod hello {
 
         #[chain(action="sayhello")]
         pub fn say_hello(&self, name: String) {
-            prints("hello, debugger!!!!!!!!!");
-            // eosio_println!("++++hello", name);
+            eosio_println!("++++hello:", name);
         }
     }
 
@@ -57,6 +56,16 @@ mod tests {
     #[test]
     fn test_prints() {
         let mut tester = ChainTester::new();
-        tester.push_action("hello");
+        let args = r#"
+        {
+            "name": "rust"
+        }
+        "#;
+        let permissions = r#"
+        {
+            "hello": "active"
+        }
+        "#;
+        tester.push_action("hello", "sayhello", args, permissions);
     }
 }
