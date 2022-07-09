@@ -1,0 +1,22 @@
+[package]
+name = "chaintester"
+version = "0.1.2"
+authors = ["learnforpractice@gmail.com"]
+edition = "2021"
+
+license = "Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/uuosio/rscdk"
+documentation = "https://docs.rs/eosio-chain/"
+homepage = "https://github.com/uuosio/"
+description = "chain tester for rust smart contracts"
+keywords = ["wasm", "eosio", "webassembly", "blockchain"]
+categories = ["no-std", "embedded"]
+include = ["Cargo.toml", "src/**/*.rs", "README.md", "LICENSE"]
+
+[dependencies]
+clap = "3.2.8"
+bitflags = "1.3.2"
+thrift = "0.16.0"
+log = "0.4"
+threadpool = "1"
