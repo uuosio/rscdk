@@ -13,7 +13,6 @@ use core::slice;
 pub fn prints(cstr: *const u8) {
     let s = unsafe { CStr::from_ptr(cstr as *const i8).to_str().unwrap() };
     let mut client = get_vm_api_client();
-    println!("+++++++++prints");
     client.prints(s.to_owned()).unwrap();
 }
 
@@ -23,12 +22,8 @@ pub fn prints_l(_cstr: *const u8, _len: u32) {
         slice::from_raw_parts(_cstr, _len as usize)
     };
 
-    println!("+++++++++prints_l");    
     let _s = std::str::from_utf8(s).unwrap();
-    // new_vm_api_client("127.0.0.1", 9092).unwrap().prints(_s.to_owned()).unwrap();
-    println!("begin prints to server!");
-    let mut client = get_vm_api_client().prints(_s.to_owned()).unwrap();
-    println!("end prints to server!");
+    get_vm_api_client().prints(_s.to_owned()).unwrap();
 }
 
 ///

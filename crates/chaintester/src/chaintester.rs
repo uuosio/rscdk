@@ -1593,6 +1593,7 @@ impl ApplyRequestApplyEndResult {
 pub trait TApplySyncClient {
   fn prints(&mut self, cstr: String) -> thrift::Result<i32>;
   fn read_action_data(&mut self, len: i32) -> thrift::Result<Vec<u8>>;
+  fn send_inline(&mut self, serialized_action: Vec<u8>) -> thrift::Result<i32>;
   fn end_apply(&mut self) -> thrift::Result<i32>;
 }
 
@@ -1674,6 +1675,33 @@ impl <C: TThriftClient + TApplySyncClientMarker> TApplySyncClient for C {
       result.ok_or()
     }
   }
+  fn send_inline(&mut self, serialized_action: Vec<u8>) -> thrift::Result<i32> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("send_inline", TMessageType::Call, self.sequence_number());
+        let call_args = ApplySendInlineArgs { serialized_action };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("send_inline", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplySendInlineResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
   fn end_apply(&mut self) -> thrift::Result<i32> {
     (
       {
@@ -1710,6 +1738,7 @@ impl <C: TThriftClient + TApplySyncClientMarker> TApplySyncClient for C {
 pub trait ApplySyncHandler {
   fn handle_prints(&self, cstr: String) -> thrift::Result<i32>;
   fn handle_read_action_data(&self, len: i32) -> thrift::Result<Vec<u8>>;
+  fn handle_send_inline(&self, serialized_action: Vec<u8>) -> thrift::Result<i32>;
   fn handle_end_apply(&self) -> thrift::Result<i32>;
 }
 
@@ -1728,6 +1757,9 @@ impl <H: ApplySyncHandler> ApplySyncProcessor<H> {
   }
   fn process_read_action_data(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TApplyProcessFunctions::process_read_action_data(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_send_inline(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_send_inline(&self.handler, incoming_sequence_number, i_prot, o_prot)
   }
   fn process_end_apply(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TApplyProcessFunctions::process_end_apply(&self.handler, incoming_sequence_number, i_prot, o_prot)
@@ -1811,6 +1843,43 @@ impl TApplyProcessFunctions {
       },
     }
   }
+  pub fn process_send_inline<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplySendInlineArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_send_inline(args.serialized_action) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("send_inline", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplySendInlineResult { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("send_inline", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("send_inline", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
   pub fn process_end_apply<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     let _ = ApplyEndApplyArgs::read_from_in_protocol(i_prot)?;
     match handler.handle_end_apply() {
@@ -1859,6 +1928,9 @@ impl <H: ApplySyncHandler> TProcessor for ApplySyncProcessor<H> {
       },
       "read_action_data" => {
         self.process_read_action_data(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "send_inline" => {
+        self.process_send_inline(message_ident.sequence_number, i_prot, o_prot)
       },
       "end_apply" => {
         self.process_end_apply(message_ident.sequence_number, i_prot, o_prot)
@@ -2093,6 +2165,117 @@ impl ApplyReadActionDataResult {
           ApplicationError::new(
             ApplicationErrorKind::MissingResult,
             "no result received for ApplyReadActionData"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// ApplySendInlineArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplySendInlineArgs {
+  serialized_action: Vec<u8>,
+}
+
+impl ApplySendInlineArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplySendInlineArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<Vec<u8>> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_bytes()?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplySendInlineArgs.serialized_action", &f_1)?;
+    let ret = ApplySendInlineArgs {
+      serialized_action: f_1.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("send_inline_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("serialized_action", TType::String, 1))?;
+    o_prot.write_bytes(&self.serialized_action)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplySendInlineResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplySendInlineResult {
+  result_value: Option<i32>,
+}
+
+impl ApplySendInlineResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplySendInlineResult> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<i32> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = i_prot.read_i32()?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplySendInlineResult {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplySendInlineResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::I32, 0))?;
+      o_prot.write_i32(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<i32> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for ApplySendInline"
           )
         )
       )

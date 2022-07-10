@@ -4,10 +4,16 @@
 mod hello {
     use eosio_chain::{
         Name,
+        name,
         eosio_println,
         print::{
             prints,
-        }
+        },
+        action::{
+            Action,
+            PermissionLevel,
+        },
+        ACTIVE,
     };
 
     #[chain(main)]
@@ -16,6 +22,11 @@ mod hello {
         receiver: Name,
         first_receiver: Name,
         action: Name,
+    }
+
+    #[chain(packer)]
+    struct SayGoodbye {
+        name: String,
     }
 
     impl Hello {
@@ -30,8 +41,21 @@ mod hello {
 
         #[chain(action="sayhello")]
         pub fn say_hello(&self, name: String) {
+            for i in 0..1 {
+                eosio_println!("++++hello:", name);
+            }
+            // return;
+            let perms: Vec<PermissionLevel> = vec![PermissionLevel{actor: name!("hello"), permission: ACTIVE}];
+            let say_goodbye = SayGoodbye{name: name};
+            let action = Action::new(name!("hello"), name!("saygoodbye"), &perms, &say_goodbye);
+            action.send();
+        }
+
+        #[chain(action="saygoodbye")]
+        pub fn say_goodbye(&self, name: String) {
             eosio_println!("++++hello:", name);
         }
+
     }
 
     // #[no_mangle]
@@ -66,6 +90,6 @@ mod tests {
             "hello": "active"
         }
         "#;
-        tester.push_action("hello", "sayhello", args, permissions);
+        tester.push_action("hello", "sayhello", args, permissions)
     }
 }

@@ -85,6 +85,7 @@ pub fn is_account( _name: Name ) -> bool {
 
 ///
 pub fn send_inline(_serialized_action: &[u8]) {
+	get_vm_api_client().send_inline(_serialized_action.to_vec()).unwrap();
 }
 
 ///
