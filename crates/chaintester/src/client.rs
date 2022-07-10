@@ -8,7 +8,7 @@ use thrift::transport::{
     ReadHalf, TBufferedReadTransport, TBufferedWriteTransport, TIoChannel, TTcpChannel, WriteHalf,
 };
 
-use crate::chaintester::{IPCChainTesterSyncClient, TIPCChainTesterSyncClient, ApplySyncClient, TApplySyncClient};
+use crate::interfaces::{IPCChainTesterSyncClient, TIPCChainTesterSyncClient, ApplySyncClient, TApplySyncClient};
 
 type ClientInputProtocol = TBinaryInputProtocol<TBufferedReadTransport<ReadHalf<TTcpChannel>>>;
 type ClientOutputProtocol = TBinaryOutputProtocol<TBufferedWriteTransport<WriteHalf<TTcpChannel>>>;
@@ -36,8 +36,8 @@ use thrift::transport::{
     TWriteTransportFactory,
 };
 
-use crate::chaintester::{ApplyRequestSyncHandler, ApplyRequestSyncProcessor};
-use crate::chaintester::{Uint64};
+use crate::interfaces::{ApplyRequestSyncHandler, ApplyRequestSyncProcessor};
+use crate::interfaces::{Uint64};
 
 use lazy_static::lazy_static; // 1.4.0
 use std::sync::{
@@ -118,7 +118,7 @@ impl ChainTester {
         let mut c = TTcpChannel::new();
     
         // open the underlying TCP stream
-        println!("connecting to chaintester server on {}:{}", host, port);
+        println!("connecting to interfaces server on {}:{}", host, port);
         c.open(&format!("{}:{}", host, port)).unwrap();    
         
         // clone the TCP channel into two halves, one which
@@ -160,7 +160,7 @@ pub fn new_vm_api_client(
     let mut c = TTcpChannel::new();
 
     // open the underlying TCP stream
-    println!("connecting to chaintester server on {}:{}", host, port);
+    println!("connecting to interfaces server on {}:{}", host, port);
     //wait for vm api server to start
     thread::sleep(Duration::from_micros(10));
     let remote_address = format!("{}:{}", host, port);

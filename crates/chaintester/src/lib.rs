@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-pub mod chaintester;
+pub mod interfaces;
 pub mod client;
 pub use client::{
     new_vm_api_client,

@@ -1423,7 +1423,7 @@ impl Contract {
 
             #[cfg(feature = "std")]
             const _: () = {
-                use eosio_chain::eosio_chaintester::chaintester::TApplySyncClient;
+                use eosio_chain::eosio_chaintester::interfaces::TApplySyncClient;
                 #[no_mangle]
                 fn native_apply(receiver: u64, first_receiver: u64, action: u64) {
                     apply(receiver, first_receiver, action);

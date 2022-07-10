@@ -13,7 +13,7 @@ use core::slice;
 
 use eosio_chaintester::{
     get_vm_api_client,
-	chaintester::{
+	interfaces::{
 		TApplySyncClient,
 	}
 };
