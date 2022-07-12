@@ -27,6 +27,36 @@ use thrift::server::TProcessor;
 
 use crate::client;
 
+fn to_uint64(value: u64) -> Uint64 {
+  return Uint64 {
+      raw_value: Some(value.to_le_bytes().to_vec())
+  };
+}
+
+fn to_fixed_array(v: Vec<u8>) -> [u8; 8] {
+  v.try_into()
+      .unwrap_or_else(|v: Vec<u8>| panic!("Expected a Vec of length {} but it was {}", 8, v.len()))
+}
+
+fn to_u64(value: Uint64) -> u64 {
+  if value.raw_value.is_none() {
+      panic!("bad raw Uint64 value 1");
+  }
+  return u64::from_le_bytes(to_fixed_array(value.raw_value.unwrap()));
+}
+
+impl From<u64> for Uint64 {
+  fn from(value: u64) -> Uint64 {
+      to_uint64(value)
+  }
+}
+
+impl From<Uint64> for u64 {
+  fn from(value: Uint64) -> u64 {
+      to_u64(value)
+  }
+}
+
 //
 // Action
 //
@@ -138,36 +168,6 @@ impl Default for Action {
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Uint64 {
   pub raw_value: Option<Vec<u8>>,
-}
-
-fn to_uint64(value: u64) -> Uint64 {
-  return Uint64 {
-      raw_value: Some(value.to_le_bytes().to_vec())
-  };
-}
-
-fn to_fixed_array(v: Vec<u8>) -> [u8; 8] {
-  v.try_into()
-      .unwrap_or_else(|v: Vec<u8>| panic!("Expected a Vec of length {} but it was {}", 8, v.len()))
-}
-
-fn to_u64(value: Uint64) -> u64 {
-  if value.raw_value.is_none() {
-      panic!("bad raw Uint64 value 1");
-  }
-  return u64::from_le_bytes(to_fixed_array(value.raw_value.unwrap()));
-}
-
-impl From<u64> for Uint64 {
-  fn from(value: u64) -> Uint64 {
-      to_uint64(value)
-  }
-}
-
-impl From<Uint64> for u64 {
-  fn from(value: Uint64) -> u64 {
-      to_u64(value)
-  }
 }
 
 impl Uint64 {
@@ -1762,7 +1762,7 @@ pub trait TApplySyncClient {
   fn prints(&mut self, cstr: String) -> thrift::Result<()>;
   fn printi(&mut self, value: i64) -> thrift::Result<()>;
   fn printui(&mut self, value: Uint64) -> thrift::Result<()>;
-  fn read_action_data(&mut self, len: i32) -> thrift::Result<Vec<u8>>;
+  fn read_action_data(&mut self, len: i32) -> thrift::Result<DataBuffer>;
   fn send_inline(&mut self, serialized_action: Vec<u8>) -> thrift::Result<i32>;
   fn end_apply(&mut self) -> thrift::Result<i32>;
   fn db_store_i64(&mut self, scope: Uint64, table: Uint64, payer: Uint64, id: Uint64, data: Vec<u8>) -> thrift::Result<i32>;
@@ -1882,7 +1882,7 @@ impl <C: TThriftClient + TApplySyncClientMarker> TApplySyncClient for C {
       result.ok_or()
     }
   }
-  fn read_action_data(&mut self, len: i32) -> thrift::Result<Vec<u8>> {
+  fn read_action_data(&mut self, len: i32) -> thrift::Result<DataBuffer> {
     (
       {
         self.increment_sequence_number();
@@ -2243,7 +2243,7 @@ pub trait ApplySyncHandler {
   fn handle_prints(&self, cstr: String) -> thrift::Result<()>;
   fn handle_printi(&self, value: i64) -> thrift::Result<()>;
   fn handle_printui(&self, value: Uint64) -> thrift::Result<()>;
-  fn handle_read_action_data(&self, len: i32) -> thrift::Result<Vec<u8>>;
+  fn handle_read_action_data(&self, len: i32) -> thrift::Result<DataBuffer>;
   fn handle_send_inline(&self, serialized_action: Vec<u8>) -> thrift::Result<i32>;
   fn handle_end_apply(&self) -> thrift::Result<i32>;
   fn handle_db_store_i64(&self, scope: Uint64, table: Uint64, payer: Uint64, id: Uint64, data: Vec<u8>) -> thrift::Result<i32>;
@@ -3297,13 +3297,13 @@ impl ApplyReadActionDataArgs {
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 struct ApplyReadActionDataResult {
-  result_value: Option<Vec<u8>>,
+  result_value: Option<DataBuffer>,
 }
 
 impl ApplyReadActionDataResult {
   fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyReadActionDataResult> {
     i_prot.read_struct_begin()?;
-    let mut f_0: Option<Vec<u8>> = None;
+    let mut f_0: Option<DataBuffer> = None;
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -3312,7 +3312,7 @@ impl ApplyReadActionDataResult {
       let field_id = field_id(&field_ident)?;
       match field_id {
         0 => {
-          let val = i_prot.read_bytes()?;
+          let val = DataBuffer::read_from_in_protocol(i_prot)?;
           f_0 = Some(val);
         },
         _ => {
@@ -3331,14 +3331,14 @@ impl ApplyReadActionDataResult {
     let struct_ident = TStructIdentifier::new("ApplyReadActionDataResult");
     o_prot.write_struct_begin(&struct_ident)?;
     if let Some(ref fld_var) = self.result_value {
-      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::String, 0))?;
-      o_prot.write_bytes(fld_var)?;
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::Struct, 0))?;
+      fld_var.write_to_out_protocol(o_prot)?;
       o_prot.write_field_end()?
     }
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
   }
-  fn ok_or(self) -> thrift::Result<Vec<u8>> {
+  fn ok_or(self) -> thrift::Result<DataBuffer> {
     if self.result_value.is_some() {
       Ok(self.result_value.unwrap())
     } else {
