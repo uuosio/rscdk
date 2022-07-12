@@ -8,7 +8,6 @@ use thrift::protocol::{
     TInputProtocol, TInputProtocolFactory, TOutputProtocol, TOutputProtocolFactory,
 };
 use thrift::transport::{TIoChannel, TReadTransportFactory, TTcpChannel, TWriteTransportFactory};
-use thrift::{ApplicationError, ApplicationErrorKind};
 
 use thrift::server::{
     TProcessor
@@ -29,7 +28,7 @@ where
     w_trans_factory: WTF,
     o_proto_factory: OPF,
     processor: Arc<PRC>,
-    worker_pool: ThreadPool,
+    // worker_pool: ThreadPool,
 }
 
 impl<PRC, RTF, IPF, WTF, OPF> IPCServer<PRC, RTF, IPF, WTF, OPF>
@@ -61,7 +60,7 @@ where
             w_trans_factory: write_transport_factory,
             o_proto_factory: output_protocol_factory,
             processor: Arc::new(processor),
-            worker_pool: ThreadPool::with_name("Thrift service processor".to_owned(), num_workers),
+            // worker_pool: ThreadPool::with_name("Thrift service processor".to_owned(), num_workers),
         }
     }
 

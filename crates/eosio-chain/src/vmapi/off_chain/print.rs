@@ -3,7 +3,6 @@ use eosio_chaintester::interfaces::TApplySyncClient;
 
 use eosio_chaintester::{
     get_vm_api_client,
-    new_vm_api_client
 };
 
 use crate::structs::*;

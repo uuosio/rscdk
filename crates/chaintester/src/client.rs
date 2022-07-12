@@ -1,14 +1,12 @@
 use std::{thread, time::Duration};
 use std::ops::{Deref, DerefMut};
 
-use clap::{clap_app, value_t};
-
 use thrift::protocol::{TBinaryInputProtocol, TBinaryOutputProtocol};
 use thrift::transport::{
     ReadHalf, TBufferedReadTransport, TBufferedWriteTransport, TIoChannel, TTcpChannel, WriteHalf,
 };
 
-use crate::interfaces::{IPCChainTesterSyncClient, TIPCChainTesterSyncClient, ApplySyncClient, TApplySyncClient};
+use crate::interfaces::{IPCChainTesterSyncClient, TIPCChainTesterSyncClient, ApplySyncClient};
 
 type ClientInputProtocol = TBinaryInputProtocol<TBufferedReadTransport<ReadHalf<TTcpChannel>>>;
 type ClientOutputProtocol = TBinaryOutputProtocol<TBufferedWriteTransport<WriteHalf<TTcpChannel>>>;
@@ -20,20 +18,12 @@ use std::default::Default;
 use thrift::protocol::{
     TBinaryInputProtocolFactory,
     TBinaryOutputProtocolFactory,
-    TInputProtocolFactory,
-    TOutputProtocolFactory,
-};
-
-use thrift::server::{
-    TProcessor
 };
 
 use crate::server::IPCServer;
 
 use thrift::transport::{
     TBufferedReadTransportFactory, TBufferedWriteTransportFactory,
-    TReadTransportFactory,
-    TWriteTransportFactory,
 };
 
 use crate::interfaces::{ApplyRequestSyncHandler, ApplyRequestSyncProcessor};
@@ -153,6 +143,12 @@ impl ChainTester {
     }
 }
 
+impl Drop for ChainTester {
+    fn drop(&mut self) {
+        self.free_chain()
+    }
+}
+
 pub fn new_vm_api_client(
     host: &str,
     port: u16,
@@ -231,9 +227,6 @@ impl Default for ApplyRequestHandler {
         }
     }
 }
-
-use std::convert::TryInto;
-
 
 impl ApplyRequestSyncHandler for ApplyRequestHandler {
     fn handle_apply_request(&self, receiver: Uint64, first_receiver: Uint64, action: Uint64) -> thrift::Result<i32> {

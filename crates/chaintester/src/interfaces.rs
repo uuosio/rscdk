@@ -1683,7 +1683,9 @@ impl ApplyRequestApplyEndResult {
 //
 
 pub trait TApplySyncClient {
-  fn prints(&mut self, cstr: String) -> thrift::Result<i32>;
+  fn prints(&mut self, cstr: String) -> thrift::Result<()>;
+  fn printi(&mut self, value: i64) -> thrift::Result<()>;
+  fn printui(&mut self, value: Uint64) -> thrift::Result<()>;
   fn read_action_data(&mut self, len: i32) -> thrift::Result<Vec<u8>>;
   fn send_inline(&mut self, serialized_action: Vec<u8>) -> thrift::Result<i32>;
   fn end_apply(&mut self) -> thrift::Result<i32>;
@@ -1723,7 +1725,7 @@ impl <IP, OP> TThriftClient for ApplySyncClient<IP, OP> where IP: TInputProtocol
 impl <IP, OP> TApplySyncClientMarker for ApplySyncClient<IP, OP> where IP: TInputProtocol, OP: TOutputProtocol {}
 
 impl <C: TThriftClient + TApplySyncClientMarker> TApplySyncClient for C {
-  fn prints(&mut self, cstr: String) -> thrift::Result<i32> {
+  fn prints(&mut self, cstr: String) -> thrift::Result<()> {
     (
       {
         self.increment_sequence_number();
@@ -1746,6 +1748,60 @@ impl <C: TThriftClient + TApplySyncClientMarker> TApplySyncClient for C {
       }
       verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
       let result = ApplyPrintsResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn printi(&mut self, value: i64) -> thrift::Result<()> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("printi", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyPrintiArgs { value };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("printi", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyPrintiResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn printui(&mut self, value: Uint64) -> thrift::Result<()> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("printui", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyPrintuiArgs { value };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("printui", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyPrintuiResult::read_from_in_protocol(self.i_prot_mut())?;
       self.i_prot_mut().read_message_end()?;
       result.ok_or()
     }
@@ -2108,7 +2164,9 @@ impl <C: TThriftClient + TApplySyncClientMarker> TApplySyncClient for C {
 //
 
 pub trait ApplySyncHandler {
-  fn handle_prints(&self, cstr: String) -> thrift::Result<i32>;
+  fn handle_prints(&self, cstr: String) -> thrift::Result<()>;
+  fn handle_printi(&self, value: i64) -> thrift::Result<()>;
+  fn handle_printui(&self, value: Uint64) -> thrift::Result<()>;
   fn handle_read_action_data(&self, len: i32) -> thrift::Result<Vec<u8>>;
   fn handle_send_inline(&self, serialized_action: Vec<u8>) -> thrift::Result<i32>;
   fn handle_end_apply(&self) -> thrift::Result<i32>;
@@ -2136,6 +2194,12 @@ impl <H: ApplySyncHandler> ApplySyncProcessor<H> {
   }
   fn process_prints(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TApplyProcessFunctions::process_prints(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_printi(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_printi(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_printui(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_printui(&self.handler, incoming_sequence_number, i_prot, o_prot)
   }
   fn process_read_action_data(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TApplyProcessFunctions::process_read_action_data(&self.handler, incoming_sequence_number, i_prot, o_prot)
@@ -2184,10 +2248,10 @@ impl TApplyProcessFunctions {
   pub fn process_prints<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     let args = ApplyPrintsArgs::read_from_in_protocol(i_prot)?;
     match handler.handle_prints(args.cstr) {
-      Ok(handler_return) => {
+      Ok(_) => {
         let message_ident = TMessageIdentifier::new("prints", TMessageType::Reply, incoming_sequence_number);
         o_prot.write_message_begin(&message_ident)?;
-        let ret = ApplyPrintsResult { result_value: Some(handler_return) };
+        let ret = ApplyPrintsResult {  };
         ret.write_to_out_protocol(o_prot)?;
         o_prot.write_message_end()?;
         o_prot.flush()
@@ -2209,6 +2273,80 @@ impl TApplyProcessFunctions {
               )
             };
             let message_ident = TMessageIdentifier::new("prints", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_printi<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyPrintiArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_printi(args.value) {
+      Ok(_) => {
+        let message_ident = TMessageIdentifier::new("printi", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyPrintiResult {  };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("printi", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("printi", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_printui<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyPrintuiArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_printui(args.value) {
+      Ok(_) => {
+        let message_ident = TMessageIdentifier::new("printui", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyPrintuiResult {  };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("printui", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("printui", TMessageType::Exception, incoming_sequence_number);
             o_prot.write_message_begin(&message_ident)?;
             thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
             o_prot.write_message_end()?;
@@ -2708,6 +2846,12 @@ impl <H: ApplySyncHandler> TProcessor for ApplySyncProcessor<H> {
       "prints" => {
         self.process_prints(message_ident.sequence_number, i_prot, o_prot)
       },
+      "printi" => {
+        self.process_printi(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "printui" => {
+        self.process_printui(message_ident.sequence_number, i_prot, o_prot)
+      },
       "read_action_data" => {
         self.process_read_action_data(message_ident.sequence_number, i_prot, o_prot)
       },
@@ -2816,13 +2960,11 @@ impl ApplyPrintsArgs {
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 struct ApplyPrintsResult {
-  result_value: Option<i32>,
 }
 
 impl ApplyPrintsResult {
   fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyPrintsResult> {
     i_prot.read_struct_begin()?;
-    let mut f_0: Option<i32> = None;
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -2830,9 +2972,50 @@ impl ApplyPrintsResult {
       }
       let field_id = field_id(&field_ident)?;
       match field_id {
-        0 => {
-          let val = i_prot.read_i32()?;
-          f_0 = Some(val);
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyPrintsResult {};
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyPrintsResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<()> {
+    Ok(())
+  }
+}
+
+//
+// ApplyPrintiArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyPrintiArgs {
+  value: i64,
+}
+
+impl ApplyPrintiArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyPrintiArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<i64> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_i64()?;
+          f_1 = Some(val);
         },
         _ => {
           i_prot.skip(field_ident.field_type)?;
@@ -2841,35 +3024,146 @@ impl ApplyPrintsResult {
       i_prot.read_field_end()?;
     }
     i_prot.read_struct_end()?;
-    let ret = ApplyPrintsResult {
-      result_value: f_0,
+    verify_required_field_exists("ApplyPrintiArgs.value", &f_1)?;
+    let ret = ApplyPrintiArgs {
+      value: f_1.expect("auto-generated code should have checked for presence of required fields"),
     };
     Ok(ret)
   }
   fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
-    let struct_ident = TStructIdentifier::new("ApplyPrintsResult");
+    let struct_ident = TStructIdentifier::new("printi_args");
     o_prot.write_struct_begin(&struct_ident)?;
-    if let Some(fld_var) = self.result_value {
-      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::I32, 0))?;
-      o_prot.write_i32(fld_var)?;
-      o_prot.write_field_end()?
-    }
+    o_prot.write_field_begin(&TFieldIdentifier::new("value", TType::I64, 1))?;
+    o_prot.write_i64(self.value)?;
+    o_prot.write_field_end()?;
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
   }
-  fn ok_or(self) -> thrift::Result<i32> {
-    if self.result_value.is_some() {
-      Ok(self.result_value.unwrap())
-    } else {
-      Err(
-        thrift::Error::Application(
-          ApplicationError::new(
-            ApplicationErrorKind::MissingResult,
-            "no result received for ApplyPrints"
-          )
-        )
-      )
+}
+
+//
+// ApplyPrintiResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyPrintiResult {
+}
+
+impl ApplyPrintiResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyPrintiResult> {
+    i_prot.read_struct_begin()?;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
     }
+    i_prot.read_struct_end()?;
+    let ret = ApplyPrintiResult {};
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyPrintiResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<()> {
+    Ok(())
+  }
+}
+
+//
+// ApplyPrintuiArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyPrintuiArgs {
+  value: Uint64,
+}
+
+impl ApplyPrintuiArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyPrintuiArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<Uint64> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyPrintuiArgs.value", &f_1)?;
+    let ret = ApplyPrintuiArgs {
+      value: f_1.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("printui_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("value", TType::Struct, 1))?;
+    self.value.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyPrintuiResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyPrintuiResult {
+}
+
+impl ApplyPrintuiResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyPrintuiResult> {
+    i_prot.read_struct_begin()?;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyPrintuiResult {};
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyPrintuiResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<()> {
+    Ok(())
   }
 }
 
