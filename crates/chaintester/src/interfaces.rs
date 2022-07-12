@@ -137,21 +137,18 @@ impl Default for Action {
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Uint64 {
-  pub lo: Option<i64>,
-  pub hi: Option<i64>,
+  pub raw_value: Option<Vec<u8>>,
 }
 
 impl Uint64 {
-  pub fn new<F1, F2>(lo: F1, hi: F2) -> Uint64 where F1: Into<Option<i64>>, F2: Into<Option<i64>> {
+  pub fn new<F1>(raw_value: F1) -> Uint64 where F1: Into<Option<Vec<u8>>> {
     Uint64 {
-      lo: lo.into(),
-      hi: hi.into(),
+      raw_value: raw_value.into(),
     }
   }
   pub fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<Uint64> {
     i_prot.read_struct_begin()?;
-    let mut f_1: Option<i64> = Some(0);
-    let mut f_2: Option<i64> = Some(0);
+    let mut f_1: Option<Vec<u8>> = Some(Vec::new());
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -160,12 +157,8 @@ impl Uint64 {
       let field_id = field_id(&field_ident)?;
       match field_id {
         1 => {
-          let val = i_prot.read_i64()?;
+          let val = i_prot.read_bytes()?;
           f_1 = Some(val);
-        },
-        2 => {
-          let val = i_prot.read_i64()?;
-          f_2 = Some(val);
         },
         _ => {
           i_prot.skip(field_ident.field_type)?;
@@ -175,22 +168,16 @@ impl Uint64 {
     }
     i_prot.read_struct_end()?;
     let ret = Uint64 {
-      lo: f_1,
-      hi: f_2,
+      raw_value: f_1,
     };
     Ok(ret)
   }
   pub fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     let struct_ident = TStructIdentifier::new("Uint64");
     o_prot.write_struct_begin(&struct_ident)?;
-    if let Some(fld_var) = self.lo {
-      o_prot.write_field_begin(&TFieldIdentifier::new("lo", TType::I64, 1))?;
-      o_prot.write_i64(fld_var)?;
-      o_prot.write_field_end()?
-    }
-    if let Some(fld_var) = self.hi {
-      o_prot.write_field_begin(&TFieldIdentifier::new("hi", TType::I64, 2))?;
-      o_prot.write_i64(fld_var)?;
+    if let Some(ref fld_var) = self.raw_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("rawValue", TType::String, 1))?;
+      o_prot.write_bytes(fld_var)?;
       o_prot.write_field_end()?
     }
     o_prot.write_field_stop()?;
@@ -201,8 +188,83 @@ impl Uint64 {
 impl Default for Uint64 {
   fn default() -> Self {
     Uint64{
-      lo: Some(0),
-      hi: Some(0),
+      raw_value: Some(Vec::new()),
+    }
+  }
+}
+
+//
+// NextPreviousReturn
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct NextPreviousReturn {
+  pub iterator: Option<i32>,
+  pub primary: Option<Uint64>,
+}
+
+impl NextPreviousReturn {
+  pub fn new<F1, F2>(iterator: F1, primary: F2) -> NextPreviousReturn where F1: Into<Option<i32>>, F2: Into<Option<Uint64>> {
+    NextPreviousReturn {
+      iterator: iterator.into(),
+      primary: primary.into(),
+    }
+  }
+  pub fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<NextPreviousReturn> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<i32> = Some(0);
+    let mut f_2: Option<Uint64> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_i32()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_2 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = NextPreviousReturn {
+      iterator: f_1,
+      primary: f_2,
+    };
+    Ok(ret)
+  }
+  pub fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("NextPreviousReturn");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(fld_var) = self.iterator {
+      o_prot.write_field_begin(&TFieldIdentifier::new("iterator", TType::I32, 1))?;
+      o_prot.write_i32(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    if let Some(ref fld_var) = self.primary {
+      o_prot.write_field_begin(&TFieldIdentifier::new("primary", TType::Struct, 2))?;
+      fld_var.write_to_out_protocol(o_prot)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+impl Default for NextPreviousReturn {
+  fn default() -> Self {
+    NextPreviousReturn{
+      iterator: Some(0),
+      primary: None,
     }
   }
 }
@@ -1595,6 +1657,16 @@ pub trait TApplySyncClient {
   fn read_action_data(&mut self, len: i32) -> thrift::Result<Vec<u8>>;
   fn send_inline(&mut self, serialized_action: Vec<u8>) -> thrift::Result<i32>;
   fn end_apply(&mut self) -> thrift::Result<i32>;
+  fn db_store_i64(&mut self, scope: Uint64, table: Uint64, payer: Uint64, id: Uint64, data: Vec<u8>) -> thrift::Result<i32>;
+  fn db_update_i64(&mut self, iterator: i32, payer: Uint64, data: Vec<u8>) -> thrift::Result<()>;
+  fn db_remove_i64(&mut self, iterator: i32) -> thrift::Result<()>;
+  fn db_get_i64(&mut self, iterator: i32, data: Vec<u8>) -> thrift::Result<i32>;
+  fn db_next_i64(&mut self, iterator: i32) -> thrift::Result<NextPreviousReturn>;
+  fn db_previous_i64(&mut self, iterator: i32) -> thrift::Result<NextPreviousReturn>;
+  fn db_find_i64(&mut self, code: Uint64, scope: Uint64, table: Uint64, id: Uint64) -> thrift::Result<i32>;
+  fn db_lowerbound_i64(&mut self, code: Uint64, scope: Uint64, table: Uint64, id: Uint64) -> thrift::Result<i32>;
+  fn db_upperbound_i64(&mut self, code: Uint64, scope: Uint64, table: Uint64, id: Uint64) -> thrift::Result<i32>;
+  fn db_end_i64(&mut self, code: Uint64, scope: Uint64, table: Uint64) -> thrift::Result<i32>;
 }
 
 pub trait TApplySyncClientMarker {}
@@ -1729,6 +1801,276 @@ impl <C: TThriftClient + TApplySyncClientMarker> TApplySyncClient for C {
       result.ok_or()
     }
   }
+  fn db_store_i64(&mut self, scope: Uint64, table: Uint64, payer: Uint64, id: Uint64, data: Vec<u8>) -> thrift::Result<i32> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("db_store_i64", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyDbStoreI64Args { scope, table, payer, id, data };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("db_store_i64", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyDbStoreI64Result::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn db_update_i64(&mut self, iterator: i32, payer: Uint64, data: Vec<u8>) -> thrift::Result<()> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("db_update_i64", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyDbUpdateI64Args { iterator, payer, data };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("db_update_i64", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyDbUpdateI64Result::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn db_remove_i64(&mut self, iterator: i32) -> thrift::Result<()> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("db_remove_i64", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyDbRemoveI64Args { iterator };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("db_remove_i64", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyDbRemoveI64Result::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn db_get_i64(&mut self, iterator: i32, data: Vec<u8>) -> thrift::Result<i32> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("db_get_i64", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyDbGetI64Args { iterator, data };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("db_get_i64", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyDbGetI64Result::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn db_next_i64(&mut self, iterator: i32) -> thrift::Result<NextPreviousReturn> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("db_next_i64", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyDbNextI64Args { iterator };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("db_next_i64", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyDbNextI64Result::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn db_previous_i64(&mut self, iterator: i32) -> thrift::Result<NextPreviousReturn> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("db_previous_i64", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyDbPreviousI64Args { iterator };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("db_previous_i64", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyDbPreviousI64Result::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn db_find_i64(&mut self, code: Uint64, scope: Uint64, table: Uint64, id: Uint64) -> thrift::Result<i32> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("db_find_i64", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyDbFindI64Args { code, scope, table, id };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("db_find_i64", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyDbFindI64Result::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn db_lowerbound_i64(&mut self, code: Uint64, scope: Uint64, table: Uint64, id: Uint64) -> thrift::Result<i32> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("db_lowerbound_i64", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyDbLowerboundI64Args { code, scope, table, id };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("db_lowerbound_i64", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyDbLowerboundI64Result::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn db_upperbound_i64(&mut self, code: Uint64, scope: Uint64, table: Uint64, id: Uint64) -> thrift::Result<i32> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("db_upperbound_i64", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyDbUpperboundI64Args { code, scope, table, id };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("db_upperbound_i64", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyDbUpperboundI64Result::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn db_end_i64(&mut self, code: Uint64, scope: Uint64, table: Uint64) -> thrift::Result<i32> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("db_end_i64", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyDbEndI64Args { code, scope, table };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("db_end_i64", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyDbEndI64Result::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
 }
 
 //
@@ -1740,6 +2082,16 @@ pub trait ApplySyncHandler {
   fn handle_read_action_data(&self, len: i32) -> thrift::Result<Vec<u8>>;
   fn handle_send_inline(&self, serialized_action: Vec<u8>) -> thrift::Result<i32>;
   fn handle_end_apply(&self) -> thrift::Result<i32>;
+  fn handle_db_store_i64(&self, scope: Uint64, table: Uint64, payer: Uint64, id: Uint64, data: Vec<u8>) -> thrift::Result<i32>;
+  fn handle_db_update_i64(&self, iterator: i32, payer: Uint64, data: Vec<u8>) -> thrift::Result<()>;
+  fn handle_db_remove_i64(&self, iterator: i32) -> thrift::Result<()>;
+  fn handle_db_get_i64(&self, iterator: i32, data: Vec<u8>) -> thrift::Result<i32>;
+  fn handle_db_next_i64(&self, iterator: i32) -> thrift::Result<NextPreviousReturn>;
+  fn handle_db_previous_i64(&self, iterator: i32) -> thrift::Result<NextPreviousReturn>;
+  fn handle_db_find_i64(&self, code: Uint64, scope: Uint64, table: Uint64, id: Uint64) -> thrift::Result<i32>;
+  fn handle_db_lowerbound_i64(&self, code: Uint64, scope: Uint64, table: Uint64, id: Uint64) -> thrift::Result<i32>;
+  fn handle_db_upperbound_i64(&self, code: Uint64, scope: Uint64, table: Uint64, id: Uint64) -> thrift::Result<i32>;
+  fn handle_db_end_i64(&self, code: Uint64, scope: Uint64, table: Uint64) -> thrift::Result<i32>;
 }
 
 pub struct ApplySyncProcessor<H: ApplySyncHandler> {
@@ -1763,6 +2115,36 @@ impl <H: ApplySyncHandler> ApplySyncProcessor<H> {
   }
   fn process_end_apply(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TApplyProcessFunctions::process_end_apply(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_db_store_i64(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_db_store_i64(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_db_update_i64(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_db_update_i64(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_db_remove_i64(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_db_remove_i64(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_db_get_i64(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_db_get_i64(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_db_next_i64(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_db_next_i64(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_db_previous_i64(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_db_previous_i64(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_db_find_i64(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_db_find_i64(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_db_lowerbound_i64(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_db_lowerbound_i64(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_db_upperbound_i64(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_db_upperbound_i64(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_db_end_i64(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_db_end_i64(&self.handler, incoming_sequence_number, i_prot, o_prot)
   }
 }
 
@@ -1917,6 +2299,376 @@ impl TApplyProcessFunctions {
       },
     }
   }
+  pub fn process_db_store_i64<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyDbStoreI64Args::read_from_in_protocol(i_prot)?;
+    match handler.handle_db_store_i64(args.scope, args.table, args.payer, args.id, args.data) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("db_store_i64", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyDbStoreI64Result { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("db_store_i64", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("db_store_i64", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_db_update_i64<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyDbUpdateI64Args::read_from_in_protocol(i_prot)?;
+    match handler.handle_db_update_i64(args.iterator, args.payer, args.data) {
+      Ok(_) => {
+        let message_ident = TMessageIdentifier::new("db_update_i64", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyDbUpdateI64Result {  };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("db_update_i64", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("db_update_i64", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_db_remove_i64<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyDbRemoveI64Args::read_from_in_protocol(i_prot)?;
+    match handler.handle_db_remove_i64(args.iterator) {
+      Ok(_) => {
+        let message_ident = TMessageIdentifier::new("db_remove_i64", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyDbRemoveI64Result {  };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("db_remove_i64", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("db_remove_i64", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_db_get_i64<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyDbGetI64Args::read_from_in_protocol(i_prot)?;
+    match handler.handle_db_get_i64(args.iterator, args.data) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("db_get_i64", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyDbGetI64Result { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("db_get_i64", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("db_get_i64", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_db_next_i64<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyDbNextI64Args::read_from_in_protocol(i_prot)?;
+    match handler.handle_db_next_i64(args.iterator) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("db_next_i64", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyDbNextI64Result { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("db_next_i64", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("db_next_i64", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_db_previous_i64<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyDbPreviousI64Args::read_from_in_protocol(i_prot)?;
+    match handler.handle_db_previous_i64(args.iterator) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("db_previous_i64", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyDbPreviousI64Result { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("db_previous_i64", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("db_previous_i64", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_db_find_i64<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyDbFindI64Args::read_from_in_protocol(i_prot)?;
+    match handler.handle_db_find_i64(args.code, args.scope, args.table, args.id) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("db_find_i64", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyDbFindI64Result { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("db_find_i64", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("db_find_i64", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_db_lowerbound_i64<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyDbLowerboundI64Args::read_from_in_protocol(i_prot)?;
+    match handler.handle_db_lowerbound_i64(args.code, args.scope, args.table, args.id) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("db_lowerbound_i64", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyDbLowerboundI64Result { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("db_lowerbound_i64", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("db_lowerbound_i64", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_db_upperbound_i64<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyDbUpperboundI64Args::read_from_in_protocol(i_prot)?;
+    match handler.handle_db_upperbound_i64(args.code, args.scope, args.table, args.id) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("db_upperbound_i64", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyDbUpperboundI64Result { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("db_upperbound_i64", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("db_upperbound_i64", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_db_end_i64<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyDbEndI64Args::read_from_in_protocol(i_prot)?;
+    match handler.handle_db_end_i64(args.code, args.scope, args.table) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("db_end_i64", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyDbEndI64Result { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("db_end_i64", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("db_end_i64", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
 }
 
 impl <H: ApplySyncHandler> TProcessor for ApplySyncProcessor<H> {
@@ -1934,6 +2686,36 @@ impl <H: ApplySyncHandler> TProcessor for ApplySyncProcessor<H> {
       },
       "end_apply" => {
         self.process_end_apply(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "db_store_i64" => {
+        self.process_db_store_i64(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "db_update_i64" => {
+        self.process_db_update_i64(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "db_remove_i64" => {
+        self.process_db_remove_i64(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "db_get_i64" => {
+        self.process_db_get_i64(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "db_next_i64" => {
+        self.process_db_next_i64(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "db_previous_i64" => {
+        self.process_db_previous_i64(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "db_find_i64" => {
+        self.process_db_find_i64(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "db_lowerbound_i64" => {
+        self.process_db_lowerbound_i64(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "db_upperbound_i64" => {
+        self.process_db_upperbound_i64(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "db_end_i64" => {
+        self.process_db_end_i64(message_ident.sequence_number, i_prot, o_prot)
       },
       method => {
         Err(
@@ -2375,6 +3157,1266 @@ impl ApplyEndApplyResult {
           ApplicationError::new(
             ApplicationErrorKind::MissingResult,
             "no result received for ApplyEndApply"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// ApplyDbStoreI64Args
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyDbStoreI64Args {
+  scope: Uint64,
+  table: Uint64,
+  payer: Uint64,
+  id: Uint64,
+  data: Vec<u8>,
+}
+
+impl ApplyDbStoreI64Args {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyDbStoreI64Args> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<Uint64> = None;
+    let mut f_2: Option<Uint64> = None;
+    let mut f_3: Option<Uint64> = None;
+    let mut f_4: Option<Uint64> = None;
+    let mut f_5: Option<Vec<u8>> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_2 = Some(val);
+        },
+        3 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_3 = Some(val);
+        },
+        4 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_4 = Some(val);
+        },
+        5 => {
+          let val = i_prot.read_bytes()?;
+          f_5 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyDbStoreI64Args.scope", &f_1)?;
+    verify_required_field_exists("ApplyDbStoreI64Args.table", &f_2)?;
+    verify_required_field_exists("ApplyDbStoreI64Args.payer", &f_3)?;
+    verify_required_field_exists("ApplyDbStoreI64Args.id", &f_4)?;
+    verify_required_field_exists("ApplyDbStoreI64Args.data", &f_5)?;
+    let ret = ApplyDbStoreI64Args {
+      scope: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      table: f_2.expect("auto-generated code should have checked for presence of required fields"),
+      payer: f_3.expect("auto-generated code should have checked for presence of required fields"),
+      id: f_4.expect("auto-generated code should have checked for presence of required fields"),
+      data: f_5.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("db_store_i64_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("scope", TType::Struct, 1))?;
+    self.scope.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("table", TType::Struct, 2))?;
+    self.table.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("payer", TType::Struct, 3))?;
+    self.payer.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("id", TType::Struct, 4))?;
+    self.id.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("data", TType::String, 5))?;
+    o_prot.write_bytes(&self.data)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyDbStoreI64Result
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyDbStoreI64Result {
+  result_value: Option<i32>,
+}
+
+impl ApplyDbStoreI64Result {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyDbStoreI64Result> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<i32> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = i_prot.read_i32()?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyDbStoreI64Result {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyDbStoreI64Result");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::I32, 0))?;
+      o_prot.write_i32(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<i32> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for ApplyDbStoreI64"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// ApplyDbUpdateI64Args
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyDbUpdateI64Args {
+  iterator: i32,
+  payer: Uint64,
+  data: Vec<u8>,
+}
+
+impl ApplyDbUpdateI64Args {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyDbUpdateI64Args> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<i32> = None;
+    let mut f_2: Option<Uint64> = None;
+    let mut f_3: Option<Vec<u8>> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_i32()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_2 = Some(val);
+        },
+        3 => {
+          let val = i_prot.read_bytes()?;
+          f_3 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyDbUpdateI64Args.iterator", &f_1)?;
+    verify_required_field_exists("ApplyDbUpdateI64Args.payer", &f_2)?;
+    verify_required_field_exists("ApplyDbUpdateI64Args.data", &f_3)?;
+    let ret = ApplyDbUpdateI64Args {
+      iterator: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      payer: f_2.expect("auto-generated code should have checked for presence of required fields"),
+      data: f_3.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("db_update_i64_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("iterator", TType::I32, 1))?;
+    o_prot.write_i32(self.iterator)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("payer", TType::Struct, 2))?;
+    self.payer.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("data", TType::String, 3))?;
+    o_prot.write_bytes(&self.data)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyDbUpdateI64Result
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyDbUpdateI64Result {
+}
+
+impl ApplyDbUpdateI64Result {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyDbUpdateI64Result> {
+    i_prot.read_struct_begin()?;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyDbUpdateI64Result {};
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyDbUpdateI64Result");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<()> {
+    Ok(())
+  }
+}
+
+//
+// ApplyDbRemoveI64Args
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyDbRemoveI64Args {
+  iterator: i32,
+}
+
+impl ApplyDbRemoveI64Args {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyDbRemoveI64Args> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<i32> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_i32()?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyDbRemoveI64Args.iterator", &f_1)?;
+    let ret = ApplyDbRemoveI64Args {
+      iterator: f_1.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("db_remove_i64_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("iterator", TType::I32, 1))?;
+    o_prot.write_i32(self.iterator)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyDbRemoveI64Result
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyDbRemoveI64Result {
+}
+
+impl ApplyDbRemoveI64Result {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyDbRemoveI64Result> {
+    i_prot.read_struct_begin()?;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyDbRemoveI64Result {};
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyDbRemoveI64Result");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<()> {
+    Ok(())
+  }
+}
+
+//
+// ApplyDbGetI64Args
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyDbGetI64Args {
+  iterator: i32,
+  data: Vec<u8>,
+}
+
+impl ApplyDbGetI64Args {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyDbGetI64Args> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<i32> = None;
+    let mut f_2: Option<Vec<u8>> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_i32()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = i_prot.read_bytes()?;
+          f_2 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyDbGetI64Args.iterator", &f_1)?;
+    verify_required_field_exists("ApplyDbGetI64Args.data", &f_2)?;
+    let ret = ApplyDbGetI64Args {
+      iterator: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      data: f_2.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("db_get_i64_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("iterator", TType::I32, 1))?;
+    o_prot.write_i32(self.iterator)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("data", TType::String, 2))?;
+    o_prot.write_bytes(&self.data)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyDbGetI64Result
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyDbGetI64Result {
+  result_value: Option<i32>,
+}
+
+impl ApplyDbGetI64Result {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyDbGetI64Result> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<i32> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = i_prot.read_i32()?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyDbGetI64Result {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyDbGetI64Result");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::I32, 0))?;
+      o_prot.write_i32(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<i32> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for ApplyDbGetI64"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// ApplyDbNextI64Args
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyDbNextI64Args {
+  iterator: i32,
+}
+
+impl ApplyDbNextI64Args {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyDbNextI64Args> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<i32> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_i32()?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyDbNextI64Args.iterator", &f_1)?;
+    let ret = ApplyDbNextI64Args {
+      iterator: f_1.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("db_next_i64_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("iterator", TType::I32, 1))?;
+    o_prot.write_i32(self.iterator)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyDbNextI64Result
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyDbNextI64Result {
+  result_value: Option<NextPreviousReturn>,
+}
+
+impl ApplyDbNextI64Result {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyDbNextI64Result> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<NextPreviousReturn> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = NextPreviousReturn::read_from_in_protocol(i_prot)?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyDbNextI64Result {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyDbNextI64Result");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(ref fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::Struct, 0))?;
+      fld_var.write_to_out_protocol(o_prot)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<NextPreviousReturn> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for ApplyDbNextI64"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// ApplyDbPreviousI64Args
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyDbPreviousI64Args {
+  iterator: i32,
+}
+
+impl ApplyDbPreviousI64Args {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyDbPreviousI64Args> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<i32> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_i32()?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyDbPreviousI64Args.iterator", &f_1)?;
+    let ret = ApplyDbPreviousI64Args {
+      iterator: f_1.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("db_previous_i64_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("iterator", TType::I32, 1))?;
+    o_prot.write_i32(self.iterator)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyDbPreviousI64Result
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyDbPreviousI64Result {
+  result_value: Option<NextPreviousReturn>,
+}
+
+impl ApplyDbPreviousI64Result {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyDbPreviousI64Result> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<NextPreviousReturn> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = NextPreviousReturn::read_from_in_protocol(i_prot)?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyDbPreviousI64Result {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyDbPreviousI64Result");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(ref fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::Struct, 0))?;
+      fld_var.write_to_out_protocol(o_prot)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<NextPreviousReturn> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for ApplyDbPreviousI64"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// ApplyDbFindI64Args
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyDbFindI64Args {
+  code: Uint64,
+  scope: Uint64,
+  table: Uint64,
+  id: Uint64,
+}
+
+impl ApplyDbFindI64Args {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyDbFindI64Args> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<Uint64> = None;
+    let mut f_2: Option<Uint64> = None;
+    let mut f_3: Option<Uint64> = None;
+    let mut f_4: Option<Uint64> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_2 = Some(val);
+        },
+        3 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_3 = Some(val);
+        },
+        4 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_4 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyDbFindI64Args.code", &f_1)?;
+    verify_required_field_exists("ApplyDbFindI64Args.scope", &f_2)?;
+    verify_required_field_exists("ApplyDbFindI64Args.table", &f_3)?;
+    verify_required_field_exists("ApplyDbFindI64Args.id", &f_4)?;
+    let ret = ApplyDbFindI64Args {
+      code: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      scope: f_2.expect("auto-generated code should have checked for presence of required fields"),
+      table: f_3.expect("auto-generated code should have checked for presence of required fields"),
+      id: f_4.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("db_find_i64_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("code", TType::Struct, 1))?;
+    self.code.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("scope", TType::Struct, 2))?;
+    self.scope.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("table", TType::Struct, 3))?;
+    self.table.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("id", TType::Struct, 4))?;
+    self.id.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyDbFindI64Result
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyDbFindI64Result {
+  result_value: Option<i32>,
+}
+
+impl ApplyDbFindI64Result {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyDbFindI64Result> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<i32> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = i_prot.read_i32()?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyDbFindI64Result {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyDbFindI64Result");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::I32, 0))?;
+      o_prot.write_i32(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<i32> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for ApplyDbFindI64"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// ApplyDbLowerboundI64Args
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyDbLowerboundI64Args {
+  code: Uint64,
+  scope: Uint64,
+  table: Uint64,
+  id: Uint64,
+}
+
+impl ApplyDbLowerboundI64Args {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyDbLowerboundI64Args> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<Uint64> = None;
+    let mut f_2: Option<Uint64> = None;
+    let mut f_3: Option<Uint64> = None;
+    let mut f_4: Option<Uint64> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_2 = Some(val);
+        },
+        3 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_3 = Some(val);
+        },
+        4 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_4 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyDbLowerboundI64Args.code", &f_1)?;
+    verify_required_field_exists("ApplyDbLowerboundI64Args.scope", &f_2)?;
+    verify_required_field_exists("ApplyDbLowerboundI64Args.table", &f_3)?;
+    verify_required_field_exists("ApplyDbLowerboundI64Args.id", &f_4)?;
+    let ret = ApplyDbLowerboundI64Args {
+      code: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      scope: f_2.expect("auto-generated code should have checked for presence of required fields"),
+      table: f_3.expect("auto-generated code should have checked for presence of required fields"),
+      id: f_4.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("db_lowerbound_i64_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("code", TType::Struct, 1))?;
+    self.code.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("scope", TType::Struct, 2))?;
+    self.scope.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("table", TType::Struct, 3))?;
+    self.table.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("id", TType::Struct, 4))?;
+    self.id.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyDbLowerboundI64Result
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyDbLowerboundI64Result {
+  result_value: Option<i32>,
+}
+
+impl ApplyDbLowerboundI64Result {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyDbLowerboundI64Result> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<i32> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = i_prot.read_i32()?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyDbLowerboundI64Result {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyDbLowerboundI64Result");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::I32, 0))?;
+      o_prot.write_i32(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<i32> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for ApplyDbLowerboundI64"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// ApplyDbUpperboundI64Args
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyDbUpperboundI64Args {
+  code: Uint64,
+  scope: Uint64,
+  table: Uint64,
+  id: Uint64,
+}
+
+impl ApplyDbUpperboundI64Args {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyDbUpperboundI64Args> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<Uint64> = None;
+    let mut f_2: Option<Uint64> = None;
+    let mut f_3: Option<Uint64> = None;
+    let mut f_4: Option<Uint64> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_2 = Some(val);
+        },
+        3 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_3 = Some(val);
+        },
+        4 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_4 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyDbUpperboundI64Args.code", &f_1)?;
+    verify_required_field_exists("ApplyDbUpperboundI64Args.scope", &f_2)?;
+    verify_required_field_exists("ApplyDbUpperboundI64Args.table", &f_3)?;
+    verify_required_field_exists("ApplyDbUpperboundI64Args.id", &f_4)?;
+    let ret = ApplyDbUpperboundI64Args {
+      code: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      scope: f_2.expect("auto-generated code should have checked for presence of required fields"),
+      table: f_3.expect("auto-generated code should have checked for presence of required fields"),
+      id: f_4.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("db_upperbound_i64_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("code", TType::Struct, 1))?;
+    self.code.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("scope", TType::Struct, 2))?;
+    self.scope.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("table", TType::Struct, 3))?;
+    self.table.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("id", TType::Struct, 4))?;
+    self.id.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyDbUpperboundI64Result
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyDbUpperboundI64Result {
+  result_value: Option<i32>,
+}
+
+impl ApplyDbUpperboundI64Result {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyDbUpperboundI64Result> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<i32> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = i_prot.read_i32()?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyDbUpperboundI64Result {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyDbUpperboundI64Result");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::I32, 0))?;
+      o_prot.write_i32(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<i32> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for ApplyDbUpperboundI64"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// ApplyDbEndI64Args
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyDbEndI64Args {
+  code: Uint64,
+  scope: Uint64,
+  table: Uint64,
+}
+
+impl ApplyDbEndI64Args {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyDbEndI64Args> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<Uint64> = None;
+    let mut f_2: Option<Uint64> = None;
+    let mut f_3: Option<Uint64> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_2 = Some(val);
+        },
+        3 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_3 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyDbEndI64Args.code", &f_1)?;
+    verify_required_field_exists("ApplyDbEndI64Args.scope", &f_2)?;
+    verify_required_field_exists("ApplyDbEndI64Args.table", &f_3)?;
+    let ret = ApplyDbEndI64Args {
+      code: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      scope: f_2.expect("auto-generated code should have checked for presence of required fields"),
+      table: f_3.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("db_end_i64_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("code", TType::Struct, 1))?;
+    self.code.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("scope", TType::Struct, 2))?;
+    self.scope.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("table", TType::Struct, 3))?;
+    self.table.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyDbEndI64Result
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyDbEndI64Result {
+  result_value: Option<i32>,
+}
+
+impl ApplyDbEndI64Result {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyDbEndI64Result> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<i32> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = i_prot.read_i32()?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyDbEndI64Result {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyDbEndI64Result");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::I32, 0))?;
+      o_prot.write_i32(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<i32> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for ApplyDbEndI64"
           )
         )
       )

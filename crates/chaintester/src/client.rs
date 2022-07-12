@@ -232,8 +232,18 @@ impl Default for ApplyRequestHandler {
     }
 }
 
+use std::convert::TryInto;
+
+fn to_fixed_array(v: Vec<u8>) -> [u8; 8] {
+    v.try_into()
+        .unwrap_or_else(|v: Vec<u8>| panic!("Expected a Vec of length {} but it was {}", 8, v.len()))
+}
+
 fn to_u64(value: Uint64) -> u64 {
-    value.lo.unwrap_or(0) as u64 | ((value.hi.unwrap_or(0) as u64) << 32)
+    if value.raw_value.is_none() {
+        panic!("bad raw Uint64 value 1");
+    }
+    return u64::from_le_bytes(to_fixed_array(value.raw_value.unwrap()));
 }
 
 impl ApplyRequestSyncHandler for ApplyRequestHandler {
