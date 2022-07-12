@@ -143,7 +143,7 @@ impl TableI64 {
             return None;
         }
 
-        let size = db_get_i64(iterator.i, 0 as *const u8, 0);
+        let size = db_get_i64(iterator.i, 0 as *mut u8, 0);
         let mut data: Vec<u8> = vec![0; size as usize];
         // let mut data: Vec<u8> = Vec::with_capacity(size as usize);
         // data.resize_with(size as usize, Default::default);

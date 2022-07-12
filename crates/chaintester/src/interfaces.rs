@@ -224,6 +224,82 @@ impl Default for Uint64 {
 }
 
 //
+// DataBuffer
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct DataBuffer {
+  pub size: Option<i32>,
+  pub buffer: Option<Vec<u8>>,
+}
+
+impl DataBuffer {
+  pub fn new<F1, F2>(size: F1, buffer: F2) -> DataBuffer where F1: Into<Option<i32>>, F2: Into<Option<Vec<u8>>> {
+    DataBuffer {
+      size: size.into(),
+      buffer: buffer.into(),
+    }
+  }
+  pub fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<DataBuffer> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<i32> = Some(0);
+    let mut f_2: Option<Vec<u8>> = Some(Vec::new());
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_i32()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = i_prot.read_bytes()?;
+          f_2 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = DataBuffer {
+      size: f_1,
+      buffer: f_2,
+    };
+    Ok(ret)
+  }
+  pub fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("DataBuffer");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(fld_var) = self.size {
+      o_prot.write_field_begin(&TFieldIdentifier::new("size", TType::I32, 1))?;
+      o_prot.write_i32(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    if let Some(ref fld_var) = self.buffer {
+      o_prot.write_field_begin(&TFieldIdentifier::new("buffer", TType::String, 2))?;
+      o_prot.write_bytes(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+impl Default for DataBuffer {
+  fn default() -> Self {
+    DataBuffer{
+      size: Some(0),
+      buffer: Some(Vec::new()),
+    }
+  }
+}
+
+//
 // NextPreviousReturn
 //
 
@@ -1692,7 +1768,7 @@ pub trait TApplySyncClient {
   fn db_store_i64(&mut self, scope: Uint64, table: Uint64, payer: Uint64, id: Uint64, data: Vec<u8>) -> thrift::Result<i32>;
   fn db_update_i64(&mut self, iterator: i32, payer: Uint64, data: Vec<u8>) -> thrift::Result<()>;
   fn db_remove_i64(&mut self, iterator: i32) -> thrift::Result<()>;
-  fn db_get_i64(&mut self, iterator: i32, data: Vec<u8>) -> thrift::Result<i32>;
+  fn db_get_i64(&mut self, iterator: i32, data_size: i32) -> thrift::Result<DataBuffer>;
   fn db_next_i64(&mut self, iterator: i32) -> thrift::Result<NextPreviousReturn>;
   fn db_previous_i64(&mut self, iterator: i32) -> thrift::Result<NextPreviousReturn>;
   fn db_find_i64(&mut self, code: Uint64, scope: Uint64, table: Uint64, id: Uint64) -> thrift::Result<i32>;
@@ -1968,12 +2044,12 @@ impl <C: TThriftClient + TApplySyncClientMarker> TApplySyncClient for C {
       result.ok_or()
     }
   }
-  fn db_get_i64(&mut self, iterator: i32, data: Vec<u8>) -> thrift::Result<i32> {
+  fn db_get_i64(&mut self, iterator: i32, data_size: i32) -> thrift::Result<DataBuffer> {
     (
       {
         self.increment_sequence_number();
         let message_ident = TMessageIdentifier::new("db_get_i64", TMessageType::Call, self.sequence_number());
-        let call_args = ApplyDbGetI64Args { iterator, data };
+        let call_args = ApplyDbGetI64Args { iterator, data_size };
         self.o_prot_mut().write_message_begin(&message_ident)?;
         call_args.write_to_out_protocol(self.o_prot_mut())?;
         self.o_prot_mut().write_message_end()?;
@@ -2173,7 +2249,7 @@ pub trait ApplySyncHandler {
   fn handle_db_store_i64(&self, scope: Uint64, table: Uint64, payer: Uint64, id: Uint64, data: Vec<u8>) -> thrift::Result<i32>;
   fn handle_db_update_i64(&self, iterator: i32, payer: Uint64, data: Vec<u8>) -> thrift::Result<()>;
   fn handle_db_remove_i64(&self, iterator: i32) -> thrift::Result<()>;
-  fn handle_db_get_i64(&self, iterator: i32, data: Vec<u8>) -> thrift::Result<i32>;
+  fn handle_db_get_i64(&self, iterator: i32, data_size: i32) -> thrift::Result<DataBuffer>;
   fn handle_db_next_i64(&self, iterator: i32) -> thrift::Result<NextPreviousReturn>;
   fn handle_db_previous_i64(&self, iterator: i32) -> thrift::Result<NextPreviousReturn>;
   fn handle_db_find_i64(&self, code: Uint64, scope: Uint64, table: Uint64, id: Uint64) -> thrift::Result<i32>;
@@ -2580,7 +2656,7 @@ impl TApplyProcessFunctions {
   }
   pub fn process_db_get_i64<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     let args = ApplyDbGetI64Args::read_from_in_protocol(i_prot)?;
-    match handler.handle_db_get_i64(args.iterator, args.data) {
+    match handler.handle_db_get_i64(args.iterator, args.data_size) {
       Ok(handler_return) => {
         let message_ident = TMessageIdentifier::new("db_get_i64", TMessageType::Reply, incoming_sequence_number);
         o_prot.write_message_begin(&message_ident)?;
@@ -3846,14 +3922,14 @@ impl ApplyDbRemoveI64Result {
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 struct ApplyDbGetI64Args {
   iterator: i32,
-  data: Vec<u8>,
+  data_size: i32,
 }
 
 impl ApplyDbGetI64Args {
   fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyDbGetI64Args> {
     i_prot.read_struct_begin()?;
     let mut f_1: Option<i32> = None;
-    let mut f_2: Option<Vec<u8>> = None;
+    let mut f_2: Option<i32> = None;
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -3866,7 +3942,7 @@ impl ApplyDbGetI64Args {
           f_1 = Some(val);
         },
         2 => {
-          let val = i_prot.read_bytes()?;
+          let val = i_prot.read_i32()?;
           f_2 = Some(val);
         },
         _ => {
@@ -3877,10 +3953,10 @@ impl ApplyDbGetI64Args {
     }
     i_prot.read_struct_end()?;
     verify_required_field_exists("ApplyDbGetI64Args.iterator", &f_1)?;
-    verify_required_field_exists("ApplyDbGetI64Args.data", &f_2)?;
+    verify_required_field_exists("ApplyDbGetI64Args.data_size", &f_2)?;
     let ret = ApplyDbGetI64Args {
       iterator: f_1.expect("auto-generated code should have checked for presence of required fields"),
-      data: f_2.expect("auto-generated code should have checked for presence of required fields"),
+      data_size: f_2.expect("auto-generated code should have checked for presence of required fields"),
     };
     Ok(ret)
   }
@@ -3890,8 +3966,8 @@ impl ApplyDbGetI64Args {
     o_prot.write_field_begin(&TFieldIdentifier::new("iterator", TType::I32, 1))?;
     o_prot.write_i32(self.iterator)?;
     o_prot.write_field_end()?;
-    o_prot.write_field_begin(&TFieldIdentifier::new("data", TType::String, 2))?;
-    o_prot.write_bytes(&self.data)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("data_size", TType::I32, 2))?;
+    o_prot.write_i32(self.data_size)?;
     o_prot.write_field_end()?;
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
@@ -3904,13 +3980,13 @@ impl ApplyDbGetI64Args {
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 struct ApplyDbGetI64Result {
-  result_value: Option<i32>,
+  result_value: Option<DataBuffer>,
 }
 
 impl ApplyDbGetI64Result {
   fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyDbGetI64Result> {
     i_prot.read_struct_begin()?;
-    let mut f_0: Option<i32> = None;
+    let mut f_0: Option<DataBuffer> = None;
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -3919,7 +3995,7 @@ impl ApplyDbGetI64Result {
       let field_id = field_id(&field_ident)?;
       match field_id {
         0 => {
-          let val = i_prot.read_i32()?;
+          let val = DataBuffer::read_from_in_protocol(i_prot)?;
           f_0 = Some(val);
         },
         _ => {
@@ -3937,15 +4013,15 @@ impl ApplyDbGetI64Result {
   fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     let struct_ident = TStructIdentifier::new("ApplyDbGetI64Result");
     o_prot.write_struct_begin(&struct_ident)?;
-    if let Some(fld_var) = self.result_value {
-      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::I32, 0))?;
-      o_prot.write_i32(fld_var)?;
+    if let Some(ref fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::Struct, 0))?;
+      fld_var.write_to_out_protocol(o_prot)?;
       o_prot.write_field_end()?
     }
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
   }
-  fn ok_or(self) -> thrift::Result<i32> {
+  fn ok_or(self) -> thrift::Result<DataBuffer> {
     if self.result_value.is_some() {
       Ok(self.result_value.unwrap())
     } else {

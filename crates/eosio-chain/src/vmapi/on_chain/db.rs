@@ -10,7 +10,7 @@ mod intrinsics {
         ///
         pub fn db_remove_i64(iterator: i32);
         ///
-        pub fn db_get_i64(iterator: i32, data: *const u8, len: u32) -> i32;
+        pub fn db_get_i64(iterator: i32, data: *mut u8, len: u32) -> i32;
         ///
         pub fn db_next_i64(iterator: i32, primary: *mut u64) -> i32;
         ///
@@ -153,7 +153,7 @@ pub fn db_remove_i64(iterator: i32){
 }
 
 ///
-pub fn db_get_i64(iterator: i32, data: *const u8, len: u32) -> i32{
+pub fn db_get_i64(iterator: i32, data: *mut u8, len: u32) -> i32{
     unsafe {
         return intrinsics::db_get_i64(iterator, data, len);
     }

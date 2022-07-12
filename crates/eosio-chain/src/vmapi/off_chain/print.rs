@@ -26,11 +26,13 @@ pub fn prints_l(_cstr: *const u8, _len: u32) {
 }
 
 ///
-pub fn printi(_value: i64) {
+pub fn printi(value: i64) {
+    get_vm_api_client().printi(value).unwrap()
 }
 
 ///
-pub fn printui(_value: u64) {
+pub fn printui(value: u64) {
+    get_vm_api_client().printui(value.into()).unwrap()
 }
 
 ///

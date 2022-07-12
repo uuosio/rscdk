@@ -32,11 +32,17 @@ pub fn db_remove_i64(iterator: i32) {
 }
 
 ///
-pub fn db_get_i64(iterator: i32, data: *const u8, len: u32) -> i32 {
-    let mut _data = unsafe {
-        slice::from_raw_parts(data, len as usize)
-    };
-    get_vm_api_client().db_get_i64(iterator, _data.to_vec()).unwrap()
+pub fn db_get_i64(iterator: i32, data: *mut u8, len: u32) -> i32 {
+    let ret = get_vm_api_client().db_get_i64(iterator, len as i32).unwrap();
+    let size = ret.size.unwrap();
+
+    if let Some(value) = &ret.buffer {
+        let buffer = ret.buffer.unwrap();
+        if buffer.len() > 0 {
+            crate::vmapi::eosio::memcpy(data, buffer.as_ptr(), size as usize);
+        }
+    }
+    return size;
 }
 
 ///
