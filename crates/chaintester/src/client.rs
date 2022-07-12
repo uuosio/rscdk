@@ -234,29 +234,14 @@ impl Default for ApplyRequestHandler {
 
 use std::convert::TryInto;
 
-fn to_fixed_array(v: Vec<u8>) -> [u8; 8] {
-    v.try_into()
-        .unwrap_or_else(|v: Vec<u8>| panic!("Expected a Vec of length {} but it was {}", 8, v.len()))
-}
-
-fn to_u64(value: Uint64) -> u64 {
-    if value.raw_value.is_none() {
-        panic!("bad raw Uint64 value 1");
-    }
-    return u64::from_le_bytes(to_fixed_array(value.raw_value.unwrap()));
-}
 
 impl ApplyRequestSyncHandler for ApplyRequestHandler {
     fn handle_apply_request(&self, receiver: Uint64, first_receiver: Uint64, action: Uint64) -> thrift::Result<i32> {
         println!("ok here!");
-        let _receiver = to_u64(receiver);
-        let _first_receiver = to_u64(first_receiver);
-        let _action = to_u64(action);
         println!("+++++++++handle_apply_request");
         unsafe {
-            native_apply(_receiver, _first_receiver, _action);
+            native_apply(receiver.into(), first_receiver.into(), action.into());
         }
-
         Ok(1)
     }
 

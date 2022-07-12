@@ -140,6 +140,36 @@ pub struct Uint64 {
   pub raw_value: Option<Vec<u8>>,
 }
 
+fn to_uint64(value: u64) -> Uint64 {
+  return Uint64 {
+      raw_value: Some(value.to_le_bytes().to_vec())
+  };
+}
+
+fn to_fixed_array(v: Vec<u8>) -> [u8; 8] {
+  v.try_into()
+      .unwrap_or_else(|v: Vec<u8>| panic!("Expected a Vec of length {} but it was {}", 8, v.len()))
+}
+
+fn to_u64(value: Uint64) -> u64 {
+  if value.raw_value.is_none() {
+      panic!("bad raw Uint64 value 1");
+  }
+  return u64::from_le_bytes(to_fixed_array(value.raw_value.unwrap()));
+}
+
+impl From<u64> for Uint64 {
+  fn from(value: u64) -> Uint64 {
+      to_uint64(value)
+  }
+}
+
+impl From<Uint64> for u64 {
+  fn from(value: Uint64) -> u64 {
+      to_u64(value)
+  }
+}
+
 impl Uint64 {
   pub fn new<F1>(raw_value: F1) -> Uint64 where F1: Into<Option<Vec<u8>>> {
     Uint64 {

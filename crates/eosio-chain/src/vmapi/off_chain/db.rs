@@ -1,55 +1,83 @@
 use crate::structs::*;
 
+use eosio_chaintester::{
+    get_vm_api_client, 
+    interfaces::{
+        TApplySyncClient,
+    }
+};
+
+use core::slice;
+
 ///
-pub fn db_store_i64(_scope: u64, _table: u64, _payer: u64, _id: u64,  _data: *const u8, _len: u32) -> i32 {
-    return 0;
+pub fn db_store_i64(scope: u64, table: u64, payer: u64, id: u64,  data: *const u8, length: u32) -> i32 {
+    let mut _data = unsafe {
+        slice::from_raw_parts(data, length as usize)
+    };
+
+    get_vm_api_client().db_store_i64(scope.into(), table.into(), payer.into(), id.into(), _data.to_vec()).unwrap()
 }
 
 ///
-pub fn db_update_i64(_iterator: i32, _payer: u64, _data: *const u8, _len: u32) {
-    return;
+pub fn db_update_i64(iterator: i32, payer: u64, data: *const u8, len: u32) {
+    let mut _data = unsafe {
+        slice::from_raw_parts(data, len as usize)
+    };
+    get_vm_api_client().db_update_i64(iterator, payer.into(), _data.to_vec()).unwrap()
 }
 
 ///
-pub fn db_remove_i64(_iterator: i32) {
-    return;
+pub fn db_remove_i64(iterator: i32) {
+    get_vm_api_client().db_remove_i64(iterator).unwrap()
 }
 
 ///
-pub fn db_get_i64(_iterator: i32, _data: *const u8, _len: u32) -> i32 {
-    return 0;
+pub fn db_get_i64(iterator: i32, data: *const u8, len: u32) -> i32 {
+    let mut _data = unsafe {
+        slice::from_raw_parts(data, len as usize)
+    };
+    get_vm_api_client().db_get_i64(iterator, _data.to_vec()).unwrap()
 }
 
 ///
-pub fn db_next_i64(_iterator: i32, _primary: *mut u64) -> i32 {
-    return 0;
+pub fn db_next_i64(iterator: i32, primary: *mut u64) -> i32 {
+    let ret = get_vm_api_client().db_next_i64(iterator).unwrap();
+    
+    unsafe {
+        *primary = ret.primary.unwrap().into();
+    }
+    ret.iterator.unwrap()
 }
 
 ///
-pub fn db_previous_i64(_iterator: i32, _primary: *mut u64) -> i32 {
-    return 0;
+pub fn db_previous_i64(iterator: i32, primary: *mut u64) -> i32 {
+    let ret = get_vm_api_client().db_previous_i64(iterator).unwrap();
+    
+    unsafe {
+        *primary = ret.primary.unwrap().into();
+    }
+    ret.iterator.unwrap()
 }
 
 ///
-pub fn db_find_i64(_code: u64, _scope: u64, _table: u64, _id: u64) -> i32 {
-    return 0;
+pub fn db_find_i64(code: u64, scope: u64, table: u64, id: u64) -> i32 {
+    get_vm_api_client().db_find_i64(code.into(), scope.into(), table.into(), id.into()).unwrap()
 }
 
 ///
-pub fn db_lowerbound_i64(_code: u64, _scope: u64, _table: u64, _id: u64) -> i32 {
-    return 0;
+pub fn db_lowerbound_i64(code: u64, scope: u64, table: u64, id: u64) -> i32 {
+    get_vm_api_client().db_lowerbound_i64(code.into(), scope.into(), table.into(), id.into()).unwrap()
 }
 
 ///
-pub fn db_upperbound_i64(_code: u64, _scope: u64, _table: u64, _id: u64) -> i32 {
-    return 0;
+pub fn db_upperbound_i64(code: u64, scope: u64, table: u64, id: u64) -> i32 {
+    get_vm_api_client().db_upperbound_i64(code.into(), scope.into(), table.into(), id.into()).unwrap()
 }
 
 ///
-pub fn db_end_i64(_code: u64, _scope: u64, _table: u64) -> i32 {
-    return 0;
+pub fn db_end_i64(code: u64, scope: u64, table: u64) -> i32 {
+    get_vm_api_client().db_end_i64(code.into(), scope.into(), table.into()).unwrap()
 }
-
 
 ///
 pub fn db_idx64_store(_scope: u64, _table: u64, _payer: u64, _id: u64, _secondary: *const u64) -> i32 {
