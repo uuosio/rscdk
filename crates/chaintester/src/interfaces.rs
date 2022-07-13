@@ -699,6 +699,8 @@ impl Default for LowerBoundUpperBoundReturn {
 //
 
 pub trait TIPCChainTesterSyncClient {
+  fn init_vm_api(&mut self) -> thrift::Result<()>;
+  fn init_apply_request(&mut self) -> thrift::Result<()>;
   fn new_chain(&mut self) -> thrift::Result<i32>;
   fn free_chain(&mut self, id: i32) -> thrift::Result<i32>;
   fn push_action(&mut self, id: i32, account: String, action: String, arguments: String, permissions: String) -> thrift::Result<i32>;
@@ -728,6 +730,34 @@ impl <IP, OP> TThriftClient for IPCChainTesterSyncClient<IP, OP> where IP: TInpu
 impl <IP, OP> TIPCChainTesterSyncClientMarker for IPCChainTesterSyncClient<IP, OP> where IP: TInputProtocol, OP: TOutputProtocol {}
 
 impl <C: TThriftClient + TIPCChainTesterSyncClientMarker> TIPCChainTesterSyncClient for C {
+  fn init_vm_api(&mut self) -> thrift::Result<()> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("init_vm_api", TMessageType::OneWay, self.sequence_number());
+        let call_args = IPCChainTesterInitVmApiArgs {  };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    Ok(())
+  }
+  fn init_apply_request(&mut self) -> thrift::Result<()> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("init_apply_request", TMessageType::OneWay, self.sequence_number());
+        let call_args = IPCChainTesterInitApplyRequestArgs {  };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    Ok(())
+  }
   fn new_chain(&mut self) -> thrift::Result<i32> {
     (
       {
@@ -817,6 +847,8 @@ impl <C: TThriftClient + TIPCChainTesterSyncClientMarker> TIPCChainTesterSyncCli
 //
 
 pub trait IPCChainTesterSyncHandler {
+  fn handle_init_vm_api(&self) -> thrift::Result<()>;
+  fn handle_init_apply_request(&self) -> thrift::Result<()>;
   fn handle_new_chain(&self) -> thrift::Result<i32>;
   fn handle_free_chain(&self, id: i32) -> thrift::Result<i32>;
   fn handle_push_action(&self, id: i32, account: String, action: String, arguments: String, permissions: String) -> thrift::Result<i32>;
@@ -832,6 +864,12 @@ impl <H: IPCChainTesterSyncHandler> IPCChainTesterSyncProcessor<H> {
       handler,
     }
   }
+  fn process_init_vm_api(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TIPCChainTesterProcessFunctions::process_init_vm_api(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_init_apply_request(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TIPCChainTesterProcessFunctions::process_init_apply_request(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
   fn process_new_chain(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TIPCChainTesterProcessFunctions::process_new_chain(&self.handler, incoming_sequence_number, i_prot, o_prot)
   }
@@ -846,6 +884,54 @@ impl <H: IPCChainTesterSyncHandler> IPCChainTesterSyncProcessor<H> {
 pub struct TIPCChainTesterProcessFunctions;
 
 impl TIPCChainTesterProcessFunctions {
+  pub fn process_init_vm_api<H: IPCChainTesterSyncHandler>(handler: &H, _: i32, i_prot: &mut dyn TInputProtocol, _: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let _ = IPCChainTesterInitVmApiArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_init_vm_api() {
+      Ok(_) => {
+        Ok(())
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            Err(thrift::Error::Application(app_err))
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            Err(thrift::Error::Application(ret_err))
+          },
+        }
+      },
+    }
+  }
+  pub fn process_init_apply_request<H: IPCChainTesterSyncHandler>(handler: &H, _: i32, i_prot: &mut dyn TInputProtocol, _: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let _ = IPCChainTesterInitApplyRequestArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_init_apply_request() {
+      Ok(_) => {
+        Ok(())
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            Err(thrift::Error::Application(app_err))
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            Err(thrift::Error::Application(ret_err))
+          },
+        }
+      },
+    }
+  }
   pub fn process_new_chain<H: IPCChainTesterSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     let _ = IPCChainTesterNewChainArgs::read_from_in_protocol(i_prot)?;
     match handler.handle_new_chain() {
@@ -963,6 +1049,12 @@ impl <H: IPCChainTesterSyncHandler> TProcessor for IPCChainTesterSyncProcessor<H
   fn process(&self, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     let message_ident = i_prot.read_message_begin()?;
     let res = match &*message_ident.name {
+      "init_vm_api" => {
+        self.process_init_vm_api(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "init_apply_request" => {
+        self.process_init_apply_request(message_ident.sequence_number, i_prot, o_prot)
+      },
       "new_chain" => {
         self.process_new_chain(message_ident.sequence_number, i_prot, o_prot)
       },
@@ -984,6 +1076,78 @@ impl <H: IPCChainTesterSyncHandler> TProcessor for IPCChainTesterSyncProcessor<H
       },
     };
     thrift::server::handle_process_result(&message_ident, res, o_prot)
+  }
+}
+
+//
+// IPCChainTesterInitVmApiArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct IPCChainTesterInitVmApiArgs {
+}
+
+impl IPCChainTesterInitVmApiArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<IPCChainTesterInitVmApiArgs> {
+    i_prot.read_struct_begin()?;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = IPCChainTesterInitVmApiArgs {};
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("init_vm_api_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// IPCChainTesterInitApplyRequestArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct IPCChainTesterInitApplyRequestArgs {
+}
+
+impl IPCChainTesterInitApplyRequestArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<IPCChainTesterInitApplyRequestArgs> {
+    i_prot.read_struct_begin()?;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = IPCChainTesterInitApplyRequestArgs {};
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("init_apply_request_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
   }
 }
 

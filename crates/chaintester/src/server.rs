@@ -14,7 +14,8 @@ use thrift::server::{
 };
 use thrift::TransportErrorKind;
 
-#[derive(Debug)]
+use crate::client;
+
 pub struct IPCServer<PRC, RTF, IPF, WTF, OPF>
 where
     PRC: TProcessor + Send + Sync + 'static,
@@ -28,6 +29,7 @@ where
     w_trans_factory: WTF,
     o_proto_factory: OPF,
     processor: Arc<PRC>,
+    pub cnn: Option<IncomingConnection<PRC>>,
     // worker_pool: ThreadPool,
 }
 
@@ -60,6 +62,7 @@ where
             w_trans_factory: write_transport_factory,
             o_proto_factory: output_protocol_factory,
             processor: Arc::new(processor),
+            cnn: None,
             // worker_pool: ThreadPool::with_name("Thrift service processor".to_owned(), num_workers),
         }
     }
@@ -78,9 +81,14 @@ where
 
         match stream {
             Ok((s, _addr)) => {
-                let (i_prot, o_prot) = self.new_protocols_for_connection(s)?;
+                let (mut i_prot, mut o_prot) = self.new_protocols_for_connection(s)?;
                 let processor = self.processor.clone();
-                handle_incoming_connection(processor, i_prot, o_prot);
+                match handle_incoming_connection(processor, &mut i_prot, &mut o_prot) {
+                    Ok(()) => {},
+                    Err(err) => {
+                        return Err(err)
+                    }
+                }
             }
             Err(e) => {
                 warn!("failed to accept remote connection with error {:?}", e);
@@ -88,6 +96,44 @@ where
         }
 
         Ok(())
+    }
+
+    pub fn accept<A: ToSocketAddrs>(&mut self, listen_address: A) -> thrift::Result<()> {
+        let listener = TcpListener::bind(listen_address)?;
+        let stream = listener.accept();
+        match stream {
+            Ok((s, _addr)) => {
+                let (i_prot, o_prot) = self.new_protocols_for_connection(s)?;
+                let processor = self.processor.clone();
+                self.cnn = Some(IncomingConnection {
+                    processor: processor,
+                    i_prot: i_prot,
+                    o_prot: o_prot,
+                    end_loop: false,
+                });
+                Ok(())
+            }
+            Err(e) => {
+                warn!("failed to accept remote connection with error {:?}", e);
+                Err(
+                    thrift::Error::Application(
+                      thrift::ApplicationError::new(
+                        thrift::ApplicationErrorKind::InternalError,
+                        format!("{}", e)
+                      )
+                    )
+                )
+            }
+        }
+    }
+
+    pub fn handle_apply_request(&mut self) -> thrift::Result<()> {
+        let mut cnn = self.cnn.as_mut().unwrap();
+        handle_incoming_connection_ex(&mut cnn)
+    }
+
+    pub fn end_loop(&mut self) {
+        self.cnn.as_mut().unwrap().end_loop = true;
     }
 
     fn new_protocols_for_connection(
@@ -116,26 +162,90 @@ where
     }
 }
 
+pub struct IncomingConnection<PRC>
+where
+    PRC: TProcessor,
+{
+    pub processor: Arc<PRC>,
+    pub i_prot: Box<dyn TInputProtocol + Send>,
+    pub o_prot: Box<dyn TOutputProtocol + Send>,
+    pub end_loop: bool,
+}
+
+impl<PRC> IncomingConnection<PRC>
+where
+    PRC: TProcessor,
+{
+    pub fn end_loop(&mut self) {
+        self.end_loop = true;
+    }
+}
+
 fn handle_incoming_connection<PRC>(
     processor: Arc<PRC>,
-    i_prot: Box<dyn TInputProtocol>,
-    o_prot: Box<dyn TOutputProtocol>,
-) where
+    i_prot: &mut Box<dyn TInputProtocol + Send>,
+    o_prot: &mut Box<dyn TOutputProtocol + Send>,
+) -> thrift::Result<()>
+where
     PRC: TProcessor,
 {
     let mut i_prot = i_prot;
     let mut o_prot = o_prot;
     loop {
-        match processor.process(&mut *i_prot, &mut *o_prot) {
+        let ret = processor.process(&mut *i_prot, &mut *o_prot);
+        match ret {
             Ok(()) => {}
-            Err(err) => {
+            Err(ref err) => {
                 match err {
                     thrift::Error::Transport(ref transport_err)
-                        if transport_err.kind == TransportErrorKind::EndOfFile => {}
-                    other => warn!("processor completed with error: {:?}", other),
+                        if transport_err.kind == TransportErrorKind::EndOfFile => {
+                        }
+                    thrift::Error::Application(ref application_err) => {
+                        //apply end, return Ok
+                        if application_err.message == "apply_end" {
+                            println!("+++++++apply end");
+                            return Ok(())
+                        }
+                    }
+                    other => {
+                        warn!("processor completed with error: {:?}", other);
+                    }
                 }
-                break;
+                return ret;
             }
         }
+        // return ret;
+    }
+}
+
+
+fn handle_incoming_connection_ex<PRC>(cnn: &mut IncomingConnection<PRC>) -> thrift::Result<()>
+where
+    PRC: TProcessor,
+{
+    cnn.end_loop = false;
+    let mut i_prot = &mut cnn.i_prot;
+    let mut o_prot = &mut cnn.o_prot;
+    loop {
+        if client::END_APPLY.lock().unwrap().get_value() {
+            client::END_APPLY.lock().unwrap().set_value(false);
+            return Ok(())
+        }
+        let ret = cnn.processor.clone().process(&mut *i_prot, &mut *o_prot);
+        match ret {
+            Ok(()) => {}
+            Err(ref err) => {
+                match err {
+                    thrift::Error::Transport(ref transport_err)
+                        if transport_err.kind == TransportErrorKind::EndOfFile => {
+                        }
+                    other => {
+                        warn!("processor completed with error: {:?}", other);
+                    }
+                }
+                return ret;
+            }
+        }
+        // return ret;
     }
 }

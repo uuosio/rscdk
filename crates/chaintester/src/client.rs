@@ -35,11 +35,51 @@ use std::sync::{
     MutexGuard
 };
 
+extern "Rust" {
+	fn native_apply(receiver: u64, first_receiver: u64, action: u64);
+}
+
+pub struct VMAPIClient {
+    vm_api_client: Option<ApplySyncClient<ClientInputProtocol, ClientOutputProtocol>>,
+}
+
+pub struct ChainTesterClient {
+    client: Option<IPCChainTesterSyncClient<ClientInputProtocol, ClientOutputProtocol>>,
+}
+
+pub struct ApplyRequestServer {
+    server: IPCServer<ApplyRequestSyncProcessor<ApplyRequestHandler>, TBufferedReadTransportFactory, TBinaryInputProtocolFactory, TBufferedWriteTransportFactory, TBinaryOutputProtocolFactory>,
+}
+
 lazy_static! {
     static ref VM_API_CLIENT: Mutex<VMAPIClient> = Mutex::new(VMAPIClient::new());
 }
 
-// 
+lazy_static! {
+    static ref CHAIN_TESTER_CLIENT: Mutex<ChainTesterClient> = Mutex::new(ChainTesterClient::new());
+}
+
+lazy_static! {
+    static ref APPLY_REQUEST_SERVER: Mutex<ApplyRequestServer> = Mutex::new(ApplyRequestServer::new());
+}
+
+pub struct EndApply {
+    value: bool
+}
+
+impl EndApply {
+    pub fn set_value(&mut self, value: bool) {
+        self.value = value;
+    }
+
+    pub fn get_value(&mut self) -> bool {
+        return self.value;
+    }
+}
+
+lazy_static! {
+    pub static ref END_APPLY: Mutex<EndApply> = Mutex::new(EndApply{value: false});
+}
 
 pub fn get_vm_api_client() -> MutexGuard<'static, VMAPIClient> {
     let mut ret = VM_API_CLIENT.lock().unwrap();
@@ -54,8 +94,13 @@ pub fn close_vm_api_client() {
     ret.close();
 }
 
-pub struct VMAPIClient {
-    vm_api_client: Option<ApplySyncClient<ClientInputProtocol, ClientOutputProtocol>>,
+pub fn get_apply_request_server() -> MutexGuard<'static, ApplyRequestServer> {
+    let mut ret = APPLY_REQUEST_SERVER.lock().unwrap();
+    if ret.server.cnn.is_none() {
+        println!("++++++++++++apply_request server: waiting for connection");
+        ret.server.accept("127.0.0.1:9091").unwrap();
+    }
+    return ret;
 }
 
 impl VMAPIClient {
@@ -97,22 +142,18 @@ impl DerefMut for VMAPIClient {
         self.vm_api_client.as_mut().unwrap()
     }
 }
+// 
 
-extern "Rust" {
-	fn native_apply(receiver: u64, first_receiver: u64, action: u64);
-}
-
-pub struct ChainTester {
-    id: i32,
-    client: IPCChainTesterSyncClient<ClientInputProtocol, ClientOutputProtocol>,
-}
-
-impl ChainTester {
-    pub fn new() -> Self {
-        Self { client: Self::new_client(), id: 0 }
+impl ChainTesterClient {
+    fn new() -> Self {
+        ChainTesterClient{client: None}
     }
 
-    fn new_client() -> IPCChainTesterSyncClient<ClientInputProtocol, ClientOutputProtocol> {
+    fn init(&mut self) {
+        if self.client.is_some() {
+            return;
+        }
+
         let host = "127.0.0.1";
         let port = 9090;
 
@@ -134,15 +175,67 @@ impl ChainTester {
         let i_prot = TBinaryInputProtocol::new(i_tran, false);
         let o_prot = TBinaryOutputProtocol::new(o_tran, true);
     
-        IPCChainTesterSyncClient::new(i_prot, o_prot)
+        let mut client = IPCChainTesterSyncClient::new(i_prot, o_prot);
+        client.init_vm_api().unwrap();
+        let _ = get_vm_api_client(); //init vm api client
+
+        client.init_apply_request().unwrap();
+        let _= get_apply_request_server();
+
+        self.client = Some(client);
+
     }
 
-    pub fn new_chain(&mut self) {
-        self.id = self.client.new_chain().unwrap();
+    pub fn close(&mut self) {
+        if self.client.is_some() {
+            self.client = None;
+        }
+    }
+}
+
+impl Deref for ChainTesterClient {
+    type Target = IPCChainTesterSyncClient<ClientInputProtocol, ClientOutputProtocol>;
+
+    fn deref(&self) -> &IPCChainTesterSyncClient<ClientInputProtocol, ClientOutputProtocol>
+    {
+        self.client.as_ref().unwrap()
+    }
+}
+
+impl DerefMut for ChainTesterClient {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.client.as_mut().unwrap()
+    }
+}
+
+pub fn get_chain_tester_client() -> MutexGuard<'static, ChainTesterClient> {
+    let mut ret = CHAIN_TESTER_CLIENT.lock().unwrap();
+    if ret.client.is_none() {
+        ret.init();
+    }
+    return ret;
+}
+
+pub fn close_chain_tester_client() {
+    let mut ret = CHAIN_TESTER_CLIENT.lock().unwrap();
+    ret.close();
+}
+
+pub struct ChainTester {
+    id: i32,
+}
+
+impl ChainTester {
+    pub fn new() -> Self {
+        Self { id: get_chain_tester_client().new_chain().unwrap() }
     }
 
-    pub fn free_chain(&mut self) {
-        self.client.free_chain(self.id).unwrap();
+    fn client(&mut self) -> MutexGuard<'static, ChainTesterClient> {
+        get_chain_tester_client()
+    }
+
+    pub fn free(&mut self) {
+        self.client().free_chain(self.id).unwrap();
     }
 
     pub fn push_action(&mut self, account: &str, action: &str, arguments: &str, permissions: &str) {
@@ -150,14 +243,14 @@ impl ChainTester {
         let _action = String::from(action);
         let _arguments = String::from(arguments);
         let _permissions = String::from(permissions);
-        self.client.push_action(self.id, _account, _action, _arguments, _permissions).unwrap();
+        self.client().push_action(self.id, _account, _action, _arguments, _permissions).unwrap();
     }
 }
 
 impl Drop for ChainTester {
     fn drop(&mut self) {
-        self.free_chain();
-        close_vm_api_client();
+        self.free();
+        // close_vm_api_client();
         println!("++++++++++ChainTester.drop");
     }
 }
@@ -184,7 +277,7 @@ pub fn new_vm_api_client(
             }
         }
     }
-    println!("+++++++++go here");
+    println!("+++++++++connect to vm_api server sucessfull!");
 
     // clone the TCP channel into two halves, one which
     // we'll use for reading, the other for writing
@@ -202,7 +295,37 @@ pub fn new_vm_api_client(
 }
 
 
-pub fn run_apply_request_server(port: u16)  -> thrift::Result<()> {
+impl ApplyRequestServer {
+    pub fn new() -> Self {
+        let listen_address = format!("127.0.0.1:{}", "9092");
+
+        println!("binding to {}", listen_address);
+    
+        let i_tran_fact = TBufferedReadTransportFactory::new();
+        let i_prot_fact = TBinaryInputProtocolFactory::new();
+    
+        let o_tran_fact = TBufferedWriteTransportFactory::new();
+        let o_prot_fact = TBinaryOutputProtocolFactory::new();
+    
+        // demux incoming messages
+        let processor = ApplyRequestSyncProcessor::new(ApplyRequestHandler {
+            ..Default::default()
+        });
+    
+        // create the server and start listening
+        Self {
+            server: IPCServer::new(
+                i_tran_fact,
+                i_prot_fact,
+                o_tran_fact,
+                o_prot_fact,
+                processor,
+                10,
+        )}
+    }
+}
+
+pub fn run_apply_request_server_bk(port: u16)  -> thrift::Result<()> {
     let listen_address = format!("127.0.0.1:{}", port);
 
     println!("binding to {}", listen_address);
@@ -219,15 +342,21 @@ pub fn run_apply_request_server(port: u16)  -> thrift::Result<()> {
     });
 
     // create the server and start listening
-    let mut server = IPCServer::new(
-        i_tran_fact,
-        i_prot_fact,
-        o_tran_fact,
-        o_prot_fact,
-        processor,
-        10,
-    );
-    server.listen(&listen_address)
+    let mut server = ApplyRequestServer {
+        server: IPCServer::new(
+            i_tran_fact,
+            i_prot_fact,
+            o_tran_fact,
+            o_prot_fact,
+            processor,
+            10,
+    )};
+    
+    server.server.listen(&listen_address)
+}
+
+pub fn run_apply_request_server(port: u16)  -> thrift::Result<()> {
+    get_apply_request_server().server.handle_apply_request()
 }
 
 /// Handles incoming ChainTester service calls.
@@ -243,7 +372,6 @@ impl Default for ApplyRequestHandler {
 
 impl ApplyRequestSyncHandler for ApplyRequestHandler {
     fn handle_apply_request(&self, receiver: Uint64, first_receiver: Uint64, action: Uint64) -> thrift::Result<i32> {
-        println!("ok here!");
         println!("+++++++++handle_apply_request");
         unsafe {
             native_apply(receiver.into(), first_receiver.into(), action.into());
@@ -252,6 +380,7 @@ impl ApplyRequestSyncHandler for ApplyRequestHandler {
     }
 
     fn handle_apply_end(&self) -> thrift::Result<i32> {
+        END_APPLY.lock().unwrap().set_value(true);
         Ok(1)
     }
 }
