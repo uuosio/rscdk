@@ -569,6 +569,14 @@ impl Contract {
                 } else {
                     false
                 }
+            }).map(|item|{
+                if let syn::FnArg::Typed(tp) = item {
+                    quote!{
+                        pub #tp
+                    }
+                } else {
+                    quote!{}
+                }
             });
 
             let serialize = item.sig.inputs.iter().map(|arg| {
@@ -652,7 +660,7 @@ impl Contract {
                 #[cfg_attr(feature = "std", derive(::eosio_chain::eosio_scale_info::TypeInfo))]
                 #[cfg_attr(feature = "std", scale_info(crate = ::eosio_chain::eosio_scale_info))]
                 #[derive(Default)]
-                struct #struct_name_ident {
+                pub struct #struct_name_ident {
                     # ( #fields ), *
                 }
                 #packed
