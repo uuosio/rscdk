@@ -178,7 +178,7 @@ impl ChainTesterClient {
         let _ = get_vm_api_client(); //init vm api client
 
         client.init_apply_request().unwrap();
-        let _= get_apply_request_server();
+        let _= get_apply_request_server(); //init apply request server
 
         self.client = Some(client);
 
@@ -236,12 +236,44 @@ impl ChainTester {
         self.client().free_chain(self.id).unwrap();
     }
 
-    pub fn push_action(&mut self, account: &str, action: &str, arguments: &str, permissions: &str) {
+    pub fn push_action(&mut self, account: &str, action: &str, arguments: ActionArguments, permissions: &str) {
         let _account = String::from(account);
         let _action = String::from(action);
-        let _arguments = String::from(arguments);
+
+        let _arguments;
+        match &arguments {
+            ActionArguments::String(s) => {
+                _arguments = s.clone();
+            }
+            ActionArguments::Binary(b) => {
+                _arguments = hex::encode(b);
+            }
+        }
         let _permissions = String::from(permissions);
         self.client().push_action(self.id, _account, _action, _arguments, _permissions).unwrap();
+    }
+}
+
+pub enum ActionArguments {
+    String(String),
+    Binary(Vec<u8>),
+}
+
+impl From<String> for ActionArguments {
+    fn from(value: String) -> Self {
+        ActionArguments::String(value)
+    }
+}
+
+impl From<&str> for ActionArguments {
+    fn from(value: &str) -> Self {
+        ActionArguments::String(String::from(value))
+    }
+}
+
+impl From<Vec<u8>> for ActionArguments {
+    fn from(value: Vec<u8>) -> Self {
+        ActionArguments::Binary(value)
     }
 }
 

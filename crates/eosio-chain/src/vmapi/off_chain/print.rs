@@ -21,8 +21,7 @@ pub fn prints_l(_cstr: *const u8, _len: u32) {
         slice::from_raw_parts(_cstr, _len as usize)
     };
 
-    let _s = std::str::from_utf8(s).unwrap();
-    get_vm_api_client().prints(_s.to_owned()).unwrap();
+    get_vm_api_client().prints_l(s.to_vec()).unwrap();
 }
 
 ///
@@ -36,30 +35,43 @@ pub fn printui(value: u64) {
 }
 
 ///
-pub fn printi128(_value: i128) {
+pub fn printi128(value: i128) {
+    get_vm_api_client().printi128(value.to_le_bytes().to_vec()).unwrap()
 }
 
 ///
-pub fn printui128(_value: u128) {
+pub fn printui128(value: u128) {
+    get_vm_api_client().printui128(value.to_le_bytes().to_vec()).unwrap()
 }
 
 ///
-pub fn printsf(_value: f32) {
+pub fn printsf(value: f32) {
+    get_vm_api_client().printsf(value.to_le_bytes().to_vec()).unwrap()
 }
 
 ///
-pub fn printdf(_value: f64) {
+pub fn printdf(value: f64) {
+    get_vm_api_client().printdf(value.to_le_bytes().to_vec()).unwrap()
 }
 
 ///
-pub fn printqf(_value: *const Float128) {
+pub fn printqf(value: *const Float128) {
+    unsafe {
+        get_vm_api_client().printqf((*value).data.to_vec()).unwrap()
+    }
 }
 
 ///
-pub fn printn(_name: u64) {
+pub fn printn(name: u64) {
+    get_vm_api_client().printn(name.into()).unwrap()
 }
 
 ///
-pub fn printhex(_data: *const u8, _datalen: u32) {
+pub fn printhex(data: *const u8, datalen: u32) {
+    let s = unsafe {
+        slice::from_raw_parts(data, datalen as usize)
+    };
+
+    get_vm_api_client().printhex(s.to_vec()).unwrap()
 }
 
