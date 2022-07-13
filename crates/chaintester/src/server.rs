@@ -200,13 +200,6 @@ where
                     thrift::Error::Transport(ref transport_err)
                         if transport_err.kind == TransportErrorKind::EndOfFile => {
                         }
-                    thrift::Error::Application(ref application_err) => {
-                        //apply end, return Ok
-                        if application_err.message == "apply_end" {
-                            println!("+++++++apply end");
-                            return Ok(())
-                        }
-                    }
                     other => {
                         warn!("processor completed with error: {:?}", other);
                     }

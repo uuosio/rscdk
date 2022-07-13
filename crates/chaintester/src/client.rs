@@ -110,10 +110,8 @@ impl VMAPIClient {
 
     pub fn init(&mut self) {
         if self.vm_api_client.is_none() {
-            println!("+++++++++++VMAPIClient.init");
             let client = new_vm_api_client("127.0.0.1", 9092).unwrap();
             self.vm_api_client = Some(client);
-            println!("+++++++++++VMAPIClient.end");
         }
     }
 
@@ -250,8 +248,6 @@ impl ChainTester {
 impl Drop for ChainTester {
     fn drop(&mut self) {
         self.free();
-        // close_vm_api_client();
-        println!("++++++++++ChainTester.drop");
     }
 }
 
@@ -277,7 +273,7 @@ pub fn new_vm_api_client(
             }
         }
     }
-    println!("+++++++++connect to vm_api server sucessfull!");
+    println!("+++++++++connect to vm_api server successfull!");
 
     // clone the TCP channel into two halves, one which
     // we'll use for reading, the other for writing
@@ -299,7 +295,7 @@ impl ApplyRequestServer {
     pub fn new() -> Self {
         let listen_address = format!("127.0.0.1:{}", "9092");
 
-        println!("binding to {}", listen_address);
+        // println!("binding to {}", listen_address);
     
         let i_tran_fact = TBufferedReadTransportFactory::new();
         let i_prot_fact = TBinaryInputProtocolFactory::new();
@@ -323,36 +319,6 @@ impl ApplyRequestServer {
                 10,
         )}
     }
-}
-
-pub fn run_apply_request_server_bk(port: u16)  -> thrift::Result<()> {
-    let listen_address = format!("127.0.0.1:{}", port);
-
-    println!("binding to {}", listen_address);
-
-    let i_tran_fact = TBufferedReadTransportFactory::new();
-    let i_prot_fact = TBinaryInputProtocolFactory::new();
-
-    let o_tran_fact = TBufferedWriteTransportFactory::new();
-    let o_prot_fact = TBinaryOutputProtocolFactory::new();
-
-    // demux incoming messages
-    let processor = ApplyRequestSyncProcessor::new(ApplyRequestHandler {
-        ..Default::default()
-    });
-
-    // create the server and start listening
-    let mut server = ApplyRequestServer {
-        server: IPCServer::new(
-            i_tran_fact,
-            i_prot_fact,
-            o_tran_fact,
-            o_prot_fact,
-            processor,
-            10,
-    )};
-    
-    server.server.listen(&listen_address)
 }
 
 pub fn run_apply_request_server(port: u16)  -> thrift::Result<()> {
