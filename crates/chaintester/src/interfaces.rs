@@ -2081,6 +2081,7 @@ pub trait TApplySyncClient {
   fn prints(&mut self, cstr: String) -> thrift::Result<()>;
   fn printi(&mut self, value: i64) -> thrift::Result<()>;
   fn printui(&mut self, value: Uint64) -> thrift::Result<()>;
+  fn action_data_size(&mut self) -> thrift::Result<i32>;
   fn read_action_data(&mut self, len: i32) -> thrift::Result<DataBuffer>;
   fn send_inline(&mut self, serialized_action: Vec<u8>) -> thrift::Result<i32>;
   fn end_apply(&mut self) -> thrift::Result<i32>;
@@ -2247,6 +2248,33 @@ impl <C: TThriftClient + TApplySyncClientMarker> TApplySyncClient for C {
       }
       verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
       let result = ApplyPrintuiResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn action_data_size(&mut self) -> thrift::Result<i32> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("action_data_size", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyActionDataSizeArgs {  };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("action_data_size", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyActionDataSizeResult::read_from_in_protocol(self.i_prot_mut())?;
       self.i_prot_mut().read_message_end()?;
       result.ok_or()
     }
@@ -3962,6 +3990,7 @@ pub trait ApplySyncHandler {
   fn handle_prints(&self, cstr: String) -> thrift::Result<()>;
   fn handle_printi(&self, value: i64) -> thrift::Result<()>;
   fn handle_printui(&self, value: Uint64) -> thrift::Result<()>;
+  fn handle_action_data_size(&self) -> thrift::Result<i32>;
   fn handle_read_action_data(&self, len: i32) -> thrift::Result<DataBuffer>;
   fn handle_send_inline(&self, serialized_action: Vec<u8>) -> thrift::Result<i32>;
   fn handle_end_apply(&self) -> thrift::Result<i32>;
@@ -4045,6 +4074,9 @@ impl <H: ApplySyncHandler> ApplySyncProcessor<H> {
   }
   fn process_printui(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TApplyProcessFunctions::process_printui(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_action_data_size(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_action_data_size(&self.handler, incoming_sequence_number, i_prot, o_prot)
   }
   fn process_read_action_data(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TApplyProcessFunctions::process_read_action_data(&self.handler, incoming_sequence_number, i_prot, o_prot)
@@ -4342,6 +4374,43 @@ impl TApplyProcessFunctions {
               )
             };
             let message_ident = TMessageIdentifier::new("printui", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_action_data_size<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let _ = ApplyActionDataSizeArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_action_data_size() {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("action_data_size", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyActionDataSizeResult { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("action_data_size", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("action_data_size", TMessageType::Exception, incoming_sequence_number);
             o_prot.write_message_begin(&message_ident)?;
             thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
             o_prot.write_message_end()?;
@@ -6697,6 +6766,9 @@ impl <H: ApplySyncHandler> TProcessor for ApplySyncProcessor<H> {
       "printui" => {
         self.process_printui(message_ident.sequence_number, i_prot, o_prot)
       },
+      "action_data_size" => {
+        self.process_action_data_size(message_ident.sequence_number, i_prot, o_prot)
+      },
       "read_action_data" => {
         self.process_read_action_data(message_ident.sequence_number, i_prot, o_prot)
       },
@@ -7159,6 +7231,105 @@ impl ApplyPrintuiResult {
   }
   fn ok_or(self) -> thrift::Result<()> {
     Ok(())
+  }
+}
+
+//
+// ApplyActionDataSizeArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyActionDataSizeArgs {
+}
+
+impl ApplyActionDataSizeArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyActionDataSizeArgs> {
+    i_prot.read_struct_begin()?;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyActionDataSizeArgs {};
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("action_data_size_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyActionDataSizeResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyActionDataSizeResult {
+  result_value: Option<i32>,
+}
+
+impl ApplyActionDataSizeResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyActionDataSizeResult> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<i32> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = i_prot.read_i32()?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyActionDataSizeResult {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyActionDataSizeResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::I32, 0))?;
+      o_prot.write_i32(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<i32> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for ApplyActionDataSize"
+          )
+        )
+      )
+    }
   }
 }
 

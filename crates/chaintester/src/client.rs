@@ -49,6 +49,11 @@ pub fn get_vm_api_client() -> MutexGuard<'static, VMAPIClient> {
     return ret;
 }
 
+pub fn close_vm_api_client() {
+    let mut ret = VM_API_CLIENT.lock().unwrap();
+    ret.close();
+}
+
 pub struct VMAPIClient {
     vm_api_client: Option<ApplySyncClient<ClientInputProtocol, ClientOutputProtocol>>,
 }
@@ -58,12 +63,18 @@ impl VMAPIClient {
         VMAPIClient{vm_api_client: None}
     }
 
-    fn init(&mut self) {
+    pub fn init(&mut self) {
         if self.vm_api_client.is_none() {
             println!("+++++++++++VMAPIClient.init");
             let client = new_vm_api_client("127.0.0.1", 9092).unwrap();
             self.vm_api_client = Some(client);
             println!("+++++++++++VMAPIClient.end");
+        }
+    }
+
+    pub fn close(&mut self) {
+        if self.vm_api_client.is_some() {
+            self.vm_api_client = None;
         }
     }
 
@@ -108,7 +119,7 @@ impl ChainTester {
         let mut c = TTcpChannel::new();
     
         // open the underlying TCP stream
-        println!("connecting to interfaces server on {}:{}", host, port);
+        println!("connecting to ChainTester server on {}:{}", host, port);
         c.open(&format!("{}:{}", host, port)).unwrap();    
         
         // clone the TCP channel into two halves, one which
@@ -145,7 +156,9 @@ impl ChainTester {
 
 impl Drop for ChainTester {
     fn drop(&mut self) {
-        self.free_chain()
+        self.free_chain();
+        close_vm_api_client();
+        println!("++++++++++ChainTester.drop");
     }
 }
 

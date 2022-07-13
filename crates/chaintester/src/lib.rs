@@ -21,6 +21,7 @@ pub use client::{
     new_vm_api_client,
     ChainTester,
     get_vm_api_client,
+    close_vm_api_client,
 };
 
 pub mod server;

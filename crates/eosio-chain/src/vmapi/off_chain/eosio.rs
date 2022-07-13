@@ -53,7 +53,9 @@ pub fn get_account_creation_time( _account: Name ) -> TimePoint {
 
 ///
 pub fn read_action_data() -> Vec<u8> {
-	return get_vm_api_client().read_action_data(64*1024).unwrap();
+	let size = get_vm_api_client().action_data_size().unwrap();
+	let ret = get_vm_api_client().read_action_data(size).unwrap();
+	return ret.buffer.unwrap()
 }
 
 ///
