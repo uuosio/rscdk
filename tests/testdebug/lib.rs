@@ -16,6 +16,11 @@ mod hello {
         ACTIVE,
     };
 
+    #[chain(table="counter", singleton)]
+    pub struct Counter {
+        count: u64
+    }
+
     #[chain(main)]
     #[allow(dead_code)]
     pub struct Hello {
@@ -41,14 +46,14 @@ mod hello {
 
         #[chain(action="sayhello")]
         pub fn say_hello(&self, name: String) {
-            for i in 0..1 {
+            for i in 0..=1 {
                 eosio_println!("++++hello:", name);
+                // return;
+                let perms: Vec<PermissionLevel> = vec![PermissionLevel{actor: name!("hello"), permission: ACTIVE}];
+                let say_goodbye = SayGoodbye{name: name.clone()};
+                let action = Action::new(name!("hello"), name!("saygoodbye"), &perms, &say_goodbye);
+                action.send();
             }
-            // return;
-            let perms: Vec<PermissionLevel> = vec![PermissionLevel{actor: name!("hello"), permission: ACTIVE}];
-            let say_goodbye = SayGoodbye{name: name};
-            let action = Action::new(name!("hello"), name!("saygoodbye"), &perms, &say_goodbye);
-            action.send();
         }
 
         #[chain(action="saygoodbye")]
@@ -56,6 +61,16 @@ mod hello {
             eosio_println!("++++hello:", name);
         }
 
+        #[chain(action = "inc")]
+        pub fn inc_count(&self) {
+            for _ in 0..1 {
+                let db = Counter::new_table(self.receiver);
+                let mut value = db.get().unwrap_or(Counter{count: 1});
+                eosio_println!("+++++count2:", value.count);
+                value.count += 1;
+                db.set(&value, self.receiver);    
+            }
+        }
     }
 
     // #[no_mangle]
@@ -77,19 +92,41 @@ mod hello {
 #[cfg(test)]
 mod tests {
     use eosio_chain::ChainTester;
+    use eosio_chain::serializer::Packer;
+    use crate::hello::sayhello;
+
     #[test]
     fn test_prints() {
         let mut tester = ChainTester::new();
-        let args = r#"
-        {
-            "name": "rust"
-        }
-        "#;
+
+        let args = sayhello{name: "rust".into()};
+
         let permissions = r#"
         {
             "hello": "active"
         }
         "#;
-        tester.push_action("hello", "sayhello", args, permissions)
+        tester.push_action("hello", "sayhello", args.pack().into(), permissions)
+    }
+
+    #[test]
+    fn test_counter() {
+        let args = "{}";
+        let permissions = r#"
+        {
+            "hello": "active"
+        }
+        "#;
+
+        {
+            let mut tester = ChainTester::new();
+            tester.push_action("hello", "inc", args.into(), permissions);
+            tester.push_action("hello", "inc", args.into(), permissions);
+        }
+        {
+            let mut tester = ChainTester::new();
+            tester.push_action("hello", "inc", args.into(), permissions);
+            tester.push_action("hello", "inc", args.into(), permissions);    
+        }
     }
 }
