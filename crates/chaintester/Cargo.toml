@@ -23,3 +23,5 @@ threadpool = "1"
 lazy_static = "1.4.0"
 hex = "0.4"
 serde_json = {version = "1.0.32", features = ["preserve_order"]}
+better-panic = "0.3.0"
+

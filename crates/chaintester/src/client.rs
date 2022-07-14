@@ -44,7 +44,6 @@ extern "Rust" {
 	fn native_apply(receiver: u64, first_receiver: u64, action: u64);
 }
 
-#[derive(Debug)]
 pub struct TransactionError {
     json: Option<Map<String, Value>>,
     error_string: Option<String>,
@@ -52,6 +51,20 @@ pub struct TransactionError {
 
 impl fmt::Display for TransactionError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(ref value) = self.json {
+            write!(f, "{}", serde_json::to_string_pretty(&Value::Object(value.clone())).unwrap())
+        } else {
+            if let Some(ref err) = self.error_string {
+                write!(f, "{}", err)
+            } else {
+                write!(f, "{}", "Unknown error")
+            }
+        }
+    }
+}
+
+impl fmt::Debug for TransactionError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if let Some(ref value) = self.json {
             write!(f, "{}", serde_json::to_string_pretty(&Value::Object(value.clone())).unwrap())
         } else {
@@ -171,6 +184,7 @@ impl DerefMut for VMAPIClient {
 
 impl ChainTesterClient {
     fn new() -> Self {
+        better_panic::install();
         ChainTesterClient{client: None}
     }
 

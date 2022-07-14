@@ -485,13 +485,20 @@ mod tests {
 
         {
             let mut tester = ChainTester::new();
-            tester.push_action("hello", "inc", args.into(), permissions);
-            tester.push_action("hello", "inc", args.into(), permissions);
+            tester.push_action("hello", "inc", args.into(), permissions).unwrap();
+            tester.produce_block();
+
+            tester.push_action("hello", "inc", args.into(), permissions).unwrap();
+            tester.produce_block();
         }
         {
             let mut tester = ChainTester::new();
-            tester.push_action("hello", "inc", args.into(), permissions);
-            tester.push_action("hello", "inc", args.into(), permissions);    
+            tester.push_action("hello", "inc", args.into(), permissions).unwrap();
+            tester.produce_block();
+
+            tester.push_action("hello", "inc", args.into(), permissions).unwrap();
+            tester.produce_block();
+
         }
     }
 
