@@ -441,15 +441,37 @@ mod tests {
     #[test]
     fn test_prints() {
         let mut tester = ChainTester::new();
+        tester.deploy_contract("hello", "../target/testdebug/testdebug.wasm", "../target/testdebug/testdebug.abi");
 
-        let args = sayhello{name: "rust".into()};
+        let updateauth_args = r#"{
+            "account": "hello",
+            "permission": "active",
+            "parent": "owner",
+            "auth": {
+                "threshold": 1,
+                "keys": [
+                    {
+                        "key": "EOS6AjF6hvF7GSuSd4sCgfPKq5uWaXvGM2aQtEUCwmEHygQaqxBSV",
+                        "weight": 1
+                    }
+                ],
+                "accounts": [{"permission":{"actor": "hello", "permission": "eosio.code"}, "weight":1}],
+                "waits": []
+            }
+        }"#;
 
         let permissions = r#"
         {
             "hello": "active"
         }
         "#;
-        tester.push_action("hello", "sayhello", args.pack().into(), permissions)
+
+        tester.push_action("eosio", "updateauth", updateauth_args.into(), permissions).unwrap();
+        tester.produce_block();
+    
+        let args = sayhello{name: "rust".into()};
+        tester.push_action("hello", "sayhello", args.pack().into(), permissions).unwrap();
+        tester.produce_block();
     }
 
     #[test]
@@ -484,6 +506,6 @@ mod tests {
             "hello": "active"
         }
         "#;
-        tester.push_action("hello", "testmi", args.into(), permissions)
+        tester.push_action("hello", "testmi", args.into(), permissions).unwrap();
     }
 }

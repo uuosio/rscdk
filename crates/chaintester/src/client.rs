@@ -1,12 +1,17 @@
+use std::fmt;
+
+use std::{fs, path::Path};
 use std::{thread, time::Duration};
 use std::ops::{Deref, DerefMut};
+
+use serde_json::{Value, Map};
 
 use thrift::protocol::{TBinaryInputProtocol, TBinaryOutputProtocol};
 use thrift::transport::{
     ReadHalf, TBufferedReadTransport, TBufferedWriteTransport, TIoChannel, TTcpChannel, WriteHalf,
 };
 
-use crate::interfaces::{IPCChainTesterSyncClient, TIPCChainTesterSyncClient, ApplySyncClient};
+use crate::interfaces::{IPCChainTesterSyncClient, TIPCChainTesterSyncClient, ApplySyncClient, Action};
 
 type ClientInputProtocol = TBinaryInputProtocol<TBufferedReadTransport<ReadHalf<TTcpChannel>>>;
 type ClientOutputProtocol = TBinaryOutputProtocol<TBufferedWriteTransport<WriteHalf<TTcpChannel>>>;
@@ -38,6 +43,28 @@ use std::sync::{
 extern "Rust" {
 	fn native_apply(receiver: u64, first_receiver: u64, action: u64);
 }
+
+#[derive(Debug)]
+pub struct TransactionError {
+    json: Option<Map<String, Value>>,
+    error_string: Option<String>,
+}
+
+impl fmt::Display for TransactionError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(ref value) = self.json {
+            write!(f, "{}", serde_json::to_string_pretty(&Value::Object(value.clone())).unwrap())
+        } else {
+            if let Some(ref err) = self.error_string {
+                write!(f, "{}", err)
+            } else {
+                write!(f, "{}", "Unknown error")
+            }
+        }
+    }
+}
+
+pub type Result<T> = core::result::Result<T, TransactionError>;
 
 pub struct VMAPIClient {
     vm_api_client: Option<ApplySyncClient<ClientInputProtocol, ClientOutputProtocol>>,
@@ -236,7 +263,11 @@ impl ChainTester {
         self.client().free_chain(self.id).unwrap();
     }
 
-    pub fn push_action(&mut self, account: &str, action: &str, arguments: ActionArguments, permissions: &str) {
+    pub fn produce_block(&mut self) {
+        self.client().produce_block(self.id).unwrap()
+    }
+
+    pub fn push_action(&mut self, account: &str, action: &str, arguments: ActionArguments, permissions: &str) -> Result<Map<String, Value>> {
         let _account = String::from(account);
         let _action = String::from(action);
 
@@ -250,8 +281,113 @@ impl ChainTester {
             }
         }
         let _permissions = String::from(permissions);
-        self.client().push_action(self.id, _account, _action, _arguments, _permissions).unwrap();
+        let ret = self.client().push_action(self.id, _account, _action, _arguments, _permissions).unwrap();
+
+        let tx: Value = serde_json::from_slice(&ret).map_err(|err| {
+            TransactionError{json: None, error_string: Some(err.to_string())}
+        })?;
+
+        let obj: &Map<String, Value> = tx.as_object().unwrap();
+        if obj.get("except").is_some() {
+            Err(TransactionError{json: Some(obj.clone()), error_string: None})
+        } else {
+            Ok(obj.clone())
+        }
     }
+
+    pub fn deploy_contract(&mut self, account: &str, wasm_file: &str, abi_file: &str) -> Result<Map<String, Value>> {
+        // abi_file.is_empty()
+        let wasm = fs::read(wasm_file).unwrap();        
+        let hex_wasm = hex::encode(wasm);
+
+        let set_code_args = format!(
+            r#"
+            {{
+                "account": "{}",
+                "vmtype": 0,
+                "vmversion": 0,
+                "code": "{}"
+             }}
+            "#,
+            account,
+            hex_wasm
+        );
+
+        let permissions = format!(
+            r#"
+            {{
+                "{}": "active"
+            }}
+            "#,
+            account,
+        );
+
+        let raw_set_code_args = self.client().pack_action_args(self.id, "eosio".into(), "setcode".into(), set_code_args).unwrap();
+        let mut actions: Vec<Box<Action>> = Vec::new();
+        let setcode = Action{
+            account: Some("eosio".into()),
+            action: Some("setcode".into()),
+            permissions: Some(permissions.clone()),
+            arguments: Some(hex::encode(raw_set_code_args)),
+        };
+        actions.push(Box::new(setcode));
+
+        if !abi_file.is_empty() {
+            // let abi = fs::read(Path::new(abi_file)).unwrap();
+            let abi = fs::read_to_string(abi_file).unwrap();
+            let raw_abi = self.client().pack_abi(abi).unwrap();
+            let hex_raw_abi = hex::encode(raw_abi);
+    
+            let set_abi_args = format!(
+                r#"
+                {{
+                    "account": "{}",
+                    "abi": "{}"
+                 }}
+                "#,
+                account,
+                hex_raw_abi
+            );
+
+            let raw_setabi = self.client().pack_action_args(self.id, "eosio".into(), "setabi".into(), set_abi_args).unwrap();
+            let setabi = Action{
+                account: Some("eosio".into()),
+                action: Some("setabi".into()),
+                permissions: Some(permissions.clone()),
+                arguments: Some(hex::encode(raw_setabi)),
+            };
+
+            actions.push(Box::new(setabi));    
+        }
+
+        let ret = self.client().push_actions(self.id, actions).unwrap();
+        let tx: Value = serde_json::from_slice(&ret).map_err(|err| {
+            TransactionError{json: None, error_string: Some(err.to_string())}
+        })?;
+
+        let obj: &Map<String, Value> = tx.as_object().unwrap();
+        if obj.get("except").is_some() {
+            Err(TransactionError{json: Some(obj.clone()), error_string: None})
+        } else {
+            Ok(obj.clone())
+        }
+
+    }
+
+    pub fn push_actions(&mut self, actions: Vec<Box<Action>>) -> Result<Map<String, Value>> {
+        let ret = self.client().push_actions(self.id, actions).unwrap();
+        let tx: Value = serde_json::from_slice(&ret).map_err(|err| {
+            TransactionError{json: None, error_string: Some(err.to_string())}
+        })?;
+
+        let obj: &Map<String, Value> = tx.as_object().unwrap();
+        if obj.get("except").is_some() {
+            Err(TransactionError{json: Some(obj.clone()), error_string: None})
+        } else {
+            Ok(obj.clone())
+        }
+    }
+
 }
 
 pub enum ActionArguments {
