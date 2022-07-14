@@ -67,7 +67,7 @@ impl Packer for Float128 {
 #[cfg_attr(feature = "std", derive(eosio_scale_info::TypeInfo))]
 #[derive(Clone, Copy, Eq, PartialEq, Default)]
 pub struct Checksum160 {
-    data: [u8; 20],
+    pub data: [u8; 20],
 }
 
 fn decode_hex(s: &str, size: usize) -> Vec<u8> {
@@ -151,7 +151,7 @@ impl Packer for Checksum256 {
 #[cfg_attr(feature = "std", derive(eosio_scale_info::TypeInfo))]
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub struct Checksum512 {
-    data: [u8; 64],
+    pub data: [u8; 64],
 }
 
 impl Checksum512 {

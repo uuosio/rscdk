@@ -60,29 +60,32 @@ pub fn read_action_data() -> Vec<u8> {
 
 ///
 pub fn action_data_size() -> usize {
-	return 0;
+	get_vm_api_client().action_data_size().unwrap() as usize
 }
 
 ///
-pub fn require_recipient(_name: Name) {
+pub fn require_recipient(name: Name) {
+	get_vm_api_client().require_recipient(name.n.into()).unwrap()
 }
 
 ///
-pub fn require_auth(_name: Name) {
+pub fn require_auth(name: Name) {
+	get_vm_api_client().require_auth(name.n.into()).unwrap()
 }
 
 ///
-pub fn has_auth( _name: Name ) -> bool {
-	return false;
+pub fn has_auth(name: Name) -> bool {
+	get_vm_api_client().has_auth(name.n.into()).unwrap()
 }
 
 ///
-pub fn require_auth2( _name: Name, _permission: Name ) {
+pub fn require_auth2(name: Name, permission: Name) {
+	get_vm_api_client().require_auth2(name.n.into(), permission.n.into()).unwrap()
 }
 
 ///
-pub fn is_account( _name: Name ) -> bool {
-	return false;
+pub fn is_account(name: Name) -> bool {
+	get_vm_api_client().is_account(name.n.into()).unwrap()
 }
 
 ///
@@ -92,48 +95,79 @@ pub fn send_inline(_serialized_action: &[u8]) {
 
 ///
 pub fn send_context_free_inline(_serialized_action: &[u8]) {
+	get_vm_api_client().send_context_free_inline(_serialized_action.to_vec()).unwrap();
 }
 
 ///
 pub fn publication_time() -> TimePoint {
-	return TimePoint{elapsed: 0};
+	let elapsed = get_vm_api_client().publication_time().unwrap();
+	return TimePoint{elapsed: elapsed.into()};
 }
 
 ///
 pub fn current_receiver() -> Name {
-	return Name{n: 0};
+	let n = get_vm_api_client().current_receiver().unwrap();
+	return Name{n: n.into()};
 }
 
 ///
-pub fn eosio_assert(_test: bool, _msg: &str) {
+pub fn eosio_assert(test: bool, msg: &str) {
+	get_vm_api_client().eosio_assert(test, msg.into()).unwrap()
 }
+
+///
+pub fn eosio_assert_message(test: u32, msg: *const u8, msg_len: u32) {
+    let mut dst = unsafe {
+        slice::from_raw_parts(msg, msg_len as usize)
+    };
+
+	let _test = match test {
+		0 => false,
+		_ => true,
+	};
+
+	get_vm_api_client().eosio_assert_message(_test, dst.into()).unwrap()
+}
+
+///
+pub fn eosio_assert_code(test: u32, code: u64) {
+	let _test = match test {
+		0 => false,
+		_ => true,
+	};
+	get_vm_api_client().eosio_assert_code(_test, code.into()).unwrap()
+}
+
 
 ///
 pub fn check(test: bool, msg: &str) {
-	system::eosio_assert_message(test as u32, msg.as_ptr(), msg.len() as u32);
+	let _test = match test {
+		false => 0,
+		true => 1,
+	};	
+	eosio_assert_message(_test, msg.as_ptr(), msg.len() as u32);
 }
 
 ///
-pub fn eosio_assert_code(_test: u32, _code: u64) {
-}
-
-///
-pub fn eosio_exit(_code: i32) {
+pub fn eosio_exit(code: i32) {
+	get_vm_api_client().eosio_exit(code).unwrap()
 }
 
 ///
 pub fn current_time() -> TimePoint {
-	return TimePoint{elapsed: 0};
+	let elapsed = get_vm_api_client().current_time().unwrap().into();
+	return TimePoint{elapsed: elapsed};
 }
 
 ///
-pub fn is_feature_activated(_feature_digest: &Checksum256) -> bool {
-	return false;
+pub fn is_feature_activated(feature_digest: &Checksum256) -> bool {
+	get_vm_api_client().is_feature_activated(feature_digest.data.into()).unwrap()
 }
 
 ///
 pub fn get_sender() -> Name {
-	return Name{n: 0};
+	let n = get_vm_api_client().get_sender().unwrap().into();
+	return Name{n: n};
 }
 
 ///

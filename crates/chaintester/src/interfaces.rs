@@ -2242,6 +2242,7 @@ impl ApplyRequestApplyEndResult {
 //
 
 pub trait TApplySyncClient {
+  fn end_apply(&mut self) -> thrift::Result<i32>;
   fn prints(&mut self, cstr: String) -> thrift::Result<()>;
   fn prints_l(&mut self, cstr: Vec<u8>) -> thrift::Result<()>;
   fn printi(&mut self, n: i64) -> thrift::Result<()>;
@@ -2255,8 +2256,32 @@ pub trait TApplySyncClient {
   fn printhex(&mut self, data: Vec<u8>) -> thrift::Result<()>;
   fn action_data_size(&mut self) -> thrift::Result<i32>;
   fn read_action_data(&mut self, len: i32) -> thrift::Result<DataBuffer>;
-  fn send_inline(&mut self, serialized_action: Vec<u8>) -> thrift::Result<i32>;
-  fn end_apply(&mut self) -> thrift::Result<i32>;
+  fn require_recipient(&mut self, name: Uint64) -> thrift::Result<()>;
+  fn require_auth(&mut self, name: Uint64) -> thrift::Result<()>;
+  fn has_auth(&mut self, name: Uint64) -> thrift::Result<bool>;
+  fn require_auth2(&mut self, name: Uint64, permission: Uint64) -> thrift::Result<()>;
+  fn is_account(&mut self, name: Uint64) -> thrift::Result<bool>;
+  fn send_inline(&mut self, serialized_action: Vec<u8>) -> thrift::Result<()>;
+  fn send_context_free_inline(&mut self, serialized_data: Vec<u8>) -> thrift::Result<()>;
+  fn publication_time(&mut self) -> thrift::Result<Uint64>;
+  fn current_receiver(&mut self) -> thrift::Result<Uint64>;
+  fn eosio_assert(&mut self, test: bool, msg: Vec<u8>) -> thrift::Result<()>;
+  fn eosio_assert_message(&mut self, test: bool, msg: Vec<u8>) -> thrift::Result<()>;
+  fn eosio_assert_code(&mut self, test: bool, code: Uint64) -> thrift::Result<()>;
+  fn eosio_exit(&mut self, code: i32) -> thrift::Result<()>;
+  fn current_time(&mut self) -> thrift::Result<Uint64>;
+  fn is_feature_activated(&mut self, feature_digest: Vec<u8>) -> thrift::Result<bool>;
+  fn get_sender(&mut self) -> thrift::Result<Uint64>;
+  fn assert_sha256(&mut self, data: Vec<u8>, hash: Vec<u8>) -> thrift::Result<()>;
+  fn assert_sha1(&mut self, data: Vec<u8>, hash: Vec<u8>) -> thrift::Result<()>;
+  fn assert_sha512(&mut self, data: Vec<u8>, hash: Vec<u8>) -> thrift::Result<()>;
+  fn assert_ripemd160(&mut self, data: Vec<u8>, hash: Vec<u8>) -> thrift::Result<()>;
+  fn sha256(&mut self, data: Vec<u8>) -> thrift::Result<Vec<u8>>;
+  fn sha1(&mut self, data: Vec<u8>) -> thrift::Result<Vec<u8>>;
+  fn sha512(&mut self, data: Vec<u8>) -> thrift::Result<Vec<u8>>;
+  fn ripemd160(&mut self, data: Vec<u8>) -> thrift::Result<Vec<u8>>;
+  fn recover_key(&mut self, digest: Vec<u8>, sig: Vec<u8>) -> thrift::Result<Vec<u8>>;
+  fn assert_recover_key(&mut self, digest: Vec<u8>, sig: Vec<u8>, pub_: Vec<u8>) -> thrift::Result<()>;
   fn db_store_i64(&mut self, scope: Uint64, table: Uint64, payer: Uint64, id: Uint64, data: Vec<u8>) -> thrift::Result<i32>;
   fn db_update_i64(&mut self, iterator: i32, payer: Uint64, data: Vec<u8>) -> thrift::Result<()>;
   fn db_remove_i64(&mut self, iterator: i32) -> thrift::Result<()>;
@@ -2343,6 +2368,33 @@ impl <IP, OP> TThriftClient for ApplySyncClient<IP, OP> where IP: TInputProtocol
 impl <IP, OP> TApplySyncClientMarker for ApplySyncClient<IP, OP> where IP: TInputProtocol, OP: TOutputProtocol {}
 
 impl <C: TThriftClient + TApplySyncClientMarker> TApplySyncClient for C {
+  fn end_apply(&mut self) -> thrift::Result<i32> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("end_apply", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyEndApplyArgs {  };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("end_apply", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyEndApplyResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
   fn prints(&mut self, cstr: String) -> thrift::Result<()> {
     (
       {
@@ -2694,7 +2746,142 @@ impl <C: TThriftClient + TApplySyncClientMarker> TApplySyncClient for C {
       result.ok_or()
     }
   }
-  fn send_inline(&mut self, serialized_action: Vec<u8>) -> thrift::Result<i32> {
+  fn require_recipient(&mut self, name: Uint64) -> thrift::Result<()> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("require_recipient", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyRequireRecipientArgs { name };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("require_recipient", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyRequireRecipientResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn require_auth(&mut self, name: Uint64) -> thrift::Result<()> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("require_auth", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyRequireAuthArgs { name };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("require_auth", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyRequireAuthResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn has_auth(&mut self, name: Uint64) -> thrift::Result<bool> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("has_auth", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyHasAuthArgs { name };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("has_auth", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyHasAuthResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn require_auth2(&mut self, name: Uint64, permission: Uint64) -> thrift::Result<()> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("require_auth2", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyRequireAuth2Args { name, permission };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("require_auth2", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyRequireAuth2Result::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn is_account(&mut self, name: Uint64) -> thrift::Result<bool> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("is_account", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyIsAccountArgs { name };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("is_account", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyIsAccountResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn send_inline(&mut self, serialized_action: Vec<u8>) -> thrift::Result<()> {
     (
       {
         self.increment_sequence_number();
@@ -2721,12 +2908,12 @@ impl <C: TThriftClient + TApplySyncClientMarker> TApplySyncClient for C {
       result.ok_or()
     }
   }
-  fn end_apply(&mut self) -> thrift::Result<i32> {
+  fn send_context_free_inline(&mut self, serialized_data: Vec<u8>) -> thrift::Result<()> {
     (
       {
         self.increment_sequence_number();
-        let message_ident = TMessageIdentifier::new("end_apply", TMessageType::Call, self.sequence_number());
-        let call_args = ApplyEndApplyArgs {  };
+        let message_ident = TMessageIdentifier::new("send_context_free_inline", TMessageType::Call, self.sequence_number());
+        let call_args = ApplySendContextFreeInlineArgs { serialized_data };
         self.o_prot_mut().write_message_begin(&message_ident)?;
         call_args.write_to_out_protocol(self.o_prot_mut())?;
         self.o_prot_mut().write_message_end()?;
@@ -2736,14 +2923,527 @@ impl <C: TThriftClient + TApplySyncClientMarker> TApplySyncClient for C {
     {
       let message_ident = self.i_prot_mut().read_message_begin()?;
       verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
-      verify_expected_service_call("end_apply", &message_ident.name)?;
+      verify_expected_service_call("send_context_free_inline", &message_ident.name)?;
       if message_ident.message_type == TMessageType::Exception {
         let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
         self.i_prot_mut().read_message_end()?;
         return Err(thrift::Error::Application(remote_error))
       }
       verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
-      let result = ApplyEndApplyResult::read_from_in_protocol(self.i_prot_mut())?;
+      let result = ApplySendContextFreeInlineResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn publication_time(&mut self) -> thrift::Result<Uint64> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("publication_time", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyPublicationTimeArgs {  };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("publication_time", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyPublicationTimeResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn current_receiver(&mut self) -> thrift::Result<Uint64> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("current_receiver", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyCurrentReceiverArgs {  };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("current_receiver", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyCurrentReceiverResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn eosio_assert(&mut self, test: bool, msg: Vec<u8>) -> thrift::Result<()> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("eosio_assert", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyEosioAssertArgs { test, msg };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("eosio_assert", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyEosioAssertResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn eosio_assert_message(&mut self, test: bool, msg: Vec<u8>) -> thrift::Result<()> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("eosio_assert_message", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyEosioAssertMessageArgs { test, msg };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("eosio_assert_message", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyEosioAssertMessageResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn eosio_assert_code(&mut self, test: bool, code: Uint64) -> thrift::Result<()> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("eosio_assert_code", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyEosioAssertCodeArgs { test, code };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("eosio_assert_code", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyEosioAssertCodeResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn eosio_exit(&mut self, code: i32) -> thrift::Result<()> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("eosio_exit", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyEosioExitArgs { code };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("eosio_exit", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyEosioExitResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn current_time(&mut self) -> thrift::Result<Uint64> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("current_time", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyCurrentTimeArgs {  };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("current_time", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyCurrentTimeResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn is_feature_activated(&mut self, feature_digest: Vec<u8>) -> thrift::Result<bool> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("is_feature_activated", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyIsFeatureActivatedArgs { feature_digest };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("is_feature_activated", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyIsFeatureActivatedResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn get_sender(&mut self) -> thrift::Result<Uint64> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("get_sender", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyGetSenderArgs {  };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("get_sender", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyGetSenderResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn assert_sha256(&mut self, data: Vec<u8>, hash: Vec<u8>) -> thrift::Result<()> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("assert_sha256", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyAssertSha256Args { data, hash };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("assert_sha256", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyAssertSha256Result::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn assert_sha1(&mut self, data: Vec<u8>, hash: Vec<u8>) -> thrift::Result<()> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("assert_sha1", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyAssertSha1Args { data, hash };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("assert_sha1", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyAssertSha1Result::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn assert_sha512(&mut self, data: Vec<u8>, hash: Vec<u8>) -> thrift::Result<()> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("assert_sha512", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyAssertSha512Args { data, hash };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("assert_sha512", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyAssertSha512Result::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn assert_ripemd160(&mut self, data: Vec<u8>, hash: Vec<u8>) -> thrift::Result<()> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("assert_ripemd160", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyAssertRipemd160Args { data, hash };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("assert_ripemd160", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyAssertRipemd160Result::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn sha256(&mut self, data: Vec<u8>) -> thrift::Result<Vec<u8>> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("sha256", TMessageType::Call, self.sequence_number());
+        let call_args = ApplySha256Args { data };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("sha256", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplySha256Result::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn sha1(&mut self, data: Vec<u8>) -> thrift::Result<Vec<u8>> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("sha1", TMessageType::Call, self.sequence_number());
+        let call_args = ApplySha1Args { data };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("sha1", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplySha1Result::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn sha512(&mut self, data: Vec<u8>) -> thrift::Result<Vec<u8>> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("sha512", TMessageType::Call, self.sequence_number());
+        let call_args = ApplySha512Args { data };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("sha512", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplySha512Result::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn ripemd160(&mut self, data: Vec<u8>) -> thrift::Result<Vec<u8>> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("ripemd160", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyRipemd160Args { data };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("ripemd160", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyRipemd160Result::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn recover_key(&mut self, digest: Vec<u8>, sig: Vec<u8>) -> thrift::Result<Vec<u8>> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("recover_key", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyRecoverKeyArgs { digest, sig };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("recover_key", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyRecoverKeyResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn assert_recover_key(&mut self, digest: Vec<u8>, sig: Vec<u8>, pub_: Vec<u8>) -> thrift::Result<()> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("assert_recover_key", TMessageType::Call, self.sequence_number());
+        let call_args = ApplyAssertRecoverKeyArgs { digest, sig, pub_ };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("assert_recover_key", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = ApplyAssertRecoverKeyResult::read_from_in_protocol(self.i_prot_mut())?;
       self.i_prot_mut().read_message_end()?;
       result.ok_or()
     }
@@ -4375,6 +5075,7 @@ impl <C: TThriftClient + TApplySyncClientMarker> TApplySyncClient for C {
 //
 
 pub trait ApplySyncHandler {
+  fn handle_end_apply(&self) -> thrift::Result<i32>;
   fn handle_prints(&self, cstr: String) -> thrift::Result<()>;
   fn handle_prints_l(&self, cstr: Vec<u8>) -> thrift::Result<()>;
   fn handle_printi(&self, n: i64) -> thrift::Result<()>;
@@ -4388,8 +5089,32 @@ pub trait ApplySyncHandler {
   fn handle_printhex(&self, data: Vec<u8>) -> thrift::Result<()>;
   fn handle_action_data_size(&self) -> thrift::Result<i32>;
   fn handle_read_action_data(&self, len: i32) -> thrift::Result<DataBuffer>;
-  fn handle_send_inline(&self, serialized_action: Vec<u8>) -> thrift::Result<i32>;
-  fn handle_end_apply(&self) -> thrift::Result<i32>;
+  fn handle_require_recipient(&self, name: Uint64) -> thrift::Result<()>;
+  fn handle_require_auth(&self, name: Uint64) -> thrift::Result<()>;
+  fn handle_has_auth(&self, name: Uint64) -> thrift::Result<bool>;
+  fn handle_require_auth2(&self, name: Uint64, permission: Uint64) -> thrift::Result<()>;
+  fn handle_is_account(&self, name: Uint64) -> thrift::Result<bool>;
+  fn handle_send_inline(&self, serialized_action: Vec<u8>) -> thrift::Result<()>;
+  fn handle_send_context_free_inline(&self, serialized_data: Vec<u8>) -> thrift::Result<()>;
+  fn handle_publication_time(&self) -> thrift::Result<Uint64>;
+  fn handle_current_receiver(&self) -> thrift::Result<Uint64>;
+  fn handle_eosio_assert(&self, test: bool, msg: Vec<u8>) -> thrift::Result<()>;
+  fn handle_eosio_assert_message(&self, test: bool, msg: Vec<u8>) -> thrift::Result<()>;
+  fn handle_eosio_assert_code(&self, test: bool, code: Uint64) -> thrift::Result<()>;
+  fn handle_eosio_exit(&self, code: i32) -> thrift::Result<()>;
+  fn handle_current_time(&self) -> thrift::Result<Uint64>;
+  fn handle_is_feature_activated(&self, feature_digest: Vec<u8>) -> thrift::Result<bool>;
+  fn handle_get_sender(&self) -> thrift::Result<Uint64>;
+  fn handle_assert_sha256(&self, data: Vec<u8>, hash: Vec<u8>) -> thrift::Result<()>;
+  fn handle_assert_sha1(&self, data: Vec<u8>, hash: Vec<u8>) -> thrift::Result<()>;
+  fn handle_assert_sha512(&self, data: Vec<u8>, hash: Vec<u8>) -> thrift::Result<()>;
+  fn handle_assert_ripemd160(&self, data: Vec<u8>, hash: Vec<u8>) -> thrift::Result<()>;
+  fn handle_sha256(&self, data: Vec<u8>) -> thrift::Result<Vec<u8>>;
+  fn handle_sha1(&self, data: Vec<u8>) -> thrift::Result<Vec<u8>>;
+  fn handle_sha512(&self, data: Vec<u8>) -> thrift::Result<Vec<u8>>;
+  fn handle_ripemd160(&self, data: Vec<u8>) -> thrift::Result<Vec<u8>>;
+  fn handle_recover_key(&self, digest: Vec<u8>, sig: Vec<u8>) -> thrift::Result<Vec<u8>>;
+  fn handle_assert_recover_key(&self, digest: Vec<u8>, sig: Vec<u8>, pub_: Vec<u8>) -> thrift::Result<()>;
   fn handle_db_store_i64(&self, scope: Uint64, table: Uint64, payer: Uint64, id: Uint64, data: Vec<u8>) -> thrift::Result<i32>;
   fn handle_db_update_i64(&self, iterator: i32, payer: Uint64, data: Vec<u8>) -> thrift::Result<()>;
   fn handle_db_remove_i64(&self, iterator: i32) -> thrift::Result<()>;
@@ -4462,6 +5187,9 @@ impl <H: ApplySyncHandler> ApplySyncProcessor<H> {
       handler,
     }
   }
+  fn process_end_apply(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_end_apply(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
   fn process_prints(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TApplyProcessFunctions::process_prints(&self.handler, incoming_sequence_number, i_prot, o_prot)
   }
@@ -4501,11 +5229,83 @@ impl <H: ApplySyncHandler> ApplySyncProcessor<H> {
   fn process_read_action_data(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TApplyProcessFunctions::process_read_action_data(&self.handler, incoming_sequence_number, i_prot, o_prot)
   }
+  fn process_require_recipient(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_require_recipient(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_require_auth(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_require_auth(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_has_auth(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_has_auth(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_require_auth2(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_require_auth2(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_is_account(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_is_account(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
   fn process_send_inline(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TApplyProcessFunctions::process_send_inline(&self.handler, incoming_sequence_number, i_prot, o_prot)
   }
-  fn process_end_apply(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
-    TApplyProcessFunctions::process_end_apply(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  fn process_send_context_free_inline(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_send_context_free_inline(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_publication_time(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_publication_time(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_current_receiver(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_current_receiver(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_eosio_assert(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_eosio_assert(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_eosio_assert_message(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_eosio_assert_message(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_eosio_assert_code(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_eosio_assert_code(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_eosio_exit(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_eosio_exit(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_current_time(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_current_time(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_is_feature_activated(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_is_feature_activated(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_get_sender(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_get_sender(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_assert_sha256(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_assert_sha256(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_assert_sha1(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_assert_sha1(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_assert_sha512(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_assert_sha512(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_assert_ripemd160(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_assert_ripemd160(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_sha256(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_sha256(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_sha1(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_sha1(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_sha512(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_sha512(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_ripemd160(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_ripemd160(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_recover_key(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_recover_key(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_assert_recover_key(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TApplyProcessFunctions::process_assert_recover_key(&self.handler, incoming_sequence_number, i_prot, o_prot)
   }
   fn process_db_store_i64(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TApplyProcessFunctions::process_db_store_i64(&self.handler, incoming_sequence_number, i_prot, o_prot)
@@ -4692,6 +5492,43 @@ impl <H: ApplySyncHandler> ApplySyncProcessor<H> {
 pub struct TApplyProcessFunctions;
 
 impl TApplyProcessFunctions {
+  pub fn process_end_apply<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let _ = ApplyEndApplyArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_end_apply() {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("end_apply", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyEndApplyResult { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("end_apply", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("end_apply", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
   pub fn process_prints<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     let args = ApplyPrintsArgs::read_from_in_protocol(i_prot)?;
     match handler.handle_prints(args.cstr) {
@@ -5173,13 +6010,198 @@ impl TApplyProcessFunctions {
       },
     }
   }
+  pub fn process_require_recipient<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyRequireRecipientArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_require_recipient(args.name) {
+      Ok(_) => {
+        let message_ident = TMessageIdentifier::new("require_recipient", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyRequireRecipientResult {  };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("require_recipient", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("require_recipient", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_require_auth<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyRequireAuthArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_require_auth(args.name) {
+      Ok(_) => {
+        let message_ident = TMessageIdentifier::new("require_auth", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyRequireAuthResult {  };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("require_auth", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("require_auth", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_has_auth<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyHasAuthArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_has_auth(args.name) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("has_auth", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyHasAuthResult { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("has_auth", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("has_auth", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_require_auth2<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyRequireAuth2Args::read_from_in_protocol(i_prot)?;
+    match handler.handle_require_auth2(args.name, args.permission) {
+      Ok(_) => {
+        let message_ident = TMessageIdentifier::new("require_auth2", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyRequireAuth2Result {  };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("require_auth2", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("require_auth2", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_is_account<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyIsAccountArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_is_account(args.name) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("is_account", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyIsAccountResult { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("is_account", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("is_account", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
   pub fn process_send_inline<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     let args = ApplySendInlineArgs::read_from_in_protocol(i_prot)?;
     match handler.handle_send_inline(args.serialized_action) {
-      Ok(handler_return) => {
+      Ok(_) => {
         let message_ident = TMessageIdentifier::new("send_inline", TMessageType::Reply, incoming_sequence_number);
         o_prot.write_message_begin(&message_ident)?;
-        let ret = ApplySendInlineResult { result_value: Some(handler_return) };
+        let ret = ApplySendInlineResult {  };
         ret.write_to_out_protocol(o_prot)?;
         o_prot.write_message_end()?;
         o_prot.flush()
@@ -5210,13 +6232,13 @@ impl TApplyProcessFunctions {
       },
     }
   }
-  pub fn process_end_apply<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
-    let _ = ApplyEndApplyArgs::read_from_in_protocol(i_prot)?;
-    match handler.handle_end_apply() {
-      Ok(handler_return) => {
-        let message_ident = TMessageIdentifier::new("end_apply", TMessageType::Reply, incoming_sequence_number);
+  pub fn process_send_context_free_inline<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplySendContextFreeInlineArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_send_context_free_inline(args.serialized_data) {
+      Ok(_) => {
+        let message_ident = TMessageIdentifier::new("send_context_free_inline", TMessageType::Reply, incoming_sequence_number);
         o_prot.write_message_begin(&message_ident)?;
-        let ret = ApplyEndApplyResult { result_value: Some(handler_return) };
+        let ret = ApplySendContextFreeInlineResult {  };
         ret.write_to_out_protocol(o_prot)?;
         o_prot.write_message_end()?;
         o_prot.flush()
@@ -5224,7 +6246,7 @@ impl TApplyProcessFunctions {
       Err(e) => {
         match e {
           thrift::Error::Application(app_err) => {
-            let message_ident = TMessageIdentifier::new("end_apply", TMessageType::Exception, incoming_sequence_number);
+            let message_ident = TMessageIdentifier::new("send_context_free_inline", TMessageType::Exception, incoming_sequence_number);
             o_prot.write_message_begin(&message_ident)?;
             thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
             o_prot.write_message_end()?;
@@ -5237,7 +6259,710 @@ impl TApplyProcessFunctions {
                 e.to_string()
               )
             };
-            let message_ident = TMessageIdentifier::new("end_apply", TMessageType::Exception, incoming_sequence_number);
+            let message_ident = TMessageIdentifier::new("send_context_free_inline", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_publication_time<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let _ = ApplyPublicationTimeArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_publication_time() {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("publication_time", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyPublicationTimeResult { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("publication_time", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("publication_time", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_current_receiver<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let _ = ApplyCurrentReceiverArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_current_receiver() {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("current_receiver", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyCurrentReceiverResult { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("current_receiver", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("current_receiver", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_eosio_assert<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyEosioAssertArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_eosio_assert(args.test, args.msg) {
+      Ok(_) => {
+        let message_ident = TMessageIdentifier::new("eosio_assert", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyEosioAssertResult {  };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("eosio_assert", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("eosio_assert", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_eosio_assert_message<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyEosioAssertMessageArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_eosio_assert_message(args.test, args.msg) {
+      Ok(_) => {
+        let message_ident = TMessageIdentifier::new("eosio_assert_message", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyEosioAssertMessageResult {  };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("eosio_assert_message", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("eosio_assert_message", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_eosio_assert_code<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyEosioAssertCodeArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_eosio_assert_code(args.test, args.code) {
+      Ok(_) => {
+        let message_ident = TMessageIdentifier::new("eosio_assert_code", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyEosioAssertCodeResult {  };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("eosio_assert_code", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("eosio_assert_code", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_eosio_exit<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyEosioExitArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_eosio_exit(args.code) {
+      Ok(_) => {
+        let message_ident = TMessageIdentifier::new("eosio_exit", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyEosioExitResult {  };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("eosio_exit", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("eosio_exit", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_current_time<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let _ = ApplyCurrentTimeArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_current_time() {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("current_time", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyCurrentTimeResult { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("current_time", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("current_time", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_is_feature_activated<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyIsFeatureActivatedArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_is_feature_activated(args.feature_digest) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("is_feature_activated", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyIsFeatureActivatedResult { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("is_feature_activated", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("is_feature_activated", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_get_sender<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let _ = ApplyGetSenderArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_get_sender() {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("get_sender", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyGetSenderResult { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("get_sender", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("get_sender", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_assert_sha256<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyAssertSha256Args::read_from_in_protocol(i_prot)?;
+    match handler.handle_assert_sha256(args.data, args.hash) {
+      Ok(_) => {
+        let message_ident = TMessageIdentifier::new("assert_sha256", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyAssertSha256Result {  };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("assert_sha256", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("assert_sha256", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_assert_sha1<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyAssertSha1Args::read_from_in_protocol(i_prot)?;
+    match handler.handle_assert_sha1(args.data, args.hash) {
+      Ok(_) => {
+        let message_ident = TMessageIdentifier::new("assert_sha1", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyAssertSha1Result {  };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("assert_sha1", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("assert_sha1", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_assert_sha512<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyAssertSha512Args::read_from_in_protocol(i_prot)?;
+    match handler.handle_assert_sha512(args.data, args.hash) {
+      Ok(_) => {
+        let message_ident = TMessageIdentifier::new("assert_sha512", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyAssertSha512Result {  };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("assert_sha512", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("assert_sha512", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_assert_ripemd160<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyAssertRipemd160Args::read_from_in_protocol(i_prot)?;
+    match handler.handle_assert_ripemd160(args.data, args.hash) {
+      Ok(_) => {
+        let message_ident = TMessageIdentifier::new("assert_ripemd160", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyAssertRipemd160Result {  };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("assert_ripemd160", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("assert_ripemd160", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_sha256<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplySha256Args::read_from_in_protocol(i_prot)?;
+    match handler.handle_sha256(args.data) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("sha256", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplySha256Result { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("sha256", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("sha256", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_sha1<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplySha1Args::read_from_in_protocol(i_prot)?;
+    match handler.handle_sha1(args.data) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("sha1", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplySha1Result { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("sha1", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("sha1", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_sha512<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplySha512Args::read_from_in_protocol(i_prot)?;
+    match handler.handle_sha512(args.data) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("sha512", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplySha512Result { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("sha512", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("sha512", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_ripemd160<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyRipemd160Args::read_from_in_protocol(i_prot)?;
+    match handler.handle_ripemd160(args.data) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("ripemd160", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyRipemd160Result { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("ripemd160", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("ripemd160", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_recover_key<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyRecoverKeyArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_recover_key(args.digest, args.sig) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("recover_key", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyRecoverKeyResult { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("recover_key", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("recover_key", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_assert_recover_key<H: ApplySyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = ApplyAssertRecoverKeyArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_assert_recover_key(args.digest, args.sig, args.pub_) {
+      Ok(_) => {
+        let message_ident = TMessageIdentifier::new("assert_recover_key", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = ApplyAssertRecoverKeyResult {  };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("assert_recover_key", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("assert_recover_key", TMessageType::Exception, incoming_sequence_number);
             o_prot.write_message_begin(&message_ident)?;
             thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
             o_prot.write_message_end()?;
@@ -7473,6 +9198,9 @@ impl <H: ApplySyncHandler> TProcessor for ApplySyncProcessor<H> {
   fn process(&self, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     let message_ident = i_prot.read_message_begin()?;
     let res = match &*message_ident.name {
+      "end_apply" => {
+        self.process_end_apply(message_ident.sequence_number, i_prot, o_prot)
+      },
       "prints" => {
         self.process_prints(message_ident.sequence_number, i_prot, o_prot)
       },
@@ -7512,11 +9240,83 @@ impl <H: ApplySyncHandler> TProcessor for ApplySyncProcessor<H> {
       "read_action_data" => {
         self.process_read_action_data(message_ident.sequence_number, i_prot, o_prot)
       },
+      "require_recipient" => {
+        self.process_require_recipient(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "require_auth" => {
+        self.process_require_auth(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "has_auth" => {
+        self.process_has_auth(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "require_auth2" => {
+        self.process_require_auth2(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "is_account" => {
+        self.process_is_account(message_ident.sequence_number, i_prot, o_prot)
+      },
       "send_inline" => {
         self.process_send_inline(message_ident.sequence_number, i_prot, o_prot)
       },
-      "end_apply" => {
-        self.process_end_apply(message_ident.sequence_number, i_prot, o_prot)
+      "send_context_free_inline" => {
+        self.process_send_context_free_inline(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "publication_time" => {
+        self.process_publication_time(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "current_receiver" => {
+        self.process_current_receiver(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "eosio_assert" => {
+        self.process_eosio_assert(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "eosio_assert_message" => {
+        self.process_eosio_assert_message(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "eosio_assert_code" => {
+        self.process_eosio_assert_code(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "eosio_exit" => {
+        self.process_eosio_exit(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "current_time" => {
+        self.process_current_time(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "is_feature_activated" => {
+        self.process_is_feature_activated(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "get_sender" => {
+        self.process_get_sender(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "assert_sha256" => {
+        self.process_assert_sha256(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "assert_sha1" => {
+        self.process_assert_sha1(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "assert_sha512" => {
+        self.process_assert_sha512(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "assert_ripemd160" => {
+        self.process_assert_ripemd160(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "sha256" => {
+        self.process_sha256(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "sha1" => {
+        self.process_sha1(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "sha512" => {
+        self.process_sha512(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "ripemd160" => {
+        self.process_ripemd160(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "recover_key" => {
+        self.process_recover_key(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "assert_recover_key" => {
+        self.process_assert_recover_key(message_ident.sequence_number, i_prot, o_prot)
       },
       "db_store_i64" => {
         self.process_db_store_i64(message_ident.sequence_number, i_prot, o_prot)
@@ -7710,6 +9510,105 @@ impl <H: ApplySyncHandler> TProcessor for ApplySyncProcessor<H> {
       },
     };
     thrift::server::handle_process_result(&message_ident, res, o_prot)
+  }
+}
+
+//
+// ApplyEndApplyArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyEndApplyArgs {
+}
+
+impl ApplyEndApplyArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyEndApplyArgs> {
+    i_prot.read_struct_begin()?;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyEndApplyArgs {};
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("end_apply_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyEndApplyResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyEndApplyResult {
+  result_value: Option<i32>,
+}
+
+impl ApplyEndApplyResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyEndApplyResult> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<i32> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = i_prot.read_i32()?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyEndApplyResult {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyEndApplyResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::I32, 0))?;
+      o_prot.write_i32(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<i32> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for ApplyEndApply"
+          )
+        )
+      )
+    }
   }
 }
 
@@ -8881,6 +10780,500 @@ impl ApplyReadActionDataResult {
 }
 
 //
+// ApplyRequireRecipientArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyRequireRecipientArgs {
+  name: Uint64,
+}
+
+impl ApplyRequireRecipientArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyRequireRecipientArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<Uint64> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyRequireRecipientArgs.name", &f_1)?;
+    let ret = ApplyRequireRecipientArgs {
+      name: f_1.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("require_recipient_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("name", TType::Struct, 1))?;
+    self.name.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyRequireRecipientResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyRequireRecipientResult {
+}
+
+impl ApplyRequireRecipientResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyRequireRecipientResult> {
+    i_prot.read_struct_begin()?;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyRequireRecipientResult {};
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyRequireRecipientResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<()> {
+    Ok(())
+  }
+}
+
+//
+// ApplyRequireAuthArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyRequireAuthArgs {
+  name: Uint64,
+}
+
+impl ApplyRequireAuthArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyRequireAuthArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<Uint64> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyRequireAuthArgs.name", &f_1)?;
+    let ret = ApplyRequireAuthArgs {
+      name: f_1.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("require_auth_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("name", TType::Struct, 1))?;
+    self.name.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyRequireAuthResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyRequireAuthResult {
+}
+
+impl ApplyRequireAuthResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyRequireAuthResult> {
+    i_prot.read_struct_begin()?;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyRequireAuthResult {};
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyRequireAuthResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<()> {
+    Ok(())
+  }
+}
+
+//
+// ApplyHasAuthArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyHasAuthArgs {
+  name: Uint64,
+}
+
+impl ApplyHasAuthArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyHasAuthArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<Uint64> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyHasAuthArgs.name", &f_1)?;
+    let ret = ApplyHasAuthArgs {
+      name: f_1.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("has_auth_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("name", TType::Struct, 1))?;
+    self.name.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyHasAuthResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyHasAuthResult {
+  result_value: Option<bool>,
+}
+
+impl ApplyHasAuthResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyHasAuthResult> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<bool> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = i_prot.read_bool()?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyHasAuthResult {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyHasAuthResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::Bool, 0))?;
+      o_prot.write_bool(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<bool> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for ApplyHasAuth"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// ApplyRequireAuth2Args
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyRequireAuth2Args {
+  name: Uint64,
+  permission: Uint64,
+}
+
+impl ApplyRequireAuth2Args {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyRequireAuth2Args> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<Uint64> = None;
+    let mut f_2: Option<Uint64> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_2 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyRequireAuth2Args.name", &f_1)?;
+    verify_required_field_exists("ApplyRequireAuth2Args.permission", &f_2)?;
+    let ret = ApplyRequireAuth2Args {
+      name: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      permission: f_2.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("require_auth2_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("name", TType::Struct, 1))?;
+    self.name.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("permission", TType::Struct, 2))?;
+    self.permission.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyRequireAuth2Result
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyRequireAuth2Result {
+}
+
+impl ApplyRequireAuth2Result {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyRequireAuth2Result> {
+    i_prot.read_struct_begin()?;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyRequireAuth2Result {};
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyRequireAuth2Result");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<()> {
+    Ok(())
+  }
+}
+
+//
+// ApplyIsAccountArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyIsAccountArgs {
+  name: Uint64,
+}
+
+impl ApplyIsAccountArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyIsAccountArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<Uint64> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyIsAccountArgs.name", &f_1)?;
+    let ret = ApplyIsAccountArgs {
+      name: f_1.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("is_account_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("name", TType::Struct, 1))?;
+    self.name.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyIsAccountResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyIsAccountResult {
+  result_value: Option<bool>,
+}
+
+impl ApplyIsAccountResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyIsAccountResult> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<bool> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = i_prot.read_bool()?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyIsAccountResult {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyIsAccountResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::Bool, 0))?;
+      o_prot.write_bool(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<bool> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for ApplyIsAccount"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
 // ApplySendInlineArgs
 //
 
@@ -8934,13 +11327,11 @@ impl ApplySendInlineArgs {
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 struct ApplySendInlineResult {
-  result_value: Option<i32>,
 }
 
 impl ApplySendInlineResult {
   fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplySendInlineResult> {
     i_prot.read_struct_begin()?;
-    let mut f_0: Option<i32> = None;
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -8948,10 +11339,6 @@ impl ApplySendInlineResult {
       }
       let field_id = field_id(&field_ident)?;
       match field_id {
-        0 => {
-          let val = i_prot.read_i32()?;
-          f_0 = Some(val);
-        },
         _ => {
           i_prot.skip(field_ident.field_type)?;
         },
@@ -8959,48 +11346,78 @@ impl ApplySendInlineResult {
       i_prot.read_field_end()?;
     }
     i_prot.read_struct_end()?;
-    let ret = ApplySendInlineResult {
-      result_value: f_0,
-    };
+    let ret = ApplySendInlineResult {};
     Ok(ret)
   }
   fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     let struct_ident = TStructIdentifier::new("ApplySendInlineResult");
     o_prot.write_struct_begin(&struct_ident)?;
-    if let Some(fld_var) = self.result_value {
-      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::I32, 0))?;
-      o_prot.write_i32(fld_var)?;
-      o_prot.write_field_end()?
-    }
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
   }
-  fn ok_or(self) -> thrift::Result<i32> {
-    if self.result_value.is_some() {
-      Ok(self.result_value.unwrap())
-    } else {
-      Err(
-        thrift::Error::Application(
-          ApplicationError::new(
-            ApplicationErrorKind::MissingResult,
-            "no result received for ApplySendInline"
-          )
-        )
-      )
-    }
+  fn ok_or(self) -> thrift::Result<()> {
+    Ok(())
   }
 }
 
 //
-// ApplyEndApplyArgs
+// ApplySendContextFreeInlineArgs
 //
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-struct ApplyEndApplyArgs {
+struct ApplySendContextFreeInlineArgs {
+  serialized_data: Vec<u8>,
 }
 
-impl ApplyEndApplyArgs {
-  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyEndApplyArgs> {
+impl ApplySendContextFreeInlineArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplySendContextFreeInlineArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<Vec<u8>> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_bytes()?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplySendContextFreeInlineArgs.serialized_data", &f_1)?;
+    let ret = ApplySendContextFreeInlineArgs {
+      serialized_data: f_1.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("send_context_free_inline_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("serialized_data", TType::String, 1))?;
+    o_prot.write_bytes(&self.serialized_data)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplySendContextFreeInlineResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplySendContextFreeInlineResult {
+}
+
+impl ApplySendContextFreeInlineResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplySendContextFreeInlineResult> {
     i_prot.read_struct_begin()?;
     loop {
       let field_ident = i_prot.read_field_begin()?;
@@ -9016,11 +11433,50 @@ impl ApplyEndApplyArgs {
       i_prot.read_field_end()?;
     }
     i_prot.read_struct_end()?;
-    let ret = ApplyEndApplyArgs {};
+    let ret = ApplySendContextFreeInlineResult {};
     Ok(ret)
   }
   fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
-    let struct_ident = TStructIdentifier::new("end_apply_args");
+    let struct_ident = TStructIdentifier::new("ApplySendContextFreeInlineResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<()> {
+    Ok(())
+  }
+}
+
+//
+// ApplyPublicationTimeArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyPublicationTimeArgs {
+}
+
+impl ApplyPublicationTimeArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyPublicationTimeArgs> {
+    i_prot.read_struct_begin()?;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyPublicationTimeArgs {};
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("publication_time_args");
     o_prot.write_struct_begin(&struct_ident)?;
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
@@ -9028,18 +11484,18 @@ impl ApplyEndApplyArgs {
 }
 
 //
-// ApplyEndApplyResult
+// ApplyPublicationTimeResult
 //
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-struct ApplyEndApplyResult {
-  result_value: Option<i32>,
+struct ApplyPublicationTimeResult {
+  result_value: Option<Uint64>,
 }
 
-impl ApplyEndApplyResult {
-  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyEndApplyResult> {
+impl ApplyPublicationTimeResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyPublicationTimeResult> {
     i_prot.read_struct_begin()?;
-    let mut f_0: Option<i32> = None;
+    let mut f_0: Option<Uint64> = None;
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -9048,7 +11504,7 @@ impl ApplyEndApplyResult {
       let field_id = field_id(&field_ident)?;
       match field_id {
         0 => {
-          let val = i_prot.read_i32()?;
+          let val = Uint64::read_from_in_protocol(i_prot)?;
           f_0 = Some(val);
         },
         _ => {
@@ -9058,23 +11514,23 @@ impl ApplyEndApplyResult {
       i_prot.read_field_end()?;
     }
     i_prot.read_struct_end()?;
-    let ret = ApplyEndApplyResult {
+    let ret = ApplyPublicationTimeResult {
       result_value: f_0,
     };
     Ok(ret)
   }
   fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
-    let struct_ident = TStructIdentifier::new("ApplyEndApplyResult");
+    let struct_ident = TStructIdentifier::new("ApplyPublicationTimeResult");
     o_prot.write_struct_begin(&struct_ident)?;
-    if let Some(fld_var) = self.result_value {
-      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::I32, 0))?;
-      o_prot.write_i32(fld_var)?;
+    if let Some(ref fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::Struct, 0))?;
+      fld_var.write_to_out_protocol(o_prot)?;
       o_prot.write_field_end()?
     }
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
   }
-  fn ok_or(self) -> thrift::Result<i32> {
+  fn ok_or(self) -> thrift::Result<Uint64> {
     if self.result_value.is_some() {
       Ok(self.result_value.unwrap())
     } else {
@@ -9082,11 +11538,1867 @@ impl ApplyEndApplyResult {
         thrift::Error::Application(
           ApplicationError::new(
             ApplicationErrorKind::MissingResult,
-            "no result received for ApplyEndApply"
+            "no result received for ApplyPublicationTime"
           )
         )
       )
     }
+  }
+}
+
+//
+// ApplyCurrentReceiverArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyCurrentReceiverArgs {
+}
+
+impl ApplyCurrentReceiverArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyCurrentReceiverArgs> {
+    i_prot.read_struct_begin()?;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyCurrentReceiverArgs {};
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("current_receiver_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyCurrentReceiverResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyCurrentReceiverResult {
+  result_value: Option<Uint64>,
+}
+
+impl ApplyCurrentReceiverResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyCurrentReceiverResult> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<Uint64> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyCurrentReceiverResult {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyCurrentReceiverResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(ref fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::Struct, 0))?;
+      fld_var.write_to_out_protocol(o_prot)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<Uint64> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for ApplyCurrentReceiver"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// ApplyEosioAssertArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyEosioAssertArgs {
+  test: bool,
+  msg: Vec<u8>,
+}
+
+impl ApplyEosioAssertArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyEosioAssertArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<bool> = None;
+    let mut f_2: Option<Vec<u8>> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_bool()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = i_prot.read_bytes()?;
+          f_2 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyEosioAssertArgs.test", &f_1)?;
+    verify_required_field_exists("ApplyEosioAssertArgs.msg", &f_2)?;
+    let ret = ApplyEosioAssertArgs {
+      test: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      msg: f_2.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("eosio_assert_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("test", TType::Bool, 1))?;
+    o_prot.write_bool(self.test)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("msg", TType::String, 2))?;
+    o_prot.write_bytes(&self.msg)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyEosioAssertResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyEosioAssertResult {
+}
+
+impl ApplyEosioAssertResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyEosioAssertResult> {
+    i_prot.read_struct_begin()?;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyEosioAssertResult {};
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyEosioAssertResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<()> {
+    Ok(())
+  }
+}
+
+//
+// ApplyEosioAssertMessageArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyEosioAssertMessageArgs {
+  test: bool,
+  msg: Vec<u8>,
+}
+
+impl ApplyEosioAssertMessageArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyEosioAssertMessageArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<bool> = None;
+    let mut f_2: Option<Vec<u8>> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_bool()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = i_prot.read_bytes()?;
+          f_2 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyEosioAssertMessageArgs.test", &f_1)?;
+    verify_required_field_exists("ApplyEosioAssertMessageArgs.msg", &f_2)?;
+    let ret = ApplyEosioAssertMessageArgs {
+      test: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      msg: f_2.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("eosio_assert_message_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("test", TType::Bool, 1))?;
+    o_prot.write_bool(self.test)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("msg", TType::String, 2))?;
+    o_prot.write_bytes(&self.msg)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyEosioAssertMessageResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyEosioAssertMessageResult {
+}
+
+impl ApplyEosioAssertMessageResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyEosioAssertMessageResult> {
+    i_prot.read_struct_begin()?;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyEosioAssertMessageResult {};
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyEosioAssertMessageResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<()> {
+    Ok(())
+  }
+}
+
+//
+// ApplyEosioAssertCodeArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyEosioAssertCodeArgs {
+  test: bool,
+  code: Uint64,
+}
+
+impl ApplyEosioAssertCodeArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyEosioAssertCodeArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<bool> = None;
+    let mut f_2: Option<Uint64> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_bool()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_2 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyEosioAssertCodeArgs.test", &f_1)?;
+    verify_required_field_exists("ApplyEosioAssertCodeArgs.code", &f_2)?;
+    let ret = ApplyEosioAssertCodeArgs {
+      test: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      code: f_2.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("eosio_assert_code_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("test", TType::Bool, 1))?;
+    o_prot.write_bool(self.test)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("code", TType::Struct, 2))?;
+    self.code.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyEosioAssertCodeResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyEosioAssertCodeResult {
+}
+
+impl ApplyEosioAssertCodeResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyEosioAssertCodeResult> {
+    i_prot.read_struct_begin()?;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyEosioAssertCodeResult {};
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyEosioAssertCodeResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<()> {
+    Ok(())
+  }
+}
+
+//
+// ApplyEosioExitArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyEosioExitArgs {
+  code: i32,
+}
+
+impl ApplyEosioExitArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyEosioExitArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<i32> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_i32()?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyEosioExitArgs.code", &f_1)?;
+    let ret = ApplyEosioExitArgs {
+      code: f_1.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("eosio_exit_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("code", TType::I32, 1))?;
+    o_prot.write_i32(self.code)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyEosioExitResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyEosioExitResult {
+}
+
+impl ApplyEosioExitResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyEosioExitResult> {
+    i_prot.read_struct_begin()?;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyEosioExitResult {};
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyEosioExitResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<()> {
+    Ok(())
+  }
+}
+
+//
+// ApplyCurrentTimeArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyCurrentTimeArgs {
+}
+
+impl ApplyCurrentTimeArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyCurrentTimeArgs> {
+    i_prot.read_struct_begin()?;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyCurrentTimeArgs {};
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("current_time_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyCurrentTimeResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyCurrentTimeResult {
+  result_value: Option<Uint64>,
+}
+
+impl ApplyCurrentTimeResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyCurrentTimeResult> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<Uint64> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyCurrentTimeResult {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyCurrentTimeResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(ref fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::Struct, 0))?;
+      fld_var.write_to_out_protocol(o_prot)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<Uint64> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for ApplyCurrentTime"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// ApplyIsFeatureActivatedArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyIsFeatureActivatedArgs {
+  feature_digest: Vec<u8>,
+}
+
+impl ApplyIsFeatureActivatedArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyIsFeatureActivatedArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<Vec<u8>> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_bytes()?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyIsFeatureActivatedArgs.feature_digest", &f_1)?;
+    let ret = ApplyIsFeatureActivatedArgs {
+      feature_digest: f_1.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("is_feature_activated_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("feature_digest", TType::String, 1))?;
+    o_prot.write_bytes(&self.feature_digest)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyIsFeatureActivatedResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyIsFeatureActivatedResult {
+  result_value: Option<bool>,
+}
+
+impl ApplyIsFeatureActivatedResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyIsFeatureActivatedResult> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<bool> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = i_prot.read_bool()?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyIsFeatureActivatedResult {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyIsFeatureActivatedResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::Bool, 0))?;
+      o_prot.write_bool(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<bool> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for ApplyIsFeatureActivated"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// ApplyGetSenderArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyGetSenderArgs {
+}
+
+impl ApplyGetSenderArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyGetSenderArgs> {
+    i_prot.read_struct_begin()?;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyGetSenderArgs {};
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("get_sender_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyGetSenderResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyGetSenderResult {
+  result_value: Option<Uint64>,
+}
+
+impl ApplyGetSenderResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyGetSenderResult> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<Uint64> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = Uint64::read_from_in_protocol(i_prot)?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyGetSenderResult {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyGetSenderResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(ref fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::Struct, 0))?;
+      fld_var.write_to_out_protocol(o_prot)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<Uint64> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for ApplyGetSender"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// ApplyAssertSha256Args
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyAssertSha256Args {
+  data: Vec<u8>,
+  hash: Vec<u8>,
+}
+
+impl ApplyAssertSha256Args {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyAssertSha256Args> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<Vec<u8>> = None;
+    let mut f_2: Option<Vec<u8>> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_bytes()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = i_prot.read_bytes()?;
+          f_2 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyAssertSha256Args.data", &f_1)?;
+    verify_required_field_exists("ApplyAssertSha256Args.hash", &f_2)?;
+    let ret = ApplyAssertSha256Args {
+      data: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      hash: f_2.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("assert_sha256_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("data", TType::String, 1))?;
+    o_prot.write_bytes(&self.data)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("hash", TType::String, 2))?;
+    o_prot.write_bytes(&self.hash)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyAssertSha256Result
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyAssertSha256Result {
+}
+
+impl ApplyAssertSha256Result {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyAssertSha256Result> {
+    i_prot.read_struct_begin()?;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyAssertSha256Result {};
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyAssertSha256Result");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<()> {
+    Ok(())
+  }
+}
+
+//
+// ApplyAssertSha1Args
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyAssertSha1Args {
+  data: Vec<u8>,
+  hash: Vec<u8>,
+}
+
+impl ApplyAssertSha1Args {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyAssertSha1Args> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<Vec<u8>> = None;
+    let mut f_2: Option<Vec<u8>> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_bytes()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = i_prot.read_bytes()?;
+          f_2 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyAssertSha1Args.data", &f_1)?;
+    verify_required_field_exists("ApplyAssertSha1Args.hash", &f_2)?;
+    let ret = ApplyAssertSha1Args {
+      data: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      hash: f_2.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("assert_sha1_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("data", TType::String, 1))?;
+    o_prot.write_bytes(&self.data)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("hash", TType::String, 2))?;
+    o_prot.write_bytes(&self.hash)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyAssertSha1Result
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyAssertSha1Result {
+}
+
+impl ApplyAssertSha1Result {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyAssertSha1Result> {
+    i_prot.read_struct_begin()?;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyAssertSha1Result {};
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyAssertSha1Result");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<()> {
+    Ok(())
+  }
+}
+
+//
+// ApplyAssertSha512Args
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyAssertSha512Args {
+  data: Vec<u8>,
+  hash: Vec<u8>,
+}
+
+impl ApplyAssertSha512Args {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyAssertSha512Args> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<Vec<u8>> = None;
+    let mut f_2: Option<Vec<u8>> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_bytes()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = i_prot.read_bytes()?;
+          f_2 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyAssertSha512Args.data", &f_1)?;
+    verify_required_field_exists("ApplyAssertSha512Args.hash", &f_2)?;
+    let ret = ApplyAssertSha512Args {
+      data: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      hash: f_2.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("assert_sha512_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("data", TType::String, 1))?;
+    o_prot.write_bytes(&self.data)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("hash", TType::String, 2))?;
+    o_prot.write_bytes(&self.hash)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyAssertSha512Result
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyAssertSha512Result {
+}
+
+impl ApplyAssertSha512Result {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyAssertSha512Result> {
+    i_prot.read_struct_begin()?;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyAssertSha512Result {};
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyAssertSha512Result");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<()> {
+    Ok(())
+  }
+}
+
+//
+// ApplyAssertRipemd160Args
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyAssertRipemd160Args {
+  data: Vec<u8>,
+  hash: Vec<u8>,
+}
+
+impl ApplyAssertRipemd160Args {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyAssertRipemd160Args> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<Vec<u8>> = None;
+    let mut f_2: Option<Vec<u8>> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_bytes()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = i_prot.read_bytes()?;
+          f_2 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyAssertRipemd160Args.data", &f_1)?;
+    verify_required_field_exists("ApplyAssertRipemd160Args.hash", &f_2)?;
+    let ret = ApplyAssertRipemd160Args {
+      data: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      hash: f_2.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("assert_ripemd160_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("data", TType::String, 1))?;
+    o_prot.write_bytes(&self.data)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("hash", TType::String, 2))?;
+    o_prot.write_bytes(&self.hash)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyAssertRipemd160Result
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyAssertRipemd160Result {
+}
+
+impl ApplyAssertRipemd160Result {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyAssertRipemd160Result> {
+    i_prot.read_struct_begin()?;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyAssertRipemd160Result {};
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyAssertRipemd160Result");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<()> {
+    Ok(())
+  }
+}
+
+//
+// ApplySha256Args
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplySha256Args {
+  data: Vec<u8>,
+}
+
+impl ApplySha256Args {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplySha256Args> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<Vec<u8>> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_bytes()?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplySha256Args.data", &f_1)?;
+    let ret = ApplySha256Args {
+      data: f_1.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("sha256_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("data", TType::String, 1))?;
+    o_prot.write_bytes(&self.data)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplySha256Result
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplySha256Result {
+  result_value: Option<Vec<u8>>,
+}
+
+impl ApplySha256Result {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplySha256Result> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<Vec<u8>> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = i_prot.read_bytes()?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplySha256Result {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplySha256Result");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(ref fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::String, 0))?;
+      o_prot.write_bytes(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<Vec<u8>> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for ApplySha256"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// ApplySha1Args
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplySha1Args {
+  data: Vec<u8>,
+}
+
+impl ApplySha1Args {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplySha1Args> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<Vec<u8>> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_bytes()?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplySha1Args.data", &f_1)?;
+    let ret = ApplySha1Args {
+      data: f_1.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("sha1_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("data", TType::String, 1))?;
+    o_prot.write_bytes(&self.data)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplySha1Result
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplySha1Result {
+  result_value: Option<Vec<u8>>,
+}
+
+impl ApplySha1Result {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplySha1Result> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<Vec<u8>> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = i_prot.read_bytes()?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplySha1Result {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplySha1Result");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(ref fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::String, 0))?;
+      o_prot.write_bytes(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<Vec<u8>> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for ApplySha1"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// ApplySha512Args
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplySha512Args {
+  data: Vec<u8>,
+}
+
+impl ApplySha512Args {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplySha512Args> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<Vec<u8>> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_bytes()?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplySha512Args.data", &f_1)?;
+    let ret = ApplySha512Args {
+      data: f_1.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("sha512_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("data", TType::String, 1))?;
+    o_prot.write_bytes(&self.data)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplySha512Result
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplySha512Result {
+  result_value: Option<Vec<u8>>,
+}
+
+impl ApplySha512Result {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplySha512Result> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<Vec<u8>> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = i_prot.read_bytes()?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplySha512Result {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplySha512Result");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(ref fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::String, 0))?;
+      o_prot.write_bytes(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<Vec<u8>> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for ApplySha512"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// ApplyRipemd160Args
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyRipemd160Args {
+  data: Vec<u8>,
+}
+
+impl ApplyRipemd160Args {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyRipemd160Args> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<Vec<u8>> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_bytes()?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyRipemd160Args.data", &f_1)?;
+    let ret = ApplyRipemd160Args {
+      data: f_1.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ripemd160_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("data", TType::String, 1))?;
+    o_prot.write_bytes(&self.data)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyRipemd160Result
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyRipemd160Result {
+  result_value: Option<Vec<u8>>,
+}
+
+impl ApplyRipemd160Result {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyRipemd160Result> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<Vec<u8>> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = i_prot.read_bytes()?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyRipemd160Result {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyRipemd160Result");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(ref fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::String, 0))?;
+      o_prot.write_bytes(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<Vec<u8>> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for ApplyRipemd160"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// ApplyRecoverKeyArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyRecoverKeyArgs {
+  digest: Vec<u8>,
+  sig: Vec<u8>,
+}
+
+impl ApplyRecoverKeyArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyRecoverKeyArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<Vec<u8>> = None;
+    let mut f_2: Option<Vec<u8>> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_bytes()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = i_prot.read_bytes()?;
+          f_2 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyRecoverKeyArgs.digest", &f_1)?;
+    verify_required_field_exists("ApplyRecoverKeyArgs.sig", &f_2)?;
+    let ret = ApplyRecoverKeyArgs {
+      digest: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      sig: f_2.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("recover_key_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("digest", TType::String, 1))?;
+    o_prot.write_bytes(&self.digest)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("sig", TType::String, 2))?;
+    o_prot.write_bytes(&self.sig)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyRecoverKeyResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyRecoverKeyResult {
+  result_value: Option<Vec<u8>>,
+}
+
+impl ApplyRecoverKeyResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyRecoverKeyResult> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<Vec<u8>> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = i_prot.read_bytes()?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyRecoverKeyResult {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyRecoverKeyResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(ref fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::String, 0))?;
+      o_prot.write_bytes(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<Vec<u8>> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for ApplyRecoverKey"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// ApplyAssertRecoverKeyArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyAssertRecoverKeyArgs {
+  digest: Vec<u8>,
+  sig: Vec<u8>,
+  pub_: Vec<u8>,
+}
+
+impl ApplyAssertRecoverKeyArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyAssertRecoverKeyArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<Vec<u8>> = None;
+    let mut f_2: Option<Vec<u8>> = None;
+    let mut f_3: Option<Vec<u8>> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_bytes()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = i_prot.read_bytes()?;
+          f_2 = Some(val);
+        },
+        3 => {
+          let val = i_prot.read_bytes()?;
+          f_3 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("ApplyAssertRecoverKeyArgs.digest", &f_1)?;
+    verify_required_field_exists("ApplyAssertRecoverKeyArgs.sig", &f_2)?;
+    verify_required_field_exists("ApplyAssertRecoverKeyArgs.pub_", &f_3)?;
+    let ret = ApplyAssertRecoverKeyArgs {
+      digest: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      sig: f_2.expect("auto-generated code should have checked for presence of required fields"),
+      pub_: f_3.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("assert_recover_key_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("digest", TType::String, 1))?;
+    o_prot.write_bytes(&self.digest)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("sig", TType::String, 2))?;
+    o_prot.write_bytes(&self.sig)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("pub", TType::String, 3))?;
+    o_prot.write_bytes(&self.pub_)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// ApplyAssertRecoverKeyResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct ApplyAssertRecoverKeyResult {
+}
+
+impl ApplyAssertRecoverKeyResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyAssertRecoverKeyResult> {
+    i_prot.read_struct_begin()?;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = ApplyAssertRecoverKeyResult {};
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ApplyAssertRecoverKeyResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<()> {
+    Ok(())
   }
 }
 

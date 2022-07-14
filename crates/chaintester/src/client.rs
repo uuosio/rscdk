@@ -290,7 +290,7 @@ pub fn new_vm_api_client(
     let mut c = TTcpChannel::new();
 
     // open the underlying TCP stream
-    println!("connecting to interfaces server on {}:{}", host, port);
+    println!("connecting to VM API server on {}:{}", host, port);
     //wait for vm api server to start
     thread::sleep(Duration::from_micros(10));
     let remote_address = format!("{}:{}", host, port);
@@ -368,12 +368,52 @@ impl Default for ApplyRequestHandler {
     }
 }
 
+///
+pub fn n2s(value: u64) -> String {
+	let charmap = ".12345abcdefghijklmnopqrstuvwxyz".as_bytes();
+	// 13 dots
+	let mut s: [u8; 13] = ['.' as u8, '.'  as u8, '.' as u8, '.' as u8, '.' as u8, '.' as u8, '.' as u8, '.' as u8, '.' as u8, '.' as u8, '.' as u8, '.' as u8, '.' as u8];
+	let mut tmp = value;
+	for i in 0..13 {
+		let c: u8;
+		if i == 0 {
+			c = charmap[(tmp&0x0f) as usize];
+		} else {
+			c = charmap[(tmp&0x1f) as usize];
+		}
+		s[12-i] = c;
+		if i == 0 {
+			tmp >>= 4
+		} else {
+			tmp >>= 5
+		}
+	}
+
+	let mut i = s.len() - 1;
+	while i != 0 {
+		if s[i] != '.' as u8 {
+			break
+		}
+        i -= 1;
+	}
+
+    let r = match String::from_utf8(s[0..i+1].to_vec()) {
+        Ok(v) => v,
+        Err(_) => String::from(""),
+    };
+    return r;
+}
+
 impl ApplyRequestSyncHandler for ApplyRequestHandler {
     fn handle_apply_request(&self, receiver: Uint64, first_receiver: Uint64, action: Uint64) -> thrift::Result<i32> {
-        println!("+++++++++handle_apply_request");
+        let _receiver = receiver.into();
+        let _first_receiver = first_receiver.into();
+        let _action = action.into();
+        // println!("\x1b[92m[({},{})->{}]: CONSOLE OUTPUT BEGIN =====================\x1b[0m", n2s(_receiver), n2s(_action), n2s(_first_receiver));
         unsafe {
-            native_apply(receiver.into(), first_receiver.into(), action.into());
+            native_apply(_receiver, _first_receiver, _action);
         }
+        // println!("\x1b[92m[({},{})->{}]: CONSOLE OUTPUT END   =====================\x1b[0m", n2s(_receiver), n2s(_action), n2s(_first_receiver));
         Ok(1)
     }
 

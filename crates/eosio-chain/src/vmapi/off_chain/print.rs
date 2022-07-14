@@ -12,6 +12,7 @@ use core::slice;
 pub fn prints(cstr: *const u8) {
     let s = unsafe { CStr::from_ptr(cstr as *const i8).to_str().unwrap() };
     let mut client = get_vm_api_client();
+    // print!("\x1b[92m{}\x1b[0m", s);
     client.prints(s.to_owned()).unwrap();
 }
 
@@ -20,7 +21,7 @@ pub fn prints_l(_cstr: *const u8, _len: u32) {
     let s = unsafe {
         slice::from_raw_parts(_cstr, _len as usize)
     };
-
+    // print!("\x1b[92m{}\x1b[0m", std::str::from_utf8(s).unwrap());
     get_vm_api_client().prints_l(s.to_vec()).unwrap();
 }
 
