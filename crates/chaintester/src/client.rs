@@ -77,6 +77,22 @@ impl fmt::Debug for TransactionError {
     }
 }
 
+pub struct TransactionReturn {
+    pub value: Map<String, Value>
+}
+
+impl fmt::Display for TransactionReturn {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", serde_json::to_string_pretty(&Value::Object(self.value.clone())).unwrap())
+    }
+}
+
+impl fmt::Debug for TransactionReturn {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", serde_json::to_string_pretty(&Value::Object(self.value.clone())).unwrap())
+    }
+}
+
 pub type Result<T> = core::result::Result<T, TransactionError>;
 
 pub struct VMAPIClient {
@@ -281,7 +297,7 @@ impl ChainTester {
         self.client().produce_block(self.id).unwrap()
     }
 
-    pub fn push_action(&mut self, account: &str, action: &str, arguments: ActionArguments, permissions: &str) -> Result<Map<String, Value>> {
+    pub fn push_action(&mut self, account: &str, action: &str, arguments: ActionArguments, permissions: &str) -> Result<TransactionReturn> {
         let _account = String::from(account);
         let _action = String::from(action);
 
@@ -305,11 +321,11 @@ impl ChainTester {
         if obj.get("except").is_some() {
             Err(TransactionError{json: Some(obj.clone()), error_string: None})
         } else {
-            Ok(obj.clone())
+            Ok(TransactionReturn{value: obj.clone()})
         }
     }
 
-    pub fn deploy_contract(&mut self, account: &str, wasm_file: &str, abi_file: &str) -> Result<Map<String, Value>> {
+    pub fn deploy_contract(&mut self, account: &str, wasm_file: &str, abi_file: &str) -> Result<TransactionReturn> {
         // abi_file.is_empty()
         let wasm = fs::read(wasm_file).unwrap();        
         let hex_wasm = hex::encode(wasm);
@@ -383,9 +399,8 @@ impl ChainTester {
         if obj.get("except").is_some() {
             Err(TransactionError{json: Some(obj.clone()), error_string: None})
         } else {
-            Ok(obj.clone())
+            Ok(TransactionReturn{value: obj.clone()})
         }
-
     }
 
     pub fn push_actions(&mut self, actions: Vec<Box<Action>>) -> Result<Map<String, Value>> {
