@@ -1407,8 +1407,7 @@ impl Contract {
         let notify_handle_code = self.generate_action_handle_code(true);
         let action_handle_code = self.generate_action_handle_code(false);
         quote!{
-            #[no_mangle]
-            fn apply(receiver: u64, first_receiver: u64, action: u64) {
+            pub fn contract_apply(receiver: u64, first_receiver: u64, action: u64) {
                 let _receiver = eosio_chain::Name{n: receiver};
                 let _first_receiver = eosio_chain::Name{n: first_receiver};
                 let _action = eosio_chain::Name{n: action};
@@ -1429,15 +1428,21 @@ impl Contract {
                 }
             }
 
+            #[cfg(not(feature = "std"))]
+            #[no_mangle]
+            pub fn apply(receiver: u64, first_receiver: u64, action: u64) {
+                contract_apply(receiver, first_receiver, action);
+            }
+
+
             #[cfg(feature = "std")]
-            const _: () = {
-                use eosio_chain::eosio_chaintester::interfaces::TApplySyncClient;
-                #[no_mangle]
-                fn native_apply(receiver: u64, first_receiver: u64, action: u64) {
-                    apply(receiver, first_receiver, action);
-                    eosio_chain::eosio_chaintester::get_vm_api_client().end_apply().unwrap();
-                }
-            };
+            use eosio_chain::eosio_chaintester::interfaces::TApplySyncClient;
+
+            #[cfg(feature = "std")]
+            pub fn native_apply(receiver: u64, first_receiver: u64, action: u64) {
+                contract_apply(receiver, first_receiver, action);
+                eosio_chain::eosio_chaintester::get_vm_api_client().end_apply().unwrap();
+            }
         }
     }
 
