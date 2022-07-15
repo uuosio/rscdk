@@ -1,0 +1,24 @@
+[package]
+name = "tester"
+version = "0.1.0"
+authors = [""]
+edition = "2021"
+
+[dependencies]
+eosio-chain = { version = "0.1.0", path = "../../../crates/eosio-chain", default-features = false }
+sayhello = { version = "0.1.0", path = "../sayhello", default-features = false }
+saygoodbye = { version = "0.1.0", path = "../saygoodbye", default-features = false }
+
+[lib]
+name = "tester"
+path = "lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["std"]
+std = [
+    "eosio-chain/std",
+    "sayhello/std",
+    "saygoodbye/std",
+
+]
