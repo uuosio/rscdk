@@ -81,7 +81,9 @@ mod tests {
     }
 
     fn deploy_contract(tester: &mut ChainTester) {
-        tester.deploy_contract("hello", "/Users/newworld/dev/github/rscdk/tests/testdebug/../target/testdebug/testdebug.wasm", "/Users/newworld/dev/github/rscdk/tests/testdebug/../target/testdebug/testdebug.abi").unwrap();
+        let cur_dir: &str = &std::env::current_dir().unwrap().into_os_string().into_string().unwrap();
+        println!("{cur_dir}");
+        tester.deploy_contract("hello", &format!("{cur_dir}/testdebug2/saygoodbye/target/saygoodbye.wasm"), &format!("{cur_dir}/testdebug2/saygoodbye/target/saygoodbye.abi")).unwrap();
     }
 
     #[test]
@@ -90,25 +92,9 @@ mod tests {
         println!("defined in file: {exe:?}");
     
         let mut tester = ChainTester::new();
-        tester.enable_debug(true);
+        tester.enable_debug_contract("hello", true).unwrap();
 
         deploy_contract(&mut tester);
-        let updateauth_args = r#"{
-            "account": "hello",
-            "permission": "active",
-            "parent": "owner",
-            "auth": {
-                "threshold": 1,
-                "keys": [
-                    {
-                        "key": "EOS6AjF6hvF7GSuSd4sCgfPKq5uWaXvGM2aQtEUCwmEHygQaqxBSV",
-                        "weight": 1
-                    }
-                ],
-                "accounts": [{"permission":{"actor": "hello", "permission": "eosio.code"}, "weight":1}],
-                "waits": []
-            }
-        }"#;
 
         let permissions = r#"
         {
@@ -116,11 +102,8 @@ mod tests {
         }
         "#;
 
-        tester.push_action("eosio", "updateauth", updateauth_args.into(), permissions).unwrap();
-        tester.produce_block();
-    
         let args = saygoodbye::saygoodbye{name: "rust".into()};
-        tester.push_action("hello", "sayhello", args.pack().into(), permissions).unwrap();
+        tester.push_action("hello", "saygoodbye", args.pack().into(), permissions).unwrap();
         tester.produce_block();
     }
 
