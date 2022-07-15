@@ -434,15 +434,24 @@ mod hello {
 
 #[cfg(test)]
 mod tests {
+
     use eosio_chain::ChainTester;
     use eosio_chain::serializer::Packer;
     use crate::hello::sayhello;
 
+    fn deploy_contract(tester: &mut ChainTester) {
+        tester.deploy_contract("hello", "/Users/newworld/dev/github/rscdk/tests/testdebug/../target/testdebug/testdebug.wasm", "/Users/newworld/dev/github/rscdk/tests/testdebug/../target/testdebug/testdebug.abi").unwrap();
+    }
+
     #[test]
     fn test_prints() {
+        let exe = std::env::current_exe();
+        println!("defined in file: {exe:?}");
+    
         let mut tester = ChainTester::new();
-        tester.deploy_contract("hello", "../target/testdebug/testdebug.wasm", "../target/testdebug/testdebug.abi");
+        tester.enable_debug(true);
 
+        deploy_contract(&mut tester);
         let updateauth_args = r#"{
             "account": "hello",
             "permission": "active",
@@ -485,7 +494,9 @@ mod tests {
 
         {
             let mut tester = ChainTester::new();
-            tester.push_action("hello", "inc", args.into(), permissions).unwrap();
+            deploy_contract(&mut tester);
+
+            let r = tester.push_action("hello", "inc", args.into(), permissions).unwrap();
             tester.produce_block();
 
             tester.push_action("hello", "inc", args.into(), permissions).unwrap();
@@ -493,6 +504,8 @@ mod tests {
         }
         {
             let mut tester = ChainTester::new();
+            deploy_contract(&mut tester);
+
             tester.push_action("hello", "inc", args.into(), permissions).unwrap();
             tester.produce_block();
 

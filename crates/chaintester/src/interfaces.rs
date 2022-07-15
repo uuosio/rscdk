@@ -701,6 +701,8 @@ impl Default for LowerBoundUpperBoundReturn {
 pub trait TIPCChainTesterSyncClient {
   fn init_vm_api(&mut self) -> thrift::Result<()>;
   fn init_apply_request(&mut self) -> thrift::Result<()>;
+  fn enable_debug_contract(&mut self, id: i32, contract: String, enable: bool) -> thrift::Result<()>;
+  fn is_debug_contract_enabled(&mut self, id: i32, contract: String) -> thrift::Result<bool>;
   fn pack_abi(&mut self, abi: String) -> thrift::Result<Vec<u8>>;
   fn pack_action_args(&mut self, id: i32, contract: String, action: String, action_args: String) -> thrift::Result<Vec<u8>>;
   fn unpack_action_args(&mut self, id: i32, contract: String, action: String, raw_args: Vec<u8>) -> thrift::Result<Vec<u8>>;
@@ -762,6 +764,60 @@ impl <C: TThriftClient + TIPCChainTesterSyncClientMarker> TIPCChainTesterSyncCli
       }
     )?;
     Ok(())
+  }
+  fn enable_debug_contract(&mut self, id: i32, contract: String, enable: bool) -> thrift::Result<()> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("enable_debug_contract", TMessageType::Call, self.sequence_number());
+        let call_args = IPCChainTesterEnableDebugContractArgs { id, contract, enable };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("enable_debug_contract", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = IPCChainTesterEnableDebugContractResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn is_debug_contract_enabled(&mut self, id: i32, contract: String) -> thrift::Result<bool> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("is_debug_contract_enabled", TMessageType::Call, self.sequence_number());
+        let call_args = IPCChainTesterIsDebugContractEnabledArgs { id, contract };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("is_debug_contract_enabled", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = IPCChainTesterIsDebugContractEnabledResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
   }
   fn pack_abi(&mut self, abi: String) -> thrift::Result<Vec<u8>> {
     (
@@ -990,6 +1046,8 @@ impl <C: TThriftClient + TIPCChainTesterSyncClientMarker> TIPCChainTesterSyncCli
 pub trait IPCChainTesterSyncHandler {
   fn handle_init_vm_api(&self) -> thrift::Result<()>;
   fn handle_init_apply_request(&self) -> thrift::Result<()>;
+  fn handle_enable_debug_contract(&self, id: i32, contract: String, enable: bool) -> thrift::Result<()>;
+  fn handle_is_debug_contract_enabled(&self, id: i32, contract: String) -> thrift::Result<bool>;
   fn handle_pack_abi(&self, abi: String) -> thrift::Result<Vec<u8>>;
   fn handle_pack_action_args(&self, id: i32, contract: String, action: String, action_args: String) -> thrift::Result<Vec<u8>>;
   fn handle_unpack_action_args(&self, id: i32, contract: String, action: String, raw_args: Vec<u8>) -> thrift::Result<Vec<u8>>;
@@ -1015,6 +1073,12 @@ impl <H: IPCChainTesterSyncHandler> IPCChainTesterSyncProcessor<H> {
   }
   fn process_init_apply_request(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TIPCChainTesterProcessFunctions::process_init_apply_request(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_enable_debug_contract(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TIPCChainTesterProcessFunctions::process_enable_debug_contract(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_is_debug_contract_enabled(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TIPCChainTesterProcessFunctions::process_is_debug_contract_enabled(&self.handler, incoming_sequence_number, i_prot, o_prot)
   }
   fn process_pack_abi(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TIPCChainTesterProcessFunctions::process_pack_abi(&self.handler, incoming_sequence_number, i_prot, o_prot)
@@ -1088,6 +1152,80 @@ impl TIPCChainTesterProcessFunctions {
               )
             };
             Err(thrift::Error::Application(ret_err))
+          },
+        }
+      },
+    }
+  }
+  pub fn process_enable_debug_contract<H: IPCChainTesterSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = IPCChainTesterEnableDebugContractArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_enable_debug_contract(args.id, args.contract, args.enable) {
+      Ok(_) => {
+        let message_ident = TMessageIdentifier::new("enable_debug_contract", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = IPCChainTesterEnableDebugContractResult {  };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("enable_debug_contract", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("enable_debug_contract", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_is_debug_contract_enabled<H: IPCChainTesterSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = IPCChainTesterIsDebugContractEnabledArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_is_debug_contract_enabled(args.id, args.contract) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("is_debug_contract_enabled", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = IPCChainTesterIsDebugContractEnabledResult { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("is_debug_contract_enabled", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("is_debug_contract_enabled", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
           },
         }
       },
@@ -1401,6 +1539,12 @@ impl <H: IPCChainTesterSyncHandler> TProcessor for IPCChainTesterSyncProcessor<H
       "init_apply_request" => {
         self.process_init_apply_request(message_ident.sequence_number, i_prot, o_prot)
       },
+      "enable_debug_contract" => {
+        self.process_enable_debug_contract(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "is_debug_contract_enabled" => {
+        self.process_is_debug_contract_enabled(message_ident.sequence_number, i_prot, o_prot)
+      },
       "pack_abi" => {
         self.process_pack_abi(message_ident.sequence_number, i_prot, o_prot)
       },
@@ -1509,6 +1653,237 @@ impl IPCChainTesterInitApplyRequestArgs {
     o_prot.write_struct_begin(&struct_ident)?;
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
+  }
+}
+
+//
+// IPCChainTesterEnableDebugContractArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct IPCChainTesterEnableDebugContractArgs {
+  id: i32,
+  contract: String,
+  enable: bool,
+}
+
+impl IPCChainTesterEnableDebugContractArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<IPCChainTesterEnableDebugContractArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<i32> = None;
+    let mut f_2: Option<String> = None;
+    let mut f_3: Option<bool> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_i32()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = i_prot.read_string()?;
+          f_2 = Some(val);
+        },
+        3 => {
+          let val = i_prot.read_bool()?;
+          f_3 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("IPCChainTesterEnableDebugContractArgs.id", &f_1)?;
+    verify_required_field_exists("IPCChainTesterEnableDebugContractArgs.contract", &f_2)?;
+    verify_required_field_exists("IPCChainTesterEnableDebugContractArgs.enable", &f_3)?;
+    let ret = IPCChainTesterEnableDebugContractArgs {
+      id: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      contract: f_2.expect("auto-generated code should have checked for presence of required fields"),
+      enable: f_3.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("enable_debug_contract_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("id", TType::I32, 1))?;
+    o_prot.write_i32(self.id)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("contract", TType::String, 2))?;
+    o_prot.write_string(&self.contract)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("enable", TType::Bool, 3))?;
+    o_prot.write_bool(self.enable)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// IPCChainTesterEnableDebugContractResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct IPCChainTesterEnableDebugContractResult {
+}
+
+impl IPCChainTesterEnableDebugContractResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<IPCChainTesterEnableDebugContractResult> {
+    i_prot.read_struct_begin()?;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = IPCChainTesterEnableDebugContractResult {};
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("IPCChainTesterEnableDebugContractResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<()> {
+    Ok(())
+  }
+}
+
+//
+// IPCChainTesterIsDebugContractEnabledArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct IPCChainTesterIsDebugContractEnabledArgs {
+  id: i32,
+  contract: String,
+}
+
+impl IPCChainTesterIsDebugContractEnabledArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<IPCChainTesterIsDebugContractEnabledArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<i32> = None;
+    let mut f_2: Option<String> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_i32()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = i_prot.read_string()?;
+          f_2 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("IPCChainTesterIsDebugContractEnabledArgs.id", &f_1)?;
+    verify_required_field_exists("IPCChainTesterIsDebugContractEnabledArgs.contract", &f_2)?;
+    let ret = IPCChainTesterIsDebugContractEnabledArgs {
+      id: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      contract: f_2.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("is_debug_contract_enabled_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("id", TType::I32, 1))?;
+    o_prot.write_i32(self.id)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("contract", TType::String, 2))?;
+    o_prot.write_string(&self.contract)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// IPCChainTesterIsDebugContractEnabledResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct IPCChainTesterIsDebugContractEnabledResult {
+  result_value: Option<bool>,
+}
+
+impl IPCChainTesterIsDebugContractEnabledResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<IPCChainTesterIsDebugContractEnabledResult> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<bool> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = i_prot.read_bool()?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = IPCChainTesterIsDebugContractEnabledResult {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("IPCChainTesterIsDebugContractEnabledResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::Bool, 0))?;
+      o_prot.write_bool(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<bool> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for IPCChainTesterIsDebugContractEnabled"
+          )
+        )
+      )
+    }
   }
 }
 

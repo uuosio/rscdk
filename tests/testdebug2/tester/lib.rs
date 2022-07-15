@@ -36,7 +36,8 @@ mod tests {
         println!("defined in file: {exe:?}");
 
         let mut tester = ChainTester::new();
-        tester.enable_debug(true);
+        tester.enable_debug_contract("hello", true);
+        tester.enable_debug_contract("bob", true);
 
         deploy_contract(&mut tester);
 

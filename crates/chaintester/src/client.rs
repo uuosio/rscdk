@@ -297,6 +297,14 @@ impl ChainTester {
         self.client().produce_block(self.id).unwrap()
     }
 
+    pub fn enable_debug_contract(&mut self, contract: &str, enable: bool) -> thrift::Result<()> {
+        self.client().enable_debug_contract(self.id, contract.into(), enable)
+    }
+
+    pub fn is_debug_contract_enabled(&mut self, contract: &str) -> thrift::Result<bool> {
+        self.client().is_debug_contract_enabled(self.id, contract.into())
+    }
+
     pub fn push_action(&mut self, account: &str, action: &str, arguments: ActionArguments, permissions: &str) -> Result<TransactionReturn> {
         let _account = String::from(account);
         let _action = String::from(action);

@@ -31,7 +31,10 @@ members = [
     "testvariant",
     "testnotify/receiver",
     "testnotify/sender",
-    "testdebug"
+    "testdebug",
+    "testdebug2/sayhello",
+    "testdebug2/saygoodbye",
+    "testdebug2/tester",
 ]
 
 exclude = []
