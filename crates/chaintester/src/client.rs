@@ -1,6 +1,7 @@
 use std::fmt;
+use std::panic;
 
-use std::{fs, path::Path};
+use std::{fs};
 use std::{thread, time::Duration};
 use std::ops::{Deref, DerefMut};
 
@@ -40,9 +41,6 @@ use std::sync::{
     MutexGuard
 };
 
-extern "Rust" {
-	fn native_apply(receiver: u64, first_receiver: u64, action: u64);
-}
 
 pub struct TransactionError {
     json: Option<Map<String, Value>>,
@@ -103,38 +101,12 @@ pub struct ChainTesterClient {
     client: Option<IPCChainTesterSyncClient<ClientInputProtocol, ClientOutputProtocol>>,
 }
 
-pub struct ApplyRequestServer {
-    server: IPCServer<ApplyRequestSyncProcessor<ApplyRequestHandler>, TBufferedReadTransportFactory, TBinaryInputProtocolFactory, TBufferedWriteTransportFactory, TBinaryOutputProtocolFactory>,
-}
-
 lazy_static! {
     static ref VM_API_CLIENT: Mutex<VMAPIClient> = Mutex::new(VMAPIClient::new());
 }
 
 lazy_static! {
     static ref CHAIN_TESTER_CLIENT: Mutex<ChainTesterClient> = Mutex::new(ChainTesterClient::new());
-}
-
-lazy_static! {
-    static ref APPLY_REQUEST_SERVER: Mutex<ApplyRequestServer> = Mutex::new(ApplyRequestServer::new());
-}
-
-pub struct EndApply {
-    value: bool
-}
-
-impl EndApply {
-    pub fn set_value(&mut self, value: bool) {
-        self.value = value;
-    }
-
-    pub fn get_value(&mut self) -> bool {
-        return self.value;
-    }
-}
-
-lazy_static! {
-    pub static ref END_APPLY: Mutex<EndApply> = Mutex::new(EndApply{value: false});
 }
 
 pub fn get_vm_api_client() -> MutexGuard<'static, VMAPIClient> {
@@ -148,15 +120,6 @@ pub fn get_vm_api_client() -> MutexGuard<'static, VMAPIClient> {
 pub fn close_vm_api_client() {
     let mut ret = VM_API_CLIENT.lock().unwrap();
     ret.close();
-}
-
-pub fn get_apply_request_server() -> MutexGuard<'static, ApplyRequestServer> {
-    let mut ret = APPLY_REQUEST_SERVER.lock().unwrap();
-    if ret.server.cnn.is_none() {
-        println!("++++++++++++apply_request server: waiting for connection");
-        ret.server.accept("127.0.0.1:9091").unwrap();
-    }
-    return ret;
 }
 
 impl VMAPIClient {
@@ -235,7 +198,7 @@ impl ChainTesterClient {
         let _ = get_vm_api_client(); //init vm api client
 
         client.init_apply_request().unwrap();
-        let _= get_apply_request_server(); //init apply request server
+        let _= crate::server::get_apply_request_server(); //init apply request server
 
         self.client = Some(client);
 
@@ -319,17 +282,24 @@ impl ChainTester {
             }
         }
         let _permissions = String::from(permissions);
-        let ret = self.client().push_action(self.id, _account, _action, _arguments, _permissions).unwrap();
-
-        let tx: Value = serde_json::from_slice(&ret).map_err(|err| {
-            TransactionError{json: None, error_string: Some(err.to_string())}
-        })?;
-
-        let obj: &Map<String, Value> = tx.as_object().unwrap();
-        if obj.get("except").is_some() {
-            Err(TransactionError{json: Some(obj.clone()), error_string: None})
-        } else {
-            Ok(TransactionReturn{value: obj.clone()})
+        match self.client().push_action(self.id, _account, _action, _arguments, _permissions) {
+            Ok(ret) => {
+                let tx: Value = serde_json::from_slice(&ret).map_err(|err| {
+                    TransactionError{json: None, error_string: Some(err.to_string())}
+                })?;
+        
+                let obj: &Map<String, Value> = tx.as_object().unwrap();
+                if obj.get("except").is_some() {
+                    Err(TransactionError{json: Some(obj.clone()), error_string: None})
+                } else {
+                    Ok(TransactionReturn{value: obj.clone()})
+                }
+            }
+            Err(err) => {
+                Err(TransactionError{
+                    json: None, error_string: Some(format!("{:?}", err)),
+                })
+            }
         }
     }
 
@@ -412,16 +382,24 @@ impl ChainTester {
     }
 
     pub fn push_actions(&mut self, actions: Vec<Box<Action>>) -> Result<Map<String, Value>> {
-        let ret = self.client().push_actions(self.id, actions).unwrap();
-        let tx: Value = serde_json::from_slice(&ret).map_err(|err| {
-            TransactionError{json: None, error_string: Some(err.to_string())}
-        })?;
-
-        let obj: &Map<String, Value> = tx.as_object().unwrap();
-        if obj.get("except").is_some() {
-            Err(TransactionError{json: Some(obj.clone()), error_string: None})
-        } else {
-            Ok(obj.clone())
+        match self.client().push_actions(self.id, actions) {
+            Ok(ret) => {
+                let tx: Value = serde_json::from_slice(&ret).map_err(|err| {
+                    TransactionError{json: None, error_string: Some(err.to_string())}
+                })?;
+        
+                let obj: &Map<String, Value> = tx.as_object().unwrap();
+                if obj.get("except").is_some() {
+                    Err(TransactionError{json: Some(obj.clone()), error_string: None})
+                } else {
+                    Ok(obj.clone())
+                }
+            }
+            Err(err) => {
+                Err(TransactionError{
+                    json: None, error_string: Some(format!("{:?}", err)),
+                })
+            }
         }
     }
 
@@ -495,52 +473,6 @@ pub fn new_vm_api_client(
     Ok(ApplySyncClient::new(i_prot, o_prot))
 }
 
-
-impl ApplyRequestServer {
-    pub fn new() -> Self {
-        let listen_address = format!("127.0.0.1:{}", "9092");
-
-        // println!("binding to {}", listen_address);
-    
-        let i_tran_fact = TBufferedReadTransportFactory::new();
-        let i_prot_fact = TBinaryInputProtocolFactory::new();
-    
-        let o_tran_fact = TBufferedWriteTransportFactory::new();
-        let o_prot_fact = TBinaryOutputProtocolFactory::new();
-    
-        // demux incoming messages
-        let processor = ApplyRequestSyncProcessor::new(ApplyRequestHandler {
-            ..Default::default()
-        });
-    
-        // create the server and start listening
-        Self {
-            server: IPCServer::new(
-                i_tran_fact,
-                i_prot_fact,
-                o_tran_fact,
-                o_prot_fact,
-                processor,
-                10,
-        )}
-    }
-}
-
-pub fn run_apply_request_server(port: u16)  -> thrift::Result<()> {
-    get_apply_request_server().server.handle_apply_request()
-}
-
-/// Handles incoming ChainTester service calls.
-struct ApplyRequestHandler {
-}
-
-impl Default for ApplyRequestHandler {
-    fn default() -> ApplyRequestHandler {
-        ApplyRequestHandler {
-        }
-    }
-}
-
 ///
 pub fn n2s(value: u64) -> String {
 	let charmap = ".12345abcdefghijklmnopqrstuvwxyz".as_bytes();
@@ -577,21 +509,3 @@ pub fn n2s(value: u64) -> String {
     return r;
 }
 
-impl ApplyRequestSyncHandler for ApplyRequestHandler {
-    fn handle_apply_request(&self, receiver: Uint64, first_receiver: Uint64, action: Uint64) -> thrift::Result<i32> {
-        let _receiver = receiver.into();
-        let _first_receiver = first_receiver.into();
-        let _action = action.into();
-        // println!("\x1b[92m[({},{})->{}]: CONSOLE OUTPUT BEGIN =====================\x1b[0m", n2s(_receiver), n2s(_action), n2s(_first_receiver));
-        unsafe {
-            native_apply(_receiver, _first_receiver, _action);
-        }
-        // println!("\x1b[92m[({},{})->{}]: CONSOLE OUTPUT END   =====================\x1b[0m", n2s(_receiver), n2s(_action), n2s(_first_receiver));
-        Ok(1)
-    }
-
-    fn handle_apply_end(&self) -> thrift::Result<i32> {
-        END_APPLY.lock().unwrap().set_value(true);
-        Ok(1)
-    }
-}
