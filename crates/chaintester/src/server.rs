@@ -2,7 +2,7 @@ use log::warn;
 
 use std::net::{TcpListener, TcpStream, ToSocketAddrs};
 use std::sync::Arc;
-use threadpool::ThreadPool;
+use std::panic;
 
 use thrift::protocol::{
     TInputProtocol, TInputProtocolFactory, TOutputProtocol, TOutputProtocolFactory,
@@ -14,7 +14,14 @@ use thrift::server::{
 };
 use thrift::TransportErrorKind;
 
+use crate::interfaces::{Uint64};
+use crate::interfaces::TApplySyncClient;
+
 use crate::client;
+
+extern "Rust" {
+	fn native_apply(receiver: u64, first_receiver: u64, action: u64);
+}
 
 pub struct IPCServer<PRC, RTF, IPF, WTF, OPF>
 where
@@ -189,8 +196,8 @@ fn handle_incoming_connection<PRC>(
 where
     PRC: TProcessor,
 {
-    let mut i_prot = i_prot;
-    let mut o_prot = o_prot;
+    let i_prot = i_prot;
+    let o_prot = o_prot;
     loop {
         let ret = processor.process(&mut *i_prot, &mut *o_prot);
         match ret {
@@ -217,11 +224,11 @@ where
     PRC: TProcessor,
 {
     cnn.end_loop = false;
-    let mut i_prot = &mut cnn.i_prot;
-    let mut o_prot = &mut cnn.o_prot;
+    let i_prot = &mut cnn.i_prot;
+    let o_prot = &mut cnn.o_prot;
     loop {
-        if client::END_APPLY.lock().unwrap().get_value() {
-            client::END_APPLY.lock().unwrap().set_value(false);
+        if END_APPLY.lock().unwrap().get_value() {
+            END_APPLY.lock().unwrap().set_value(false);
             return Ok(())
         }
         let ret = cnn.processor.clone().process(&mut *i_prot, &mut *o_prot);
@@ -241,4 +248,135 @@ where
         }
         // return ret;
     }
+}
+
+use thrift::protocol::{
+    TBinaryInputProtocolFactory,
+    TBinaryOutputProtocolFactory,
+};
+
+
+use thrift::transport::{
+    TBufferedReadTransportFactory, TBufferedWriteTransportFactory,
+};
+
+use crate::interfaces::{ApplyRequestSyncHandler, ApplyRequestSyncProcessor};
+
+use lazy_static::lazy_static; // 1.4.0
+
+use std::sync::{
+    Mutex,
+    MutexGuard
+};
+
+
+pub struct EndApply {
+    value: bool
+}
+
+impl EndApply {
+    pub fn set_value(&mut self, value: bool) {
+        self.value = value;
+    }
+
+    pub fn get_value(&mut self) -> bool {
+        return self.value;
+    }
+}
+
+lazy_static! {
+    pub static ref END_APPLY: Mutex<EndApply> = Mutex::new(EndApply{value: false});
+}
+
+lazy_static! {
+    static ref APPLY_REQUEST_SERVER: Mutex<ApplyRequestServer> = Mutex::new(ApplyRequestServer::new());
+}
+
+
+/// Handles incoming ChainTester service calls.
+struct ApplyRequestHandler {
+}
+
+impl Default for ApplyRequestHandler {
+    fn default() -> ApplyRequestHandler {
+        ApplyRequestHandler {
+        }
+    }
+}
+
+impl ApplyRequestSyncHandler for ApplyRequestHandler {
+    fn handle_apply_request(&self, receiver: Uint64, first_receiver: Uint64, action: Uint64) -> thrift::Result<i32> {
+        let _receiver = receiver.into();
+        let _first_receiver = first_receiver.into();
+        let _action = action.into();
+
+        let result = panic::catch_unwind(|| {
+            unsafe {
+                native_apply(_receiver, _first_receiver, _action);
+            }    
+        });
+        match result {
+            Ok(()) => {
+
+            }
+            Err(err) => {
+                println!("{:?}", err);
+                // crate::client::get_vm_api_client().end_apply().unwrap();
+                // panic!("{:?}", err);
+            }
+        }
+        println!("native_apply done!");
+        // println!("\x1b[92m[({},{})->{}]: CONSOLE OUTPUT END   =====================\x1b[0m", n2s(_receiver), n2s(_action), n2s(_first_receiver));
+        Ok(1)
+    }
+
+    fn handle_apply_end(&self) -> thrift::Result<i32> {
+        END_APPLY.lock().unwrap().set_value(true);
+        Ok(1)
+    }
+}
+
+pub struct ApplyRequestServer {
+    server: IPCServer<ApplyRequestSyncProcessor<ApplyRequestHandler>, TBufferedReadTransportFactory, TBinaryInputProtocolFactory, TBufferedWriteTransportFactory, TBinaryOutputProtocolFactory>,
+}
+
+impl ApplyRequestServer {
+    pub fn new() -> Self {
+        // println!("binding to {}", listen_address);
+    
+        let i_tran_fact = TBufferedReadTransportFactory::new();
+        let i_prot_fact = TBinaryInputProtocolFactory::new();
+    
+        let o_tran_fact = TBufferedWriteTransportFactory::new();
+        let o_prot_fact = TBinaryOutputProtocolFactory::new();
+    
+        // demux incoming messages
+        let processor = ApplyRequestSyncProcessor::new(ApplyRequestHandler {
+            ..Default::default()
+        });
+    
+        // create the server and start listening
+        Self {
+            server: IPCServer::new(
+                i_tran_fact,
+                i_prot_fact,
+                o_tran_fact,
+                o_prot_fact,
+                processor,
+                10,
+        )}
+    }
+}
+
+pub fn run_apply_request_server(_port: u16)  -> thrift::Result<()> {
+    get_apply_request_server().server.handle_apply_request()
+}
+
+pub fn get_apply_request_server() -> MutexGuard<'static, ApplyRequestServer> {
+    let mut ret = APPLY_REQUEST_SERVER.lock().unwrap();
+    if ret.server.cnn.is_none() {
+        println!("++++++++++++apply_request server: waiting for connection");
+        ret.server.accept("127.0.0.1:9091").unwrap();
+    }
+    return ret;
 }
