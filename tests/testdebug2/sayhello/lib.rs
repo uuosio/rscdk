@@ -69,6 +69,7 @@ pub mod sayhello {
 
         #[chain(action="sayhello")]
         pub fn say_hello(&self, name: String) {
+            // check(false, "oops!");
             eosio_println!("++++hello:", name);
             let perms: Vec<PermissionLevel> = vec![PermissionLevel{actor: name!("hello"), permission: ACTIVE}];
             let say_goodbye = SayGoodbye{name: name.clone()};
@@ -84,6 +85,9 @@ mod tests {
     use eosio_chain::ChainTester;
     use eosio_chain::serializer::Packer;
     use crate::sayhello;
+    use std::panic;
+    use std::fs;
+    use std::path::Path;
 
     #[no_mangle]
     fn native_apply(receiver: u64, first_receiver: u64, action: u64) {
@@ -91,7 +95,15 @@ mod tests {
     }
 
     fn deploy_contract(tester: &mut ChainTester) {
-        tester.deploy_contract("hello", "/Users/newworld/dev/github/rscdk/tests/testdebug/../target/testdebug/testdebug.wasm", "/Users/newworld/dev/github/rscdk/tests/testdebug/../target/testdebug/testdebug.abi").unwrap();
+        let mut cur_dir: &str = &std::env::current_dir().unwrap().into_os_string().into_string().unwrap();
+        // "/Users/newworld/dev/github/rscdk/tests"
+        let mut cur_dir2 = format!("{cur_dir}/testdebug2/sayhello");
+        if !Path::new(&cur_dir2).exists() {
+            cur_dir2 = format!("{cur_dir}");
+        }
+        let ref wasm_file = format!("{cur_dir2}/target/sayhello.wasm");
+        let ref abi_file = format!("{cur_dir2}/target/sayhello.abi");
+        tester.deploy_contract("hello", wasm_file, abi_file).unwrap();
     }
 
     #[test]
@@ -100,7 +112,7 @@ mod tests {
         println!("defined in file: {exe:?}");
     
         let mut tester = ChainTester::new();
-        tester.enable_debug(true);
+        tester.enable_debug_contract("hello", true);
 
         deploy_contract(&mut tester);
         let updateauth_args = r#"{
@@ -130,7 +142,8 @@ mod tests {
         tester.produce_block();
     
         let args = sayhello::sayhello{name: "rust".into()};
-        tester.push_action("hello", "sayhello", args.pack().into(), permissions).unwrap();
+        let r = tester.push_action("hello", "sayhello", args.pack().into(), permissions).unwrap();
+        println!("{:?}", r);
         tester.produce_block();
     }
 }

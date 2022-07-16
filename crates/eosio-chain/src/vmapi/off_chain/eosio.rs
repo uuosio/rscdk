@@ -53,9 +53,7 @@ pub fn get_account_creation_time( _account: Name ) -> TimePoint {
 
 ///
 pub fn read_action_data() -> Vec<u8> {
-	let size = get_vm_api_client().action_data_size().unwrap();
-	let ret = get_vm_api_client().read_action_data(size).unwrap();
-	return ret.buffer.unwrap()
+	return get_vm_api_client().read_action_data().unwrap();
 }
 
 ///
@@ -117,16 +115,22 @@ pub fn eosio_assert(test: bool, msg: &str) {
 
 ///
 pub fn eosio_assert_message(test: u32, msg: *const u8, msg_len: u32) {
-    let mut dst = unsafe {
+	if test >= 1 {
+		return;
+	}
+
+	let dst = unsafe {
         slice::from_raw_parts(msg, msg_len as usize)
     };
 
-	let _test = match test {
-		0 => false,
-		_ => true,
-	};
+	match get_vm_api_client().eosio_assert_message(false, dst.into()) {
+		Ok(()) => {
 
-	get_vm_api_client().eosio_assert_message(_test, dst.into()).unwrap()
+		},
+		Err(err) => {
+			panic!("{:?}", err);
+		}
+	}
 }
 
 ///
@@ -141,11 +145,10 @@ pub fn eosio_assert_code(test: u32, code: u64) {
 
 ///
 pub fn check(test: bool, msg: &str) {
-	let _test = match test {
-		false => 0,
-		true => 1,
-	};	
-	eosio_assert_message(_test, msg.as_ptr(), msg.len() as u32);
+	if test {
+		return
+	}
+	eosio_assert_message(0, msg.as_ptr(), msg.len() as u32);
 }
 
 ///
@@ -214,48 +217,54 @@ pub fn get_blockchain_parameters_packed() -> Vec<u8> {
 pub fn preactivate_feature(_feature_digest:  &Checksum256) {
 }
 
-//TODO:
 ///
-pub fn send_deferred(_sender_id: &Uint128, _payer: Name, _serialized_transaction: &[u8], _replace_existing: u32) {
+pub fn send_deferred(sender_id: &Uint128, payer: Name, serialized_transaction: &[u8], replace_existing: u32) {
+    let _sender_id = unsafe {
+        slice::from_raw_parts(sender_id as *const Uint128 as *const u8, 16)
+    };
+
+	get_vm_api_client().send_deferred(_sender_id.into(), payer.n.into(), serialized_transaction.into(), replace_existing as i32).unwrap()
 }
 
 ///
-pub fn cancel_deferred(_sender_id: &Uint128) -> i32 {
-	return 0;
+pub fn cancel_deferred(sender_id: &Uint128) -> i32 {
+    let _sender_id = unsafe {
+        slice::from_raw_parts(sender_id as *const Uint128 as *const u8, 16)
+    };
+	get_vm_api_client().cancel_deferred(_sender_id.into()).unwrap()
 }
 
-//TODO:
 ///
 pub fn read_transaction() -> Vec<u8> {
-	return Vec::new();
+	get_vm_api_client().read_transaction().unwrap()
 }
 
 ///
 pub fn transaction_size() -> usize {
-	return 0;
+	get_vm_api_client().transaction_size().unwrap() as usize
 }
 
 ///
 pub fn tapos_block_num() -> i32 {
-	return 0;
+	get_vm_api_client().tapos_block_num().unwrap()
 }
 
 ///
 pub fn tapos_block_prefix() -> i32 {
-	return 0;
+	get_vm_api_client().tapos_block_prefix().unwrap()
 }
 
 ///
 pub fn expiration() -> u32 {
-	return 0;
+	get_vm_api_client().expiration().unwrap() as u32
 }
 
 ///
-pub fn get_action(_type: u32, _index: u32) -> Vec<u8> {
-	return Vec::new();
+pub fn get_action(tp: u32, index: u32) -> Vec<u8> {
+	get_vm_api_client().get_action(tp as i32, index as i32).unwrap()
 }
 
 ///
-pub fn get_context_free_data(_index: u32) -> Vec<u8> {
-	return Vec::new();
+pub fn get_context_free_data(index: u32) -> Vec<u8> {
+	get_vm_api_client().get_context_free_data(index as i32).unwrap()
 }
