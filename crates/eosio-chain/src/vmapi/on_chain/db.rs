@@ -153,9 +153,15 @@ pub fn db_remove_i64(iterator: i32){
 }
 
 ///
-pub fn db_get_i64(iterator: i32, data: *mut u8, len: u32) -> i32{
+pub fn db_get_i64(iterator: i32) -> Vec<u8> {
     unsafe {
-        return intrinsics::db_get_i64(iterator, data, len);
+        let size = intrinsics::db_get_i64(iterator, 0 as *mut u8, 0);
+        if size == 0 {
+            return Vec::new();
+        }
+        let data = vec![0u8, size];
+        intrinsics::db_get_i64(iterator, data.as_ptr(), size);
+        return data
     }
 }
 

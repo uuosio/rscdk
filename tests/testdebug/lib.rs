@@ -439,6 +439,11 @@ mod tests {
     use eosio_chain::serializer::Packer;
     use crate::hello::sayhello;
 
+    #[no_mangle]
+    fn native_apply(receiver: u64, first_receiver: u64, action: u64) {
+        crate::hello::native_apply(receiver, first_receiver, action);
+    }
+
     fn deploy_contract(tester: &mut ChainTester) {
         tester.deploy_contract("hello", "/Users/newworld/dev/github/rscdk/tests/testdebug/../target/testdebug/testdebug.wasm", "/Users/newworld/dev/github/rscdk/tests/testdebug/../target/testdebug/testdebug.abi").unwrap();
     }
@@ -449,7 +454,7 @@ mod tests {
         println!("defined in file: {exe:?}");
     
         let mut tester = ChainTester::new();
-        tester.enable_debug(true);
+        tester.enable_debug_contract("hello", true);
 
         deploy_contract(&mut tester);
         let updateauth_args = r#"{
