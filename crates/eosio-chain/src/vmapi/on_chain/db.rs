@@ -1,3 +1,8 @@
+use crate::{
+    vec,
+    vec::Vec,
+};
+
 use crate::structs::*;
 
 mod intrinsics {
@@ -159,8 +164,8 @@ pub fn db_get_i64(iterator: i32) -> Vec<u8> {
         if size == 0 {
             return Vec::new();
         }
-        let data = vec![0u8, size];
-        intrinsics::db_get_i64(iterator, data.as_ptr(), size);
+        let mut data = vec![0u8; size as usize];
+        intrinsics::db_get_i64(iterator, data.as_mut_ptr(), size as u32);
         return data
     }
 }
