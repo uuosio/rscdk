@@ -368,7 +368,7 @@ impl ApplyRequestServer {
     }
 }
 
-pub fn run_apply_request_server(_port: u16)  -> thrift::Result<()> {
+pub fn run_apply_request_server()  -> thrift::Result<()> {
     get_apply_request_server().server.handle_apply_request()
 }
 
@@ -376,7 +376,10 @@ pub fn get_apply_request_server() -> MutexGuard<'static, ApplyRequestServer> {
     let mut ret = APPLY_REQUEST_SERVER.lock().unwrap();
     if ret.server.cnn.is_none() {
         println!("++++++++++++apply_request server: waiting for connection");
-        ret.server.accept("127.0.0.1:9091").unwrap();
+        let host = crate::get_debugger_config().apply_request_server_address.clone();
+        let port = crate::get_debugger_config().apply_request_server_port;
+        let address = format!("{}:{}", host, port);
+        ret.server.accept(address).unwrap();
     }
     return ret;
 }

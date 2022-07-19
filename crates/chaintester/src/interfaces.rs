@@ -1145,7 +1145,7 @@ impl <C: TThriftClient + TIPCChainTesterSyncClientMarker> TIPCChainTesterSyncCli
         self.o_prot_mut().flush()
       }
     )?;
-    server::run_apply_request_server(9091)?;
+    server::run_apply_request_server()?;
     {
       let message_ident = self.i_prot_mut().read_message_begin()?;
       verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
@@ -1173,7 +1173,7 @@ impl <C: TThriftClient + TIPCChainTesterSyncClientMarker> TIPCChainTesterSyncCli
         self.o_prot_mut().flush()
       }
     )?;
-    server::run_apply_request_server(9091)?;
+    server::run_apply_request_server()?;
     {
       let message_ident = self.i_prot_mut().read_message_begin()?;
       verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;

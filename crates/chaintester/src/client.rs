@@ -129,7 +129,9 @@ impl VMAPIClient {
 
     pub fn init(&mut self) {
         if self.vm_api_client.is_none() {
-            let client = new_vm_api_client("127.0.0.1", 9092).unwrap();
+            let host = crate::get_debugger_config().vm_api_server_address.clone();
+            let port = crate::get_debugger_config().vm_api_server_port;
+            let client = new_vm_api_client(&host, port).unwrap();
             self.vm_api_client = Some(client);
         }
     }
@@ -172,8 +174,8 @@ impl ChainTesterClient {
             return;
         }
 
-        let host = "127.0.0.1";
-        let port = 9090;
+        let host = crate::get_debugger_config().debugger_server_address.clone();
+        let port = crate::get_debugger_config().debugger_server_port;
 
         let mut c = TTcpChannel::new();
     
@@ -445,17 +447,22 @@ pub fn new_vm_api_client(
     //wait for vm api server to start
     thread::sleep(Duration::from_micros(10));
     let remote_address = format!("{}:{}", host, port);
-    for _ in 0..10 {
+    for i in 0..=10 {
         match c.open(&remote_address) {
             Ok(()) => {
                 break;
             }
             Err(err) => {
-                println!("+++++++vm_api_client error: {}", err);
-                thread::sleep(Duration::from_micros(200));
+                if i == 10 {
+                    panic!("{}", err)
+                } else {
+                    println!("+++++++vm_api_client error: {}", err);
+                    thread::sleep(Duration::from_micros(200));    
+                }
             }
         }
     }
+    
     println!("+++++++++connect to vm_api server successfull!");
 
     // clone the TCP channel into two halves, one which
