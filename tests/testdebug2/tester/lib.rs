@@ -3,6 +3,8 @@
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
     use sayhello;
     use saygoodbye;
     use eosio_chain::{
@@ -24,20 +26,25 @@ mod tests {
     }
 
     fn deploy_contract(tester: &mut ChainTester) {
-        let cur_dir: &str = &std::env::current_dir().unwrap().into_os_string().into_string().unwrap();
-        println!("{cur_dir}");
-        tester.deploy_contract("hello", &format!("{cur_dir}/testdebug2/sayhello/target/sayhello.wasm"), &format!("{cur_dir}/testdebug2/sayhello/target/sayhello.abi")).unwrap();
-        tester.deploy_contract("bob",&format!("{cur_dir}/testdebug2/saygoodbye/target/saygoodbye.wasm"), &format!("{cur_dir}/testdebug2/saygoodbye/target/saygoodbye.abi")).unwrap();
+        let mut cur_dir = std::env::current_dir().unwrap().into_os_string().into_string().unwrap();
+        let cur_dir2 = format!("{cur_dir}/testdebug2");
+        if Path::new(&cur_dir2).exists() {
+            //in debugging
+            cur_dir = cur_dir2;
+        } else {
+            //start with cargo test in tester directory
+            cur_dir = format!("{cur_dir}/..");
+        }
+        println!("{cur_dir}/sayhello/target/sayhello.wasm");
+        tester.deploy_contract("hello", &format!("{cur_dir}/sayhello/target/sayhello.wasm"), &format!("{cur_dir}/sayhello/target/sayhello.abi")).unwrap();
+        tester.deploy_contract("bob",&format!("{cur_dir}/saygoodbye/target/saygoodbye.wasm"), &format!("{cur_dir}/saygoodbye/target/saygoodbye.abi")).unwrap();
     }
 
     #[test]
     fn test_debug() {
-        let exe = std::env::current_exe();
-        println!("defined in file: {exe:?}");
-
         let mut tester = ChainTester::new();
-        tester.enable_debug_contract("hello", true);
-        tester.enable_debug_contract("bob", true);
+        tester.enable_debug_contract("hello", true).unwrap();
+        tester.enable_debug_contract("bob", true).unwrap();
 
         deploy_contract(&mut tester);
 

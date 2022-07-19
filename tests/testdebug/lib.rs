@@ -449,7 +449,7 @@ mod tests {
     }
 
     #[test]
-    fn test_prints() {
+    fn test_sayhello() {
         let exe = std::env::current_exe();
         println!("defined in file: {exe:?}");
     
