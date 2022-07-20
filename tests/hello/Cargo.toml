@@ -5,7 +5,7 @@ authors = [""]
 edition = "2021"
 
 [dependencies]
-eosio-chain = { version = "0.1.0", path = "../../crates/eosio-chain", default-features = false }
+eosio-chain = { version = "0.2", path = "../../crates/eosio-chain", default-features = false }
 
 [lib]
 name = "hello"
