@@ -1648,36 +1648,13 @@ impl TIPCChainTesterProcessFunctions {
       Ok(handler_return) => {
         let message_ident = TMessageIdentifier::new("push_actions", TMessageType::Reply, incoming_sequence_number);
         o_prot.write_message_begin(&message_ident)?;
-        let ret = IPCChainTesterPushActionsResult { result_value: Some(handler_return), exc: None };
+        let ret = IPCChainTesterPushActionsResult { result_value: Some(handler_return) };
         ret.write_to_out_protocol(o_prot)?;
         o_prot.write_message_end()?;
         o_prot.flush()
       },
       Err(e) => {
         match e {
-          thrift::Error::User(usr_err) => {
-            if usr_err.downcast_ref::<TransactionException>().is_some() {
-              let err = usr_err.downcast::<TransactionException>().expect("downcast already checked");
-              let ret_err = IPCChainTesterPushActionsResult{ result_value: None, exc: Some(*err) };
-              let message_ident = TMessageIdentifier::new("push_actions", TMessageType::Reply, incoming_sequence_number);
-              o_prot.write_message_begin(&message_ident)?;
-              ret_err.write_to_out_protocol(o_prot)?;
-              o_prot.write_message_end()?;
-              o_prot.flush()
-            } else {
-              let ret_err = {
-                ApplicationError::new(
-                  ApplicationErrorKind::Unknown,
-                  usr_err.to_string()
-                )
-              };
-              let message_ident = TMessageIdentifier::new("push_actions", TMessageType::Exception, incoming_sequence_number);
-              o_prot.write_message_begin(&message_ident)?;
-              thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
-              o_prot.write_message_end()?;
-              o_prot.flush()
-            }
-          },
           thrift::Error::Application(app_err) => {
             let message_ident = TMessageIdentifier::new("push_actions", TMessageType::Exception, incoming_sequence_number);
             o_prot.write_message_begin(&message_ident)?;
@@ -2989,14 +2966,12 @@ impl IPCChainTesterPushActionsArgs {
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 struct IPCChainTesterPushActionsResult {
   result_value: Option<Vec<u8>>,
-  exc: Option<TransactionException>,
 }
 
 impl IPCChainTesterPushActionsResult {
   fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<IPCChainTesterPushActionsResult> {
     i_prot.read_struct_begin()?;
     let mut f_0: Option<Vec<u8>> = None;
-    let mut f_1: Option<TransactionException> = None;
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -3008,10 +2983,6 @@ impl IPCChainTesterPushActionsResult {
           let val = i_prot.read_bytes()?;
           f_0 = Some(val);
         },
-        1 => {
-          let val = TransactionException::read_from_in_protocol(i_prot)?;
-          f_1 = Some(val);
-        },
         _ => {
           i_prot.skip(field_ident.field_type)?;
         },
@@ -3021,7 +2992,6 @@ impl IPCChainTesterPushActionsResult {
     i_prot.read_struct_end()?;
     let ret = IPCChainTesterPushActionsResult {
       result_value: f_0,
-      exc: f_1,
     };
     Ok(ret)
   }
@@ -3033,18 +3003,11 @@ impl IPCChainTesterPushActionsResult {
       o_prot.write_bytes(fld_var)?;
       o_prot.write_field_end()?
     }
-    if let Some(ref fld_var) = self.exc {
-      o_prot.write_field_begin(&TFieldIdentifier::new("exc", TType::Struct, 1))?;
-      fld_var.write_to_out_protocol(o_prot)?;
-      o_prot.write_field_end()?
-    }
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
   }
   fn ok_or(self) -> thrift::Result<Vec<u8>> {
-    if self.exc.is_some() {
-      Err(thrift::Error::User(Box::new(self.exc.unwrap())))
-    } else if self.result_value.is_some() {
+    if self.result_value.is_some() {
       Ok(self.result_value.unwrap())
     } else {
       Err(
