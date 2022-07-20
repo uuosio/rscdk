@@ -19,21 +19,6 @@ type ClientOutputProtocol = TBinaryOutputProtocol<TBufferedWriteTransport<WriteH
 
 
 use std::convert::{From, Into};
-use std::default::Default;
-
-use thrift::protocol::{
-    TBinaryInputProtocolFactory,
-    TBinaryOutputProtocolFactory,
-};
-
-use crate::server::IPCServer;
-
-use thrift::transport::{
-    TBufferedReadTransportFactory, TBufferedWriteTransportFactory,
-};
-
-use crate::interfaces::{ApplyRequestSyncHandler, ApplyRequestSyncProcessor};
-use crate::interfaces::{Uint64};
 
 use lazy_static::lazy_static; // 1.4.0
 use std::sync::{
@@ -180,8 +165,9 @@ impl ChainTesterClient {
         let mut c = TTcpChannel::new();
     
         // open the underlying TCP stream
-        println!("connecting to ChainTester server on {}:{}", host, port);
+        println!("connecting to debugger server on {}:{}", host, port);
         c.open(&format!("{}:{}", host, port)).unwrap();    
+        println!("debugger server connected");
         
         // clone the TCP channel into two halves, one which
         // we'll use for reading, the other for writing
@@ -462,8 +448,8 @@ pub fn new_vm_api_client(
             }
         }
     }
-    
-    println!("+++++++++connect to vm_api server successfull!");
+
+    println!("VM API server connected!");
 
     // clone the TCP channel into two halves, one which
     // we'll use for reading, the other for writing
