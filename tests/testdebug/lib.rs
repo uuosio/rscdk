@@ -1,6 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[eosio_chain::contract]
+#[allow(dead_code)]
 mod hello {
     use eosio_chain::{
         Name,
@@ -29,7 +30,6 @@ mod hello {
     }
 
     #[chain(main)]
-    #[allow(dead_code)]
     pub struct Hello {
         receiver: Name,
         first_receiver: Name,
@@ -64,7 +64,7 @@ mod hello {
 
         #[chain(action="sayhello")]
         pub fn say_hello(&self, name: String) {
-            for i in 0..=1 {
+            for _ in 0..=1 {
                 eosio_println!("++++hello:", name);
                 // return;
                 let perms: Vec<PermissionLevel> = vec![PermissionLevel{actor: name!("hello"), permission: ACTIVE}];
@@ -438,6 +438,7 @@ mod tests {
     use eosio_chain::ChainTester;
     use eosio_chain::serializer::Packer;
     use crate::hello::sayhello;
+    use eosio_chain::eosio_chaintester;
 
     #[no_mangle]
     fn native_apply(receiver: u64, first_receiver: u64, action: u64) {
@@ -445,16 +446,30 @@ mod tests {
     }
 
     fn deploy_contract(tester: &mut ChainTester) {
-        tester.deploy_contract("hello", "/Users/newworld/dev/github/rscdk/tests/testdebug/../target/testdebug/testdebug.wasm", "/Users/newworld/dev/github/rscdk/tests/testdebug/../target/testdebug/testdebug.abi").unwrap();
+        let cur_dir: &str = &std::env::current_dir().unwrap().into_os_string().into_string().unwrap();
+        println!("+++cur_dir:{}", cur_dir);
+        let mut cur_dir2 = format!("{cur_dir}/testdebug");
+        if !std::path::Path::new(&cur_dir2).exists() {
+            cur_dir2 = format!("{cur_dir}");
+        }
+        eosio_chaintester::build_contract("testdebug", &cur_dir2);
+
+        let ref wasm_file = format!("{cur_dir2}/target/testdebug.wasm");
+        let ref abi_file = format!("{cur_dir2}/target/testdebug.abi");
+
+        tester.deploy_contract("hello", wasm_file, abi_file).unwrap();
     }
 
     #[test]
     fn test_sayhello() {
         let exe = std::env::current_exe();
-        println!("defined in file: {exe:?}");
+        println!("{exe:?}");
     
+        let package_name = env!("CARGO_PKG_NAME");
+        println!("++++++++++package name: {}", package_name);    
+
         let mut tester = ChainTester::new();
-        tester.enable_debug_contract("hello", true);
+        tester.enable_debug_contract("hello", true).unwrap();
 
         deploy_contract(&mut tester);
         let updateauth_args = r#"{
@@ -501,7 +516,7 @@ mod tests {
             let mut tester = ChainTester::new();
             deploy_contract(&mut tester);
 
-            let r = tester.push_action("hello", "inc", args.into(), permissions).unwrap();
+            tester.push_action("hello", "inc", args.into(), permissions).unwrap();
             tester.produce_block();
 
             tester.push_action("hello", "inc", args.into(), permissions).unwrap();

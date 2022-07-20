@@ -1,6 +1,30 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 
+#[eosio_chain::contract]
+mod tester {
+    use eosio_chain::{
+        Name,
+    };
+
+    #[chain(main)]
+    pub struct Tester {
+        receiver: Name,
+        first_receiver: Name,
+        action: Name,
+    }
+
+    impl Tester {
+        pub fn new(receiver: Name, first_receiver: Name, action: Name) -> Self {
+            Self {
+                receiver: receiver,
+                first_receiver: first_receiver,
+                action: action,
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::Path;
@@ -15,6 +39,7 @@ mod tests {
     
     use eosio_chain::ChainTester;
     use eosio_chain::serializer::Packer;
+    use eosio_chain::eosio_chaintester;
  
     #[no_mangle]
     fn native_apply(receiver: u64, first_receiver: u64, action: u64) {
@@ -25,7 +50,20 @@ mod tests {
         }
     }
 
+    fn build_contract() {
+        let mut cur_dir = std::env::current_dir().unwrap().into_os_string().into_string().unwrap();
+        let say_hello_dir = format!("{cur_dir}/../sayhello");
+        println!("+++++++say_hello_dir:{say_hello_dir}");
+        eosio_chaintester::build_contract("sayhello", &say_hello_dir);
+
+        let say_goodbye_dir = format!("{cur_dir}/../saygoodbye");
+        println!("+++++++say_goodbye_dir:{say_goodbye_dir}");
+        eosio_chaintester::build_contract("saygoodbye", &say_goodbye_dir);
+    }
+
     fn deploy_contract(tester: &mut ChainTester) {
+        build_contract();
+
         let mut cur_dir = std::env::current_dir().unwrap().into_os_string().into_string().unwrap();
         let cur_dir2 = format!("{cur_dir}/testdebug2");
         if Path::new(&cur_dir2).exists() {
@@ -43,10 +81,10 @@ mod tests {
     #[test]
     fn test_debug() {
         let mut tester = ChainTester::new();
+        deploy_contract(&mut tester);
+
         tester.enable_debug_contract("hello", true).unwrap();
         tester.enable_debug_contract("bob", true).unwrap();
-
-        deploy_contract(&mut tester);
 
         let updateauth_args = r#"{
             "account": "hello",

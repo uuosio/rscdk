@@ -359,7 +359,7 @@ pub fn db_idx256_find_primary(code: u64, scope: u64, table: u64, data: *mut Uint
 }
 
 ///
-pub fn db_idx256_find_secondary(code: u64, scope: u64, table: u64, data: *const Uint128, data_len: u32, primary: *mut u64) -> i32 {
+pub fn db_idx256_find_secondary(code: u64, scope: u64, table: u64, data: *const Uint128, _data_len: u32, primary: *mut u64) -> i32 {
     let _secondary = unsafe {
         slice::from_raw_parts(data as *const u8, 32)
     };
@@ -395,7 +395,7 @@ pub fn db_idx256_lowerbound(code: u64, scope: u64, table: u64, data: *mut Uint12
 }
 
 ///
-pub fn db_idx256_upperbound(code: u64, scope: u64, table: u64, data: *mut Uint128, data_len: u32, primary: *mut u64) -> i32 {
+pub fn db_idx256_upperbound(code: u64, scope: u64, table: u64, data: *mut Uint128, _data_len: u32, primary: *mut u64) -> i32 {
     let (_secondary, _primary) = unsafe {
         (slice::from_raw_parts(data as *const u8, 32), *primary)
     };

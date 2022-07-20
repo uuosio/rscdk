@@ -74,7 +74,7 @@ pub fn generate_abi_file(package_name: &str) {
 
     // let package_name = env!("CARGO_PKG_NAME");
     let abi_file = format!("./target/{}.abi", package_name);
-	match fs::write(std::path::Path::new(&abi_file), abi) {
+	match std::fs::write(std::path::Path::new(&abi_file), abi) {
         Ok(()) => {
 
         }
@@ -84,7 +84,19 @@ pub fn generate_abi_file(package_name: &str) {
     }
 }
 
-pub fn build_contract(package_name: &str) {
+lazy_static! {
+    static ref BUILD_CONTRACT_MUTEX: Mutex<std::collections::HashMap<String, String>> = Mutex::new(std::collections::HashMap::new());
+}
+
+pub fn build_contract(package_name: &str, project_dir: &str) {
+    println!("++++++building {package_name} at {project_dir}");
+    let mut build_contract = BUILD_CONTRACT_MUTEX.lock().unwrap();
+    if build_contract.get(package_name).is_some() {
+        return;
+    }
+
+    build_contract.insert(package_name.into(), project_dir.into());
+
     // println!("+++++++++++++build contract:{}", dir);
     std::env::set_var("RUSTFLAGS", "-C link-arg=-zstack-size=8192 -Clinker-plugin-lto");
     let mut cmd = std::process::Command::new("cargo");
@@ -93,7 +105,7 @@ pub fn build_contract(package_name: &str) {
             "+nightly",
             "build",
             "--target=wasm32-wasi",
-            "--target-dir=./target",
+            &format!("--target-dir={project_dir}/target"),
             "-Zbuild-std",
             "--no-default-features",
             "--release",
@@ -111,8 +123,8 @@ pub fn build_contract(package_name: &str) {
         panic!("build failed");
     }
 
-    let in_wasm_file = format!("./target/wasm32-wasi/release/{}.wasm", package_name);
-    let out_wasm_file = format!("./target/{}.wasm", package_name);
+    let in_wasm_file = format!("{project_dir}/target/wasm32-wasi/release/{}.wasm", package_name);
+    let out_wasm_file = format!("{project_dir}/target/{}.wasm", package_name);
     let wasm = std::fs::read(in_wasm_file).unwrap();
     std::fs::write(out_wasm_file, wasm).unwrap();
 

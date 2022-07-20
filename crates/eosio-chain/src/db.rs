@@ -23,7 +23,6 @@ use crate::print::{
 };
 
 use crate::{
-    vec,
     vec::Vec,
 };
 

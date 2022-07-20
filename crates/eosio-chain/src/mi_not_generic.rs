@@ -16,10 +16,6 @@ use crate::name::{
 };
 
 use crate::{
-    vec,
-};
-
-use crate::{
     vec::Vec,
 };
 
