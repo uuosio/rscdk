@@ -13,3 +13,9 @@ Rust Smart Contracts Development Kit
 - [Submit an Issue](https://github.com/uuosio/rscdk/issues)
 - [Create a New Pull Request](https://github.com/uuosio/rscdk/pulls)
 - [Help Improving the RSCDK Book](https://github.com/uuosio/rscdk-book)
+
+## Debugging
+![Debugging](https://github.com/uuosio/rscdk/blob/main/images/debugging.gif)
+
+## Code Coverage
+![Code Coverage](https://github.com/uuosio/rscdk/blob/main/images/code-coverage.png)
