@@ -63,3 +63,59 @@ pub fn get_debugger_config() -> MutexGuard<'static, DebuggerConfig> {
     return DEBUGGER_CONFIG.lock().unwrap()
 }
 
+extern "Rust" {
+	pub fn __eosio_generate_abi() -> String;
+}
+
+pub fn generate_abi_file(package_name: &str) {
+	let abi = unsafe {
+		__eosio_generate_abi()
+	};
+
+    // let package_name = env!("CARGO_PKG_NAME");
+    let abi_file = format!("./target/{}.abi", package_name);
+	match fs::write(std::path::Path::new(&abi_file), abi) {
+        Ok(()) => {
+
+        }
+        Err(err) => {
+            panic!("{}", err);
+        }
+    }
+}
+
+pub fn build_contract(package_name: &str) {
+    // println!("+++++++++++++build contract:{}", dir);
+    std::env::set_var("RUSTFLAGS", "-C link-arg=-zstack-size=8192 -Clinker-plugin-lto");
+    let mut cmd = std::process::Command::new("cargo");
+    cmd
+        .args([
+            "+nightly",
+            "build",
+            "--target=wasm32-wasi",
+            "--target-dir=./target",
+            "-Zbuild-std",
+            "--no-default-features",
+            "--release",
+            "-Zbuild-std-features=panic_immediate_abort"
+            ]
+        );
+
+    let mut child = cmd
+        // capture the stdout to return from this function as bytes
+        .stdout(std::process::Stdio::null())
+        .spawn()
+        .expect("command failed to start");
+    let output = child.wait().unwrap();
+    if !output.success() {
+        panic!("build failed");
+    }
+
+    let in_wasm_file = format!("./target/wasm32-wasi/release/{}.wasm", package_name);
+    let out_wasm_file = format!("./target/{}.wasm", package_name);
+    let wasm = std::fs::read(in_wasm_file).unwrap();
+    std::fs::write(out_wasm_file, wasm).unwrap();
+
+    generate_abi_file(package_name);
+}
+

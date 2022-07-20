@@ -1441,7 +1441,6 @@ impl Contract {
             #[cfg(feature = "std")]
             pub fn native_apply(receiver: u64, first_receiver: u64, action: u64) {
                 contract_apply(receiver, first_receiver, action);
-                eosio_chain::eosio_chaintester::get_vm_api_client().end_apply().unwrap();
             }
         }
     }

@@ -17,8 +17,6 @@ use thrift::TransportErrorKind;
 use crate::interfaces::{Uint64};
 use crate::interfaces::TApplySyncClient;
 
-use crate::client;
-
 extern "Rust" {
 	fn native_apply(receiver: u64, first_receiver: u64, action: u64);
 }
@@ -61,7 +59,6 @@ where
         write_transport_factory: WTF,
         output_protocol_factory: OPF,
         processor: PRC,
-        num_workers: usize,
     ) -> IPCServer<PRC, RTF, IPF, WTF, OPF> {
         IPCServer {
             r_trans_factory: read_transport_factory,
@@ -313,7 +310,7 @@ impl ApplyRequestSyncHandler for ApplyRequestHandler {
         let result = panic::catch_unwind(|| {
             unsafe {
                 native_apply(_receiver, _first_receiver, _action);
-            }    
+            }
         });
         match result {
             Ok(()) => {
@@ -321,12 +318,9 @@ impl ApplyRequestSyncHandler for ApplyRequestHandler {
             }
             Err(err) => {
                 println!("{:?}", err);
-                // crate::client::get_vm_api_client().end_apply().unwrap();
-                // panic!("{:?}", err);
             }
         }
-        println!("native_apply done!");
-        // println!("\x1b[92m[({},{})->{}]: CONSOLE OUTPUT END   =====================\x1b[0m", n2s(_receiver), n2s(_action), n2s(_first_receiver));
+        crate::get_vm_api_client().end_apply().unwrap();
         Ok(1)
     }
 
@@ -363,7 +357,6 @@ impl ApplyRequestServer {
                 o_tran_fact,
                 o_prot_fact,
                 processor,
-                10,
         )}
     }
 }
@@ -375,11 +368,12 @@ pub fn run_apply_request_server()  -> thrift::Result<()> {
 pub fn get_apply_request_server() -> MutexGuard<'static, ApplyRequestServer> {
     let mut ret = APPLY_REQUEST_SERVER.lock().unwrap();
     if ret.server.cnn.is_none() {
-        println!("++++++++++++apply_request server: waiting for connection");
+        println!("apply_request server: waiting for debugger connection");
         let host = crate::get_debugger_config().apply_request_server_address.clone();
         let port = crate::get_debugger_config().apply_request_server_port;
         let address = format!("{}:{}", host, port);
         ret.server.accept(address).unwrap();
+        println!("apply_request server: debugger connected");
     }
     return ret;
 }
