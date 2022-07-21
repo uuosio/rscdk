@@ -63,9 +63,9 @@ class NewChain():
 
 test_dir = os.path.dirname(__file__)
 def deploy_contract(package_name):
-    with open(f'{test_dir}/target/{package_name}/{package_name}.wasm', 'rb') as f:
+    with open(f'{test_dir}/{package_name}/target/{package_name}.wasm', 'rb') as f:
         code = f.read()
-    with open(f'{test_dir}/target/{package_name}/{package_name}.abi', 'rb') as f:
+    with open(f'{test_dir}/{package_name}/target/{package_name}.abi', 'rb') as f:
         abi = f.read()
     chain.deploy_contract('hello', code, abi)
 
