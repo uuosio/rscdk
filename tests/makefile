@@ -29,46 +29,46 @@ build_notify:
 	cd testnotify/sender;rust-contract build 
 
 test_hello: build_hello
-	run-ipyeos -m pytest -s test.py -k test_hello
+	ipyeos -m pytest -s test.py -k test_hello
 
 test_abi: build_abi
-	run-ipyeos -m pytest -s test.py -k test_abi
+	ipyeos -m pytest -s test.py -k test_abi
 
 test_mi: build_all
-	run-ipyeos -m pytest -s test.py -k test_mi
+	ipyeos -m pytest -s test.py -k test_mi
 
 test_mi2: build_all
-	run-ipyeos -m pytest -s test.py -k test_2mi
+	ipyeos -m pytest -s test.py -k test_2mi
 
 test_mod: build_mod
-	run-ipyeos -m pytest -s test.py -k test_mod
+	ipyeos -m pytest -s test.py -k test_mod
 
 test_inline: build_inline
-	run-ipyeos -m pytest -s test.py -k test_inlineaction
+	ipyeos -m pytest -s test.py -k test_inlineaction
 
 test_asset: build_asset
-	run-ipyeos -m pytest -s test.py -k test_asset
+	ipyeos -m pytest -s test.py -k test_asset
 
 test_optional: build_optional
-	run-ipyeos -m pytest -s test.py -k test_optional
+	ipyeos -m pytest -s test.py -k test_optional
 
 test_variant: build_variant
-	run-ipyeos -m pytest -s test.py -k test_variant
+	ipyeos -m pytest -s test.py -k test_variant
 
 test_name: build_all
-	run-ipyeos -m pytest -s test.py -k test_name
+	ipyeos -m pytest -s test.py -k test_name
 
 test_transaction: build_all
-	run-ipyeos -m pytest -s test.py -k test_transaction
+	ipyeos -m pytest -s test.py -k test_transaction
 
 test_binaryextension: build_all
-	run-ipyeos -m pytest -s test.py -k test_binaryextension
+	ipyeos -m pytest -s test.py -k test_binaryextension
 
 test_notify: build_notify
-	run-ipyeos -m pytest -s test.py -k test_notify
+	ipyeos -m pytest -s test.py -k test_notify
 
 test_destructor: build_all
-	run-ipyeos -m pytest -s test.py -k test_destructor
+	ipyeos -m pytest -s test.py -k test_destructor
 
 all_builds = build_hello build_abi build_mod \
 	build_inline build_asset build_optional build_variant \
@@ -76,4 +76,4 @@ all_builds = build_hello build_abi build_mod \
 
 test_all: $(all_builds)
 	rust-contract build
-	run-ipyeos -m pytest -s -x test.py
+	ipyeos -m pytest -s -x test.py

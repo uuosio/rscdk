@@ -16,4 +16,4 @@ abi: abigen/main.rs lib.rs
 	cargo run --package abi-gen --release
 
 test: ./target/hello.wasm ./target/hello.abi
-	run-ipyeos -m pytest -s test.py -k test_hello
+	ipyeos -m pytest -s test.py -k test_hello
