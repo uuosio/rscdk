@@ -97,9 +97,14 @@ pub fn build_contract(package_name: &str, project_dir: &str) {
 
     build_contract.insert(package_name.into(), project_dir.into());
 
-    // println!("+++++++++++++build contract:{}", dir);
-    std::env::set_var("RUSTFLAGS", "-C link-arg=-zstack-size=8192 -Clinker-plugin-lto");
-    let mut cmd = std::process::Command::new("cargo");
+    let mut cargo_path: String = which::which("cargo").unwrap().to_str().unwrap().into();
+    if cargo_path.contains(".rustup") {
+        let pos = cargo_path.find(".rustup").unwrap();
+        cargo_path = format!("{}/{}", &cargo_path[0..pos], ".cargo/bin/cargo");
+        println!("++++++++++cargo path:{}", cargo_path);
+    }
+    std::env::set_var("RUSTFLAGS", "-C link-arg=-zstack-size=8192  -Clinker-plugin-lto");
+    let mut cmd = std::process::Command::new(cargo_path);
     cmd
         .args([
             "+nightly",
