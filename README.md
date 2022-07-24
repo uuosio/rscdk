@@ -46,6 +46,14 @@ Run the debugging server on the Windows platform:
 docker run -it --rm -p 9090:9090 -p 9092:9092 -t ghcr.io/uuosio/ipyeos
 ```
 
+Build contract
+
+```bash
+rust-contract build
+```
+
+Start debugging:
+
 ![Debugging](https://github.com/uuosio/rscdk/blob/main/images/debugging.gif)
 
 ## Code Coverage Analysis
