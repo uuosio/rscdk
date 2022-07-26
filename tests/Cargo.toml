@@ -11,13 +11,13 @@ testasset = { path = "./testasset", default-features = false }
 testoptional = { path = "./testoptional", default-features = false }
 testvariant = { path = "./testvariant", default-features = false }
 testabi = { path = "./testabi", default-features = false }
-
-# testname = { path = "./testname" }
+testrecoverkey = { path = "./testrecoverkey", default-features = false }
 
 [lib]
 name = "testall"
 path = "lib.rs"
 crate-type = ["cdylib", "rlib"]
+doctest = false
 
 [features]
 default = ["std"]
@@ -27,7 +27,8 @@ std = [
     "testasset/std",
     "testoptional/std",
     "testvariant/std",
-    "testabi/std"
+    "testabi/std",
+    "testrecoverkey/std"
 ]
 
 exclude = []

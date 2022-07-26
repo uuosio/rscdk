@@ -115,6 +115,13 @@ pub use asset::{
     Symbol,
 };
 
+///
+pub mod crypto;
+pub use crypto::{
+    recover_key,
+    assert_recover_key,
+};
+
 pub use self::vmapi::eosio:: {
     get_active_producers,
     get_permission_last_used,

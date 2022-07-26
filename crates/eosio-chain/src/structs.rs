@@ -349,9 +349,9 @@ impl Default for PublicKey {
 impl Packer for PublicKey {
     fn size(&self) -> usize {
         match self {
-            PublicKey::K1(x) => x.size(),
-            PublicKey::R1(x) => x.size(),
-            PublicKey::WebAuth(x) => x.size(),
+            PublicKey::K1(x) => x.size() + 1,
+            PublicKey::R1(x) => x.size() + 1,
+            PublicKey::WebAuth(x) => x.size() + 1,
         }
     }
 

@@ -91,7 +91,7 @@ pub mod testmi2 {
                 let mut value = MyStruct::default();
                 value.unpack(raw);
                 Box::new(value)
-            };
+            }
             let code = self.receiver;
             let scope = self.receiver;
             let table = name!("hello");
