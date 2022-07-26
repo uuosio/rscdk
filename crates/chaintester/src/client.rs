@@ -28,8 +28,35 @@ use std::sync::{
 
 
 pub struct TransactionError {
-    json: Option<Map<String, Value>>,
-    error_string: Option<String>,
+    pub json: Option<Map<String, Value>>,
+    pub error_string: Option<String>,
+}
+
+impl TransactionError {
+    pub fn get_err(&self) -> Option<String> {
+        let except = self.json.as_ref().unwrap().get("except").unwrap();
+        if let Value::Object(v1) = except {
+            if let Value::Array(v2) = v1.get("stack").unwrap() {
+                if let Value::Object(v3) = &v2[0] {
+                    let data = v3.get("data").unwrap();
+                    if let Value::Object(v4) = data {
+                        let value = v4.get("s").unwrap();
+                        if let Value::String(s) = value {
+                            return Some(s.clone());
+                        }
+                    }
+                }
+            }    
+        }
+        return None;
+    }
+
+    pub fn check_err(&self, err: &str) {
+        let err2 = &self.get_err().unwrap() ;
+        if err2 != err {
+            panic!("invalid error, expect {}, got {}", err, err2);
+        }
+    }
 }
 
 impl fmt::Display for TransactionError {
