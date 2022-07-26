@@ -25,8 +25,8 @@ build_variant:
 	cd testvariant;rust-contract build-contract 
 
 build_notify:
-	cd testnotify/receiver;rust-contract build-contract 
-	cd testnotify/sender;rust-contract build-contract
+	cd testnotify/receiver;rust-contract build 
+	cd testnotify/sender;rust-contract build
 
 all_builds = build_hello build_abi build_mod \
 	build_inline build_asset build_optional build_variant \
