@@ -72,6 +72,7 @@ jobs:
           python3 -m pip install pytest-xdist
           python3 -m pip install ipyeos
           python3 -m pip install rust-contracts-builder
+          eos-debugger &
       - name: Install binaryen
         run: |
           set -e
