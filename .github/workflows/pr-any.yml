@@ -72,7 +72,9 @@ jobs:
           python3 -m pip install pytest-xdist
           python3 -m pip install ipyeos
           python3 -m pip install rust-contracts-builder
-          eos-debugger &
+      - name: Run eos-debugger
+        run: |
+          PYTHON_SHARED_LIB_PATH=${{ env.pythonLocation }}/lib/libpython3.9.so eos-debugger &
       - name: Install binaryen
         run: |
           set -e
