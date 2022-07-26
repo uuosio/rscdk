@@ -6,6 +6,13 @@ edition = "2021"
 
 [dependencies]
 eosio-chain = { version = "0.2", path = "../crates/eosio-chain", default-features = false }
+hello = { path = "./hello", default-features = false }
+testasset = { path = "./testasset", default-features = false }
+testoptional = { path = "./testoptional", default-features = false }
+testvariant = { path = "./testvariant", default-features = false }
+testabi = { path = "./testabi", default-features = false }
+
+# testname = { path = "./testname" }
 
 [lib]
 name = "testall"
@@ -16,25 +23,11 @@ crate-type = ["cdylib", "rlib"]
 default = ["std"]
 std = [
     "eosio-chain/std",
-]
-
-[workspace]
-resolver = "2"
-members = [
-    "hello",
-    "hello/abigen",
-    "testabi",
-    "testmod",
-    "testinlineaction",
-    "testasset",
-    "testoptional",
-    "testvariant",
-    "testnotify/receiver",
-    "testnotify/sender",
-    "testdebug",
-    "testdebug2/sayhello",
-    "testdebug2/saygoodbye",
-    "testdebug2/tester",
+    "hello/std",
+    "testasset/std",
+    "testoptional/std",
+    "testvariant/std",
+    "testabi/std"
 ]
 
 exclude = []

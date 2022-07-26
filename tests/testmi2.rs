@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[eosio_chain::contract]
-pub mod test {
+pub mod testmi2 {
     use eosio_chain::{
         Name,
         Asset,

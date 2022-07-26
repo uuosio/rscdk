@@ -1,74 +1,32 @@
 ALL : test_all
 
 build_all:
-	rust-contract build
+	rust-contract build-contract
 
 build_hello:
-	cd hello;rust-contract build
+	cd hello;rust-contract build-contract
 
 build_abi:
-	cd testabi;rust-contract build 
+	cd testabi;rust-contract build-contract
 
 build_mod:
-	cd testmod;rust-contract build 
+	cd testmod;rust-contract build-contract 
 
 build_inline:
-	cd testinlineaction;rust-contract build 
+	cd testinlineaction;rust-contract build-contract 
 
 build_asset:
-	cd testasset;rust-contract build 
+	cd testasset;rust-contract build-contract 
 
 build_optional:
-	cd testoptional;rust-contract build 
+	cd testoptional;rust-contract build-contract 
 
 build_variant:
-	cd testvariant;rust-contract build 
+	cd testvariant;rust-contract build-contract 
 
 build_notify:
-	cd testnotify/receiver;rust-contract build 
-	cd testnotify/sender;rust-contract build 
-
-test_hello: build_hello
-	ipyeos -m pytest -s test.py -k test_hello
-
-test_abi: build_abi
-	ipyeos -m pytest -s test.py -k test_abi
-
-test_mi: build_all
-	ipyeos -m pytest -s test.py -k test_mi
-
-test_mi2: build_all
-	ipyeos -m pytest -s test.py -k test_2mi
-
-test_mod: build_mod
-	ipyeos -m pytest -s test.py -k test_mod
-
-test_inline: build_inline
-	ipyeos -m pytest -s test.py -k test_inlineaction
-
-test_asset: build_asset
-	ipyeos -m pytest -s test.py -k test_asset
-
-test_optional: build_optional
-	ipyeos -m pytest -s test.py -k test_optional
-
-test_variant: build_variant
-	ipyeos -m pytest -s test.py -k test_variant
-
-test_name: build_all
-	ipyeos -m pytest -s test.py -k test_name
-
-test_transaction: build_all
-	ipyeos -m pytest -s test.py -k test_transaction
-
-test_binaryextension: build_all
-	ipyeos -m pytest -s test.py -k test_binaryextension
-
-test_notify: build_notify
-	ipyeos -m pytest -s test.py -k test_notify
-
-test_destructor: build_all
-	ipyeos -m pytest -s test.py -k test_destructor
+	cd testnotify/receiver;rust-contract build-contract 
+	cd testnotify/sender;rust-contract build-contract
 
 all_builds = build_hello build_abi build_mod \
 	build_inline build_asset build_optional build_variant \
@@ -76,4 +34,4 @@ all_builds = build_hello build_abi build_mod \
 
 test_all: $(all_builds)
 	rust-contract build
-	ipyeos -m pytest -s -x test.py
+	cargo test
