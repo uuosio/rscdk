@@ -1380,21 +1380,18 @@ impl Contract {
 
         return Ok(quote!{
             #[cfg(feature = "std")]
-            const _: () = {
-                #[no_mangle]
-                pub fn __eosio_generate_abi() -> String {
-                    let mut info = ::eosio_chain::abi::ABIInfo {
-                        actions: Vec::new(),
-                        tables: Vec::new(),
-                        structs: Vec::new(),
-                        variants: Vec::new(),
-                    };
-                    #( #structs_code ) *
-                    #( #action_scale_info_code ) *
-                    #( #table_scale_info_code ) *
-                    return ::eosio_chain::abi::parse_abi_info(&mut info);
-                }
-            };
+            pub fn generate_abi() -> String {
+                let mut info = ::eosio_chain::abi::ABIInfo {
+                    actions: Vec::new(),
+                    tables: Vec::new(),
+                    structs: Vec::new(),
+                    variants: Vec::new(),
+                };
+                #( #structs_code ) *
+                #( #action_scale_info_code ) *
+                #( #table_scale_info_code ) *
+                return ::eosio_chain::abi::parse_abi_info(&mut info);
+            }
         });
     }
 
@@ -1646,6 +1643,11 @@ impl Contract {
                 #tables_code
                 #apply_code
                 #scale_info
+            }
+
+            #[cfg(feature = "std")]
+            pub fn generate_abi() -> String {
+                crate::#ident::generate_abi()
             }
         })
     }
