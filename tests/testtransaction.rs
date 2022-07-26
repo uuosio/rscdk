@@ -1,5 +1,3 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-
 #[eosio_chain::contract]
 pub mod testtransaction {
     use eosio_chain::{

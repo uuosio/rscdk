@@ -953,6 +953,7 @@ pub trait TIPCChainTesterSyncClient {
   fn produce_block(&mut self, id: i32) -> thrift::Result<()>;
   fn push_action(&mut self, id: i32, account: String, action: String, arguments: String, permissions: String) -> thrift::Result<Vec<u8>>;
   fn push_actions(&mut self, id: i32, actions: Vec<Box<Action>>) -> thrift::Result<Vec<u8>>;
+  fn get_table_rows(&mut self, id: i32, json: bool, code: String, scope: String, table: String, lower_bound: String, upper_bound: String, limit: i64, key_type: String, index_position: String, reverse: bool, show_payer: bool) -> thrift::Result<String>;
 }
 
 pub trait TIPCChainTesterSyncClientMarker {}
@@ -1279,6 +1280,33 @@ impl <C: TThriftClient + TIPCChainTesterSyncClientMarker> TIPCChainTesterSyncCli
       result.ok_or()
     }
   }
+  fn get_table_rows(&mut self, id: i32, json: bool, code: String, scope: String, table: String, lower_bound: String, upper_bound: String, limit: i64, key_type: String, index_position: String, reverse: bool, show_payer: bool) -> thrift::Result<String> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("get_table_rows", TMessageType::Call, self.sequence_number());
+        let call_args = IPCChainTesterGetTableRowsArgs { id, json, code, scope, table, lower_bound, upper_bound, limit, key_type, index_position, reverse, show_payer };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("get_table_rows", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = IPCChainTesterGetTableRowsResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
 }
 
 //
@@ -1298,6 +1326,7 @@ pub trait IPCChainTesterSyncHandler {
   fn handle_produce_block(&self, id: i32) -> thrift::Result<()>;
   fn handle_push_action(&self, id: i32, account: String, action: String, arguments: String, permissions: String) -> thrift::Result<Vec<u8>>;
   fn handle_push_actions(&self, id: i32, actions: Vec<Box<Action>>) -> thrift::Result<Vec<u8>>;
+  fn handle_get_table_rows(&self, id: i32, json: bool, code: String, scope: String, table: String, lower_bound: String, upper_bound: String, limit: i64, key_type: String, index_position: String, reverse: bool, show_payer: bool) -> thrift::Result<String>;
 }
 
 pub struct IPCChainTesterSyncProcessor<H: IPCChainTesterSyncHandler> {
@@ -1345,6 +1374,9 @@ impl <H: IPCChainTesterSyncHandler> IPCChainTesterSyncProcessor<H> {
   }
   fn process_push_actions(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TIPCChainTesterProcessFunctions::process_push_actions(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_get_table_rows(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TIPCChainTesterProcessFunctions::process_get_table_rows(&self.handler, incoming_sequence_number, i_prot, o_prot)
   }
 }
 
@@ -1769,6 +1801,43 @@ impl TIPCChainTesterProcessFunctions {
       },
     }
   }
+  pub fn process_get_table_rows<H: IPCChainTesterSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = IPCChainTesterGetTableRowsArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_get_table_rows(args.id, args.json, args.code, args.scope, args.table, args.lower_bound, args.upper_bound, args.limit, args.key_type, args.index_position, args.reverse, args.show_payer) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("get_table_rows", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = IPCChainTesterGetTableRowsResult { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("get_table_rows", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("get_table_rows", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
 }
 
 impl <H: IPCChainTesterSyncHandler> TProcessor for IPCChainTesterSyncProcessor<H> {
@@ -1810,6 +1879,9 @@ impl <H: IPCChainTesterSyncHandler> TProcessor for IPCChainTesterSyncProcessor<H
       },
       "push_actions" => {
         self.process_push_actions(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "get_table_rows" => {
+        self.process_get_table_rows(message_ident.sequence_number, i_prot, o_prot)
       },
       method => {
         Err(
@@ -3105,6 +3177,238 @@ impl IPCChainTesterPushActionsResult {
           ApplicationError::new(
             ApplicationErrorKind::MissingResult,
             "no result received for IPCChainTesterPushActions"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// IPCChainTesterGetTableRowsArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct IPCChainTesterGetTableRowsArgs {
+  id: i32,
+  json: bool,
+  code: String,
+  scope: String,
+  table: String,
+  lower_bound: String,
+  upper_bound: String,
+  limit: i64,
+  key_type: String,
+  index_position: String,
+  reverse: bool,
+  show_payer: bool,
+}
+
+impl IPCChainTesterGetTableRowsArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<IPCChainTesterGetTableRowsArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<i32> = None;
+    let mut f_2: Option<bool> = None;
+    let mut f_3: Option<String> = None;
+    let mut f_4: Option<String> = None;
+    let mut f_5: Option<String> = None;
+    let mut f_6: Option<String> = None;
+    let mut f_7: Option<String> = None;
+    let mut f_8: Option<i64> = None;
+    let mut f_9: Option<String> = None;
+    let mut f_10: Option<String> = None;
+    let mut f_11: Option<bool> = None;
+    let mut f_12: Option<bool> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_i32()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = i_prot.read_bool()?;
+          f_2 = Some(val);
+        },
+        3 => {
+          let val = i_prot.read_string()?;
+          f_3 = Some(val);
+        },
+        4 => {
+          let val = i_prot.read_string()?;
+          f_4 = Some(val);
+        },
+        5 => {
+          let val = i_prot.read_string()?;
+          f_5 = Some(val);
+        },
+        6 => {
+          let val = i_prot.read_string()?;
+          f_6 = Some(val);
+        },
+        7 => {
+          let val = i_prot.read_string()?;
+          f_7 = Some(val);
+        },
+        8 => {
+          let val = i_prot.read_i64()?;
+          f_8 = Some(val);
+        },
+        9 => {
+          let val = i_prot.read_string()?;
+          f_9 = Some(val);
+        },
+        10 => {
+          let val = i_prot.read_string()?;
+          f_10 = Some(val);
+        },
+        11 => {
+          let val = i_prot.read_bool()?;
+          f_11 = Some(val);
+        },
+        12 => {
+          let val = i_prot.read_bool()?;
+          f_12 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("IPCChainTesterGetTableRowsArgs.id", &f_1)?;
+    verify_required_field_exists("IPCChainTesterGetTableRowsArgs.json", &f_2)?;
+    verify_required_field_exists("IPCChainTesterGetTableRowsArgs.code", &f_3)?;
+    verify_required_field_exists("IPCChainTesterGetTableRowsArgs.scope", &f_4)?;
+    verify_required_field_exists("IPCChainTesterGetTableRowsArgs.table", &f_5)?;
+    verify_required_field_exists("IPCChainTesterGetTableRowsArgs.lower_bound", &f_6)?;
+    verify_required_field_exists("IPCChainTesterGetTableRowsArgs.upper_bound", &f_7)?;
+    verify_required_field_exists("IPCChainTesterGetTableRowsArgs.limit", &f_8)?;
+    verify_required_field_exists("IPCChainTesterGetTableRowsArgs.key_type", &f_9)?;
+    verify_required_field_exists("IPCChainTesterGetTableRowsArgs.index_position", &f_10)?;
+    verify_required_field_exists("IPCChainTesterGetTableRowsArgs.reverse", &f_11)?;
+    verify_required_field_exists("IPCChainTesterGetTableRowsArgs.show_payer", &f_12)?;
+    let ret = IPCChainTesterGetTableRowsArgs {
+      id: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      json: f_2.expect("auto-generated code should have checked for presence of required fields"),
+      code: f_3.expect("auto-generated code should have checked for presence of required fields"),
+      scope: f_4.expect("auto-generated code should have checked for presence of required fields"),
+      table: f_5.expect("auto-generated code should have checked for presence of required fields"),
+      lower_bound: f_6.expect("auto-generated code should have checked for presence of required fields"),
+      upper_bound: f_7.expect("auto-generated code should have checked for presence of required fields"),
+      limit: f_8.expect("auto-generated code should have checked for presence of required fields"),
+      key_type: f_9.expect("auto-generated code should have checked for presence of required fields"),
+      index_position: f_10.expect("auto-generated code should have checked for presence of required fields"),
+      reverse: f_11.expect("auto-generated code should have checked for presence of required fields"),
+      show_payer: f_12.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("get_table_rows_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("id", TType::I32, 1))?;
+    o_prot.write_i32(self.id)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("json", TType::Bool, 2))?;
+    o_prot.write_bool(self.json)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("code", TType::String, 3))?;
+    o_prot.write_string(&self.code)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("scope", TType::String, 4))?;
+    o_prot.write_string(&self.scope)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("table", TType::String, 5))?;
+    o_prot.write_string(&self.table)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("lower_bound", TType::String, 6))?;
+    o_prot.write_string(&self.lower_bound)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("upper_bound", TType::String, 7))?;
+    o_prot.write_string(&self.upper_bound)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("limit", TType::I64, 8))?;
+    o_prot.write_i64(self.limit)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("key_type", TType::String, 9))?;
+    o_prot.write_string(&self.key_type)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("index_position", TType::String, 10))?;
+    o_prot.write_string(&self.index_position)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("reverse", TType::Bool, 11))?;
+    o_prot.write_bool(self.reverse)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("show_payer", TType::Bool, 12))?;
+    o_prot.write_bool(self.show_payer)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// IPCChainTesterGetTableRowsResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct IPCChainTesterGetTableRowsResult {
+  result_value: Option<String>,
+}
+
+impl IPCChainTesterGetTableRowsResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<IPCChainTesterGetTableRowsResult> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<String> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = i_prot.read_string()?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = IPCChainTesterGetTableRowsResult {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("IPCChainTesterGetTableRowsResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(ref fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::String, 0))?;
+      o_prot.write_string(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<String> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for IPCChainTesterGetTableRows"
           )
         )
       )

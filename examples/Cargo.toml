@@ -1,16 +1,41 @@
-[workspace]
-resolver = "2"
-members = [
-    "counter",
-    "counter2",
-    "token",
-    "inlineaction",
-    "notify/receiver",
-    "notify/sender",
-    "globalstates",
-    "secondaryindex",
-    "helloworld",
-    "dbi64",
+[package]
+name = "testexamples"
+version = "0.1.0"
+authors = [""]
+edition = "2021"
+
+[dependencies]
+eosio-chain = { version = "0.2", path = "../crates/eosio-chain", default-features = false }
+counter = { path = "./counter", default-features = false }
+counter2 = { path = "./counter2", default-features = false }
+dbi64 = { path = "./dbi64", default-features = false }
+helloworld = { path = "./helloworld", default-features = false }
+secondaryindex = { path = "./secondaryindex", default-features = false }
+globalstates = { path = "./globalstates", default-features = false }
+inlineaction = { path = "./inlineaction", default-features = false }
+sender = { path = "./notify/sender", default-features = false }
+receiver = { path = "./notify/receiver", default-features = false }
+token = { path = "./token", default-features = false }
+
+[lib]
+name = "testexamples"
+path = "lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["std"]
+std = [
+    "eosio-chain/std",
+    "counter/std",
+    "counter2/std",
+    "dbi64/std",
+    "helloworld/std",
+    "secondaryindex/std",
+    "globalstates/std",
+    "inlineaction/std",
+    "sender/std",
+    "receiver/std",
+    "token/std"
 ]
 
 exclude = []

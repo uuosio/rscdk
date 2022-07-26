@@ -1,5 +1,3 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-
 #[eosio_chain::contract]
 pub mod testname {
     use eosio_chain::{
@@ -9,12 +7,14 @@ pub mod testname {
         eosio_println,
     };
 
+    #[allow(dead_code)]
     pub struct NameTest {
         receiver: Name,
         first_receiver: Name,
         action: Name,
     }
 
+    #[allow(dead_code)]
     impl NameTest {
 
         pub fn new(receiver: Name, first_receiver: Name, action: Name) -> Self {

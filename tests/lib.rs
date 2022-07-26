@@ -28,6 +28,7 @@ mod testall {
         receiver: Name, first_receiver: Name, action: Name
     }
 
+    #[allow(dead_code)]
     impl Main {
         pub fn new(receiver: Name, first_receiver: Name, action: Name) -> Self {
             Self {
@@ -81,7 +82,7 @@ mod testall {
 
 #[cfg(feature="std")]
 #[no_mangle]
-fn native_apply(receiver: u64, first_receiver: u64, action: u64) {
+fn native_apply(_receiver: u64, _first_receiver: u64, _action: u64) {
     // crate::hello3::native_apply(receiver, first_receiver, action);
 }
 
@@ -181,10 +182,10 @@ mod tests {
         tester.push_action("hello", "test", args.into(), permissions).unwrap();
         tester.produce_block();
 
-        let MAX_AMOUNT = (1i64 << 62) - 1;
+        let max_amount = (1i64 << 62) - 1;
 
-        let bad_mini_amount = -MAX_AMOUNT - 1;
-        let bad_max_amount = MAX_AMOUNT  + 1;
+        let bad_mini_amount = -max_amount - 1;
+        let bad_max_amount = max_amount  + 1;
     
         {
             // #test Asset.unpack

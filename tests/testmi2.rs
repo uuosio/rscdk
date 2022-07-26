@@ -1,12 +1,7 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-
 #[eosio_chain::contract]
 pub mod testmi2 {
     use eosio_chain::{
         Name,
-        Asset,
-        Float128,
-        Uint256,
         db::{
             SecondaryType,
             SecondaryValue,
@@ -18,7 +13,6 @@ pub mod testmi2 {
         },
 
         mi_not_generic::{
-            TableI64,
             MultiIndex,
         },
 

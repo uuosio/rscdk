@@ -27,26 +27,33 @@ use std::sync::{
 };
 
 
-pub struct TransactionError {
-    pub json: Option<Map<String, Value>>,
+pub struct ChainTesterError {
+    pub json: Option<Value>,
     pub error_string: Option<String>,
 }
 
-impl TransactionError {
+pub enum JsonKeyType {
+    ArrayIndex(usize),
+    MapKey(String)
+}
+
+impl From<usize> for JsonKeyType {
+    fn from(value: usize) -> Self {
+        JsonKeyType::ArrayIndex(value)
+    }
+}
+
+impl From<String> for JsonKeyType {
+    fn from(value: String) -> Self {
+        JsonKeyType::MapKey(value)
+    }
+}
+
+impl ChainTesterError {
     pub fn get_err(&self) -> Option<String> {
-        let except = self.json.as_ref().unwrap().get("except").unwrap();
-        if let Value::Object(v1) = except {
-            if let Value::Array(v2) = v1.get("stack").unwrap() {
-                if let Value::Object(v3) = &v2[0] {
-                    let data = v3.get("data").unwrap();
-                    if let Value::Object(v4) = data {
-                        let value = v4.get("s").unwrap();
-                        if let Value::String(s) = value {
-                            return Some(s.clone());
-                        }
-                    }
-                }
-            }    
+        let value = &self.json.as_ref().unwrap()["except"]["stack"][0]["data"]["s"];
+        if let Value::String(s) = value {
+            return Some(s.clone())
         }
         return None;
     }
@@ -59,10 +66,10 @@ impl TransactionError {
     }
 }
 
-impl fmt::Display for TransactionError {
+impl fmt::Display for ChainTesterError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(ref value) = self.json {
-            write!(f, "{}", serde_json::to_string_pretty(&Value::Object(value.clone())).unwrap())
+            write!(f, "{}", serde_json::to_string_pretty(value).unwrap())
         } else {
             if let Some(ref err) = self.error_string {
                 write!(f, "{}", err)
@@ -73,10 +80,10 @@ impl fmt::Display for TransactionError {
     }
 }
 
-impl fmt::Debug for TransactionError {
+impl fmt::Debug for ChainTesterError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if let Some(ref value) = self.json {
-            write!(f, "{}", serde_json::to_string_pretty(&Value::Object(value.clone())).unwrap())
+            write!(f, "{}", serde_json::to_string_pretty(&value).unwrap())
         } else {
             if let Some(ref err) = self.error_string {
                 write!(f, "{}", err)
@@ -88,22 +95,54 @@ impl fmt::Debug for TransactionError {
 }
 
 pub struct TransactionReturn {
-    pub value: Map<String, Value>
+    pub value: Value
 }
 
 impl fmt::Display for TransactionReturn {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", serde_json::to_string_pretty(&Value::Object(self.value.clone())).unwrap())
+        write!(f, "{}", serde_json::to_string_pretty(&self.value).unwrap())
     }
 }
 
 impl fmt::Debug for TransactionReturn {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", serde_json::to_string_pretty(&Value::Object(self.value.clone())).unwrap())
+        write!(f, "{}", serde_json::to_string_pretty(&self.value).unwrap())
     }
 }
 
-pub type Result<T> = core::result::Result<T, TransactionError>;
+pub type Result<T> = core::result::Result<T, ChainTesterError>;
+
+pub struct GetTableRowsPrams<'a> {
+    pub json: bool,
+    pub code: &'a str,
+    pub scope: &'a str,
+    pub table: &'a str,
+    pub lower_bound: &'a str,
+    pub upper_bound: &'a str,
+    pub limit: i64,
+    pub key_type: &'a str,
+    pub index_position: &'a str,
+    pub reverse: bool,
+    pub show_payer: bool,
+}
+
+impl<'a> Default for GetTableRowsPrams<'a> {
+    fn default() -> Self {
+        Self {
+            json: true,
+            code: "",
+            scope: "",
+            table: "",
+            lower_bound: "",
+            upper_bound: "",
+            limit: 10,
+            key_type: "",
+            index_position: "",
+            reverse: false,
+            show_payer: false
+        }
+    }
+}
 
 pub struct VMAPIClient {
     vm_api_client: Option<ApplySyncClient<ClientInputProtocol, ClientOutputProtocol>>,
@@ -300,25 +339,24 @@ impl ChainTester {
         match self.client().push_action(self.id, _account, _action, _arguments, _permissions) {
             Ok(ret) => {
                 let tx: Value = serde_json::from_slice(&ret).map_err(|err| {
-                    TransactionError{json: None, error_string: Some(err.to_string())}
+                    ChainTesterError{json: None, error_string: Some(err.to_string())}
                 })?;
         
-                let obj: &Map<String, Value> = tx.as_object().unwrap();
-                if obj.get("except").is_some() {
-                    Err(TransactionError{json: Some(obj.clone()), error_string: None})
+                if tx.get("except").is_some() {
+                    Err(ChainTesterError{json: Some(tx), error_string: None})
                 } else {
-                    Ok(TransactionReturn{value: obj.clone()})
+                    Ok(TransactionReturn{value: tx})
                 }
             }
             Err(err) => {
-                Err(TransactionError{
+                Err(ChainTesterError{
                     json: None, error_string: Some(format!("{:?}", err)),
                 })
             }
         }
     }
 
-    pub fn deploy_contract(&mut self, account: &str, wasm_file: &str, abi_file: &str) -> Result<TransactionReturn> {
+    pub fn deploy_contract(&mut self, account: &str, wasm_file: &str, abi_file: &str) -> Result<Value> {
         // abi_file.is_empty()
         let wasm = fs::read(wasm_file).unwrap();        
         let hex_wasm = hex::encode(wasm);
@@ -385,39 +423,87 @@ impl ChainTester {
 
         let ret = self.client().push_actions(self.id, actions).unwrap();
         let tx: Value = serde_json::from_slice(&ret).map_err(|err| {
-            TransactionError{json: None, error_string: Some(err.to_string())}
+            ChainTesterError{json: None, error_string: Some(err.to_string())}
         })?;
 
-        let obj: &Map<String, Value> = tx.as_object().unwrap();
-        if obj.get("except").is_some() {
-            Err(TransactionError{json: Some(obj.clone()), error_string: None})
+        if tx.get("except").is_some() {
+            Err(ChainTesterError{json: Some(tx), error_string: None})
         } else {
-            Ok(TransactionReturn{value: obj.clone()})
+            Ok(tx)
         }
     }
 
-    pub fn push_actions(&mut self, actions: Vec<Box<Action>>) -> Result<Map<String, Value>> {
+    pub fn push_actions(&mut self, actions: Vec<Box<Action>>) -> Result<Value> {
         match self.client().push_actions(self.id, actions) {
             Ok(ret) => {
                 let tx: Value = serde_json::from_slice(&ret).map_err(|err| {
-                    TransactionError{json: None, error_string: Some(err.to_string())}
+                    ChainTesterError{json: None, error_string: Some(err.to_string())}
                 })?;
         
-                let obj: &Map<String, Value> = tx.as_object().unwrap();
-                if obj.get("except").is_some() {
-                    Err(TransactionError{json: Some(obj.clone()), error_string: None})
+                if tx.get("except").is_some() {
+                    Err(ChainTesterError{json: Some(tx), error_string: None})
                 } else {
-                    Ok(obj.clone())
+                    Ok(tx)
                 }
             }
             Err(err) => {
-                Err(TransactionError{
+                Err(ChainTesterError{
                     json: None, error_string: Some(format!("{:?}", err)),
                 })
             }
         }
     }
 
+    pub fn get_table_rows<'a>(&mut self, json: bool, code: &'a str, scope: &'a str, table: &'a str, lower_bound: &'a str, upper_bound: &'a str, limit: i64) -> Result<Value> {
+        let param = GetTableRowsPrams {
+            json: json,
+            code: code,
+            scope: scope,
+            table: table,
+            lower_bound: lower_bound,
+            upper_bound: upper_bound,
+            limit: limit,
+            key_type: "",
+            index_position: "",
+            reverse: false,
+            show_payer: false,
+        };
+        return self.get_table_rows_ex(&param);
+
+    }
+
+    pub fn get_table_rows_ex(&mut self, params: &GetTableRowsPrams) -> Result<Value> {
+        let ret = self.client().get_table_rows(self.id,
+            params.json,
+            params.code.into(),
+            params.scope.into(),
+            params.table.into(),
+            params.lower_bound.into(),
+            params.upper_bound.into(),
+            params.limit,
+            params.key_type.into(),
+            params.index_position.into(),
+            params.reverse,
+            params.show_payer,
+        );
+
+        match &ret {
+            Ok(s) => {
+                let tx: Value = serde_json::from_str(s).map_err(|err| {
+                    ChainTesterError{json: None, error_string: Some(err.to_string())}
+                })?;
+        
+                return Ok(tx);
+            }
+            Err(err) => {
+                return Err(ChainTesterError{
+                    json: None,
+                    error_string: Some(format!("{}", err))
+                });
+            }
+        }
+
+    }    
 }
 
 pub enum ActionArguments {
