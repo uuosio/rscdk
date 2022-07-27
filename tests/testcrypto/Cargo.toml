@@ -1,5 +1,5 @@
 [package]
-name = "testrecoverkey"
+name = "testcrypto"
 version = "0.1.0"
 authors = [""]
 edition = "2021"
@@ -8,7 +8,7 @@ edition = "2021"
 eosio-chain = { version = "0.2", path = "../../crates/eosio-chain", default-features = false }
 
 [lib]
-name = "testrecoverkey"
+name = "testcrypto"
 path = "lib.rs"
 crate-type = ["cdylib", "rlib"]
 

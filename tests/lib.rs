@@ -495,15 +495,16 @@ mod tests {
         tester.push_action("hello", "mi2test", args.into(), permissions).unwrap();
         tester.produce_block();
     }
+
     #[test]
-    fn test_recover_key() {
-        let abi = &testrecoverkey::generate_abi();
-        fs::write(Path::new("./testrecoverkey/target/testrecoverkey.abi"), abi).unwrap();
+    fn test_crypto() {
+        let abi = &testcrypto::generate_abi();
+        fs::write(Path::new("./testcrypto/target/testcrypto.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
         // tester.enable_debug_contract("hello", true).unwrap();
 
-        deploy_contract(&mut tester, "testrecoverkey");
+        deploy_contract(&mut tester, "testcrypto");
 
         let args = r#"
         {

@@ -24,8 +24,8 @@ build_optional:
 build_variant:
 	cd testvariant;rust-contract build-contract 
 
-build_recover_key:
-	cd testrecoverkey;rust-contract build-contract 
+build_crypto:
+	cd testcrypto;rust-contract build-contract 
 
 build_notify:
 	cd testnotify/receiver;rust-contract build 
@@ -33,11 +33,11 @@ build_notify:
 
 all_builds = build_hello build_abi build_mod \
 	build_inline build_asset build_optional build_variant \
-	build_notify build_recover_key
+	build_notify build_crypto
 
-test_recover_key: build_recover_key
+test_crypto: build_crypto
 	rust-contract build
-	cargo test test_recover_key
+	cargo test test_crypto
 
 
 test_all: $(all_builds)

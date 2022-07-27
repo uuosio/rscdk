@@ -11,7 +11,7 @@ testasset = { path = "./testasset", default-features = false }
 testoptional = { path = "./testoptional", default-features = false }
 testvariant = { path = "./testvariant", default-features = false }
 testabi = { path = "./testabi", default-features = false }
-testrecoverkey = { path = "./testrecoverkey", default-features = false }
+testcrypto = { path = "./testcrypto", default-features = false }
 
 [lib]
 name = "testall"
@@ -28,7 +28,7 @@ std = [
     "testoptional/std",
     "testvariant/std",
     "testabi/std",
-    "testrecoverkey/std"
+    "testcrypto/std"
 ]
 
 exclude = []

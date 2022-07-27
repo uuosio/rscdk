@@ -118,6 +118,16 @@ pub use asset::{
 ///
 pub mod crypto;
 pub use crypto::{
+    assert_sha256,
+    assert_sha1,
+    assert_sha512,
+    assert_ripemd160,
+
+    sha256,
+    sha1,
+    sha512,
+    ripemd160,
+
     recover_key,
     assert_recover_key,
 };

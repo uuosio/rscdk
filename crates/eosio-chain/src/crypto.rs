@@ -21,7 +21,9 @@ pub fn assert_sha512(data: &[u8], hash: &Checksum512) {
     crypto::assert_sha512(data.as_ptr(), data.len() as u32, hash);
 }
 
-// pub fn assert_ripemd160( data: *const u8, length: u32, hash: *const Checksum160);
+pub fn assert_ripemd160(data: &[u8], hash: &Checksum160) {
+    crypto::assert_ripemd160(data.as_ptr(), data.len() as u32, hash)
+}
 
 ///
 pub fn sha256(data: &[u8]) -> Checksum256 {

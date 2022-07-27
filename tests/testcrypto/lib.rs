@@ -11,6 +11,16 @@ mod test {
         Signature,
         Name,
 
+        assert_sha256,
+        assert_sha1,
+        assert_sha512,
+        assert_ripemd160,
+    
+        sha256,
+        sha1,
+        sha512,
+        ripemd160,
+
         check,
         eosio_println,
     };
@@ -49,6 +59,19 @@ mod test {
             check(_pubkey == pubkey, "bad value");
             crypto::assert_recover_key(&digest, &sig, &pubkey);
             eosio_println!("done!");
+
+            let data: Vec<u8> =  vec![1, 2, 3, 4, 5, 6, 7];
+            let ret = sha256(&data);
+            assert_sha256(&data, &ret);
+
+            let ret = sha1(&data);
+            assert_sha1(&data, &ret);
+
+            let ret = sha512(&data);
+            assert_sha512(&data, &ret);
+
+            let ret = ripemd160(&data);
+            assert_ripemd160(&data, &ret);        
         }
     }
 }
