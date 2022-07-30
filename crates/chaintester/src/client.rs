@@ -5,7 +5,7 @@ use std::{fs};
 use std::{thread, time::Duration};
 use std::ops::{Deref, DerefMut};
 
-use serde_json::{Value, Map};
+use serde_json::{Value};
 
 use thrift::protocol::{TBinaryInputProtocol, TBinaryOutputProtocol};
 use thrift::transport::{

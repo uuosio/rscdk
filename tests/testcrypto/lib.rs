@@ -3,7 +3,7 @@
 use eosio_chain as chain;
 
 #[chain::contract]
-mod test {
+pub mod testcrypto {
     use eosio_chain::{
         crypto,
         Checksum256,
@@ -58,7 +58,6 @@ mod test {
             let _pubkey = crypto::recover_key(&digest, &sig);
             check(_pubkey == pubkey, "bad value");
             crypto::assert_recover_key(&digest, &sig, &pubkey);
-            eosio_println!("done!");
 
             let data: Vec<u8> =  vec![1, 2, 3, 4, 5, 6, 7];
             let ret = sha256(&data);
@@ -71,7 +70,8 @@ mod test {
             assert_sha512(&data, &ret);
 
             let ret = ripemd160(&data);
-            assert_ripemd160(&data, &ret);        
+            assert_ripemd160(&data, &ret);
+            eosio_println!("done!");
         }
     }
 }

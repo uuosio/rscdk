@@ -83,7 +83,7 @@ mod testall {
 #[cfg(feature="std")]
 #[no_mangle]
 fn native_apply(_receiver: u64, _first_receiver: u64, _action: u64) {
-    // crate::hello3::native_apply(receiver, first_receiver, action);
+    // testcrypto::testcrypto::native_apply(_receiver, _first_receiver, _action);
 }
 
 #[cfg(test)]
