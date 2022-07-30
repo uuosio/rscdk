@@ -63,7 +63,7 @@ pub fn sha1(data: *const u8, length: u32, hash: *mut Checksum160) {
 pub fn sha512(data: *const u8, length: u32, hash: *mut Checksum512 ) {
     unsafe {
         let _data = slice::from_raw_parts(data, length as usize);
-        let _hash = get_vm_api_client().sha1(_data.into()).unwrap();
+        let _hash = get_vm_api_client().sha512(_data.into()).unwrap();
         crate::vmapi::eosio::memcpy((*hash).data.as_ptr() as *mut u8, _hash.as_ptr(), 64);
     }
 }
