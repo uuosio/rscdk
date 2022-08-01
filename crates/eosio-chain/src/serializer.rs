@@ -149,10 +149,9 @@ impl Encoder {
     ///
     pub fn pack_number<T>(&mut self, n: T) -> usize {
         let size: usize = size_of::<T>();
-        let _n: Vec<T> = vec![n];
         let vec_size = self.buf.len();
         self.buf.resize_with(vec_size + size, Default::default);
-        eosio_memcpy(self.buf[vec_size..].as_mut_ptr(), _n.as_ptr() as *const u8, 10);
+        eosio_memcpy(self.buf[vec_size..].as_mut_ptr(), &n as *const T as *const u8, size);
         return size;
     }
 }
@@ -172,12 +171,29 @@ impl<'a> Decoder<'a> {
     }
 
     ///
-    pub fn unpack<T>(&mut self, packed: &mut T) -> usize
+    pub fn unpack<T>(&mut self, packer: &mut T) -> usize
     where T: Packer,
     {
-        let size = packed.unpack(&self.buf[self.pos..]);
+        let size = packer.unpack(&self.buf[self.pos..]);
         self.pos += size;
         return size;
+    }
+
+    ///
+    pub fn unpack_vec<T>(&mut self, vv: &mut Vec<T>) -> usize
+    where T: Packer + Default,
+    {
+        let pos = self.get_pos();
+
+        let mut size = VarUint32{n:0};
+        self.unpack(&mut size);
+
+        vv.resize_with(size.n as usize, Default::default);
+
+        for v in vv {
+            self.unpack(v);
+        }
+        self.get_pos() - pos
     }
 
     ///
