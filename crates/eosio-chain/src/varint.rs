@@ -1,4 +1,5 @@
 use crate::{
+    vec,
     vec::Vec,
 };
 
@@ -35,6 +36,10 @@ impl Packer for VarUint32 {
     fn size(&self) -> usize {
         let mut size: usize = 0;
         let mut val = self.n;
+        if val == 0 {
+            return 1;
+        }
+
         while val > 0 {
             val >>= 7;
             size += 1;
@@ -46,6 +51,10 @@ impl Packer for VarUint32 {
     fn pack(&self) -> Vec<u8> {
         let mut result: Vec<u8> = Vec::new();
         let mut val = self.n;
+        if val == 0 {
+            return vec![0];
+        }
+
         while val > 0 {
             let mut b: u32 = val & 0x7f;
             val >>= 7;
@@ -57,7 +66,6 @@ impl Packer for VarUint32 {
         return result;
     }
 
-    ///TODO: validate data
     fn unpack(&mut self, data: &[u8]) -> usize {
         let mut by: u32 = 0;
         let mut value: u32 = 0;
