@@ -14,6 +14,8 @@ pub mod testintrinsics {
         Signature,
         Name,
 
+        get_active_producers,
+
         assert_sha256,
         assert_sha1,
         assert_sha512,
@@ -164,10 +166,12 @@ pub mod testintrinsics {
             
             // void send_inline(char *serialized_action, uint32_t size);
             test.msg = "goodbye".into();
-            let a = Action::new(name!("hello"), name!("test"), &vec![PermissionLevel::new(name!("hello"), name!("active"))], &test);
+            let mut a = Action::new(name!("hello"), name!("test"), &vec![PermissionLevel::new(name!("hello"), name!("active"))], &test);
             send_inline(&a.pack());
 
             // void send_context_free_inline(char *serialized_action, uint32_t size);
+            a.authorization = vec![];
+            eosio_println!("+++a.pack():", a.pack());
             send_context_free_inline(&a.pack());
 
             // uint64_t  publication_time();
@@ -184,7 +188,7 @@ pub mod testintrinsics {
             eosio_println!(ram_bytes, net_weight, cpu_weight);
 
             // void set_resource_limits( capi_name account, int64_t ram_bytes, int64_t net_weight, int64_t cpu_weight );
-            set_resource_limits(name!("hello"), 100000, 100000, 100000);
+            set_resource_limits(name!("hello"), 10000000, 10000000, 10000000);
             let (ram_bytes, net_weight, cpu_weight) = get_resource_limits(name!("hello"));
             eosio_println!(ram_bytes, net_weight, cpu_weight);
 
@@ -202,6 +206,12 @@ pub mod testintrinsics {
             let params = get_blockchain_parameters();
             set_blockchain_parameters(&params);
             // void preactivate_feature( const capi_checksum256* feature_digest );
+
+            //chain.h
+            let prods = get_active_producers();
+            eosio_println!("++++++prods.len():", prods.len());
+            check(prods.len() == 1, "prods.len() == 1");
+            check(prods[0] == name!("eosio"), "bad value");
         }
     }
 }

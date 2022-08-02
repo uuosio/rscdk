@@ -135,12 +135,8 @@ pub fn eosio_memcpy( dst: *mut u8, src: *const u8, length: usize) -> *mut u8 {
 pub fn get_active_producers() -> Vec<Name> {
 	unsafe {
 		let datalen = intrinsics::get_active_producers(0 as *const u8, 0);
-		if datalen == 0 {
-			return Vec::new();
-		}
 		let data: Vec<Name> = vec![Name{n: 0}; (datalen/8) as usize];
 		intrinsics::get_active_producers(data.as_ptr() as *const u8 as *mut u8, datalen);
-		//		_get_active_producers(data.as_ptr() as *const u8 as *mut u8, datalen);
 		return data;
 	}
 }
@@ -430,13 +426,10 @@ pub fn cancel_deferred(sender_id: &Uint128) -> i32 {
 pub fn read_transaction() -> Transaction {
 	unsafe {
 		let size = intrinsics::transaction_size();
-		if size <= 0 {
-			return Vec::new();
-		}
 		let mut data: Vec<u8> = vec![0; size];
 		intrinsics::read_transaction(data.as_mut_ptr(), data.len());
-		let ret = Transaction::default();
-		ret.unpack(data);
+		let mut ret = Transaction::default();
+		ret.unpack(&data);
 		return ret;
 	}
 }

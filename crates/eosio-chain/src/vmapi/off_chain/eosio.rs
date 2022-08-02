@@ -1,5 +1,12 @@
 use crate::structs::*;
 
+use crate::{
+	eosio_println,
+	print::{
+		Printable,
+	},
+};
+
 use crate::transaction::{
 	Transaction,
 };
@@ -54,7 +61,14 @@ pub fn eosio_memcpy( dst: *mut u8, src: *const u8, length: usize) -> *mut u8 {
 
 ///
 pub fn get_active_producers() -> Vec<Name> {
-	return Vec::new();
+	let data = get_vm_api_client().get_active_producers().unwrap();
+	let mut ret: Vec<Name> = vec![Name::default();data.len()/8];
+	let mut i = 0usize;
+	for v in &mut ret {
+		v.unpack(data[i..].into());
+		i += 8;
+	}
+	ret
 }
 
 //permissions.h
