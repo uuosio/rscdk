@@ -17,6 +17,10 @@ use crate::serializer::{
     Decoder,
 };
 
+use crate::varint::{
+    VarUint32,
+};
+
 use crate::{
     vec,
     vec::Vec,
@@ -547,7 +551,7 @@ impl Default for Uint256 {
 #[cfg_attr(feature = "std", derive(eosio_scale_info::TypeInfo))]
 #[derive(Copy, Clone, Default)]
 pub struct TimePoint {
-    ///
+    /// elapsed in microseconds
     pub elapsed: u64,
 }
 
@@ -619,6 +623,7 @@ impl Packer for BlockTimeStampType {
 }
 
 ///
+#[derive(Clone, Eq, PartialEq)]
 pub struct ProducerKey {
     ///
     pub producer_name: Name,
@@ -638,54 +643,181 @@ impl ProducerKey {
 
 impl Packer for ProducerKey {
     fn size(&self) -> usize {
-        return 8 + 65;
+        return 8 + self.block_signing_key.size();
     }
 
     fn pack(&self) -> Vec<u8> {
-        return Vec::new();
+        let mut enc = Encoder::new(self.size());
+        enc.pack(&self.producer_name);
+        enc.pack(&self.block_signing_key);
+        return enc.get_bytes();
     }
 
-    fn unpack(&mut self, _raw: &[u8]) -> usize {
-        return 0;
-        // return ProducerKey {
-        //     producer_name: Name{n: 0},
-        //     block_signing_key: [0; 65],
-        // };
+    fn unpack(&mut self, raw: &[u8]) -> usize {
+        let mut dec = Decoder::new(raw);
+        dec.unpack(&mut self.producer_name);
+        dec.unpack(&mut self.block_signing_key);
+        return dec.get_pos();
+    }
+}
+
+impl Default for ProducerKey {
+    ///
+    #[inline]
+    fn default() -> Self {
+        ProducerKey{..Default::default()}
+    }
+}
+
+#[derive(Default)]
+pub struct KeyWeight {
+    pub key: PublicKey,
+    pub weight: u16,
+}
+
+impl Packer for KeyWeight {
+    fn size(&self) -> usize {
+        return 2 + self.key.size();
+    }
+
+    fn pack(&self) -> Vec<u8> {
+        let mut enc = Encoder::new(self.size());
+        enc.pack(&self.key);
+        enc.pack(&self.weight);
+        return enc.get_bytes();
+    }
+
+    fn unpack(&mut self, raw: &[u8]) -> usize {
+        let mut dec = Decoder::new(raw);
+        dec.unpack(&mut self.key);
+        dec.unpack(&mut self.weight);
+        return dec.get_pos();
+    }
+}
+
+#[derive(Default)]
+pub struct BlockSigningAuthorityV0 {
+    /**
+     * minimum threshold of accumulated weights from component keys that satisfies this authority
+     *
+     * @brief minimum threshold of accumulated weights from component keys that satisfies this authority
+     */
+    pub threshold: u32,
+
+    /**
+     * component keys and their associated weights
+     *
+     * @brief component keys and their associated weights
+     */
+    pub keys: Vec<KeyWeight>,
+}
+
+impl Packer for BlockSigningAuthorityV0 {
+    fn size(&self) -> usize {
+        let mut size = 2 + VarUint32::new(self.keys.len() as u32).size();
+        for key in &self.keys {
+            size += key.size();
+        }
+        return size;
+    }
+
+    fn pack(&self) -> Vec<u8> {
+        let mut enc = Encoder::new(self.size());
+        enc.pack(&self.threshold);
+        enc.pack(&self.keys);
+        return enc.get_bytes();
+    }
+
+    fn unpack(&mut self, raw: &[u8]) -> usize {
+        let mut dec = Decoder::new(raw);
+        dec.unpack(&mut self.threshold);
+        dec.unpack(&mut self.keys);
+        return dec.get_pos();
+    }
+}
+
+pub enum BlockSigningAuthority {
+    V0(BlockSigningAuthorityV0)
+}
+
+impl Default for BlockSigningAuthority {
+    fn default() -> Self {
+        BlockSigningAuthority::V0(Default::default())
+    }
+}
+
+impl Packer for BlockSigningAuthority {
+    fn size(&self) -> usize {
+        return 1 + match self {
+            BlockSigningAuthority::V0(x) => x.size(),
+            _ => {
+                0
+            }
+        };
+    }
+
+    fn pack(&self) -> Vec<u8> {
+        let mut enc = Encoder::new(self.size());
+        enc.pack(&0u8);
+        match self {
+            BlockSigningAuthority::V0(x) => {
+                enc.pack(x);
+            }
+            _ => {
+
+            }
+        }
+        return enc.get_bytes();
+    }
+
+    fn unpack(&mut self, raw: &[u8]) -> usize {
+        let mut dec = Decoder::new(raw);
+        let mut ty = 0u8;
+        dec.unpack(&mut ty);
+        if ty == 0 {
+            let mut v0 = BlockSigningAuthorityV0::default();
+            dec.unpack(&mut v0);
+            *self = BlockSigningAuthority::V0(v0);
+        } else {
+            check(false, "bad BlockSigningAuthority type");
+        }
+        return dec.get_pos();
     }
 }
 
 
-// #[cfg(feature = "std")]
-// #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
-// const _: () = {
+#[derive(Default)]
+pub struct ProducerAuthority {
 
-//     pub trait MyTypeInfo {
-//         type Identity: ?Sized + 'static;    
-//         fn type_info() -> ::eosio_scale_info::Type;
-//     }
+    /**
+     * Name of the producer
+     *
+     * @brief Name of the producer
+     */
+    pub producer_name: Name,
 
-//     impl ::eosio_scale_info::TypeInfo for f32 {
-//         type Identity = Self;
-//         fn type_info() -> ::eosio_scale_info::Type {
-//             ::eosio_scale_info::Type::builder()
-//             .path(::eosio_scale_info::Path::new("f32", ""))
-//             .type_params(Vec::new())
-//             .docs(&[])
-//             .composite(::eosio_scale_info::build::Fields::named())
-//             // ::eosio_scale_info::Type::new(::eosio_scale_info::path::Path::voldemort(), Vec::new(), item, Vec::new())
-//         }
-//     }
+    /**
+     * The block signing authority used by this producer
+     */
+    pub authority: BlockSigningAuthority,
+}
 
-//     impl ::eosio_scale_info::TypeInfo for f64 {
-//         type Identity = Self;
-//         fn type_info() -> ::eosio_scale_info::Type {        
-//             ::eosio_scale_info::Type::builder()
-//             .path(::eosio_scale_info::Path::new("f64", ""))
-//             .type_params(Vec::new())
-//             .docs(&[])
-//             .composite(::eosio_scale_info::build::Fields::named())
-//             // ::eosio_scale_info::Type::new(::eosio_scale_info::path::Path::voldemort(), Vec::new(), item, Vec::new())
-//         }
-//     }
-// };
+impl Packer for ProducerAuthority {
+    fn size(&self) -> usize {
+        return self.producer_name.size() + self.authority.size();
+    }
 
+    fn pack(&self) -> Vec<u8> {
+        let mut enc = Encoder::new(self.size());
+        enc.pack(&self.producer_name);
+        enc.pack(&self.authority);
+        return enc.get_bytes();
+    }
+
+    fn unpack(&mut self, raw: &[u8]) -> usize {
+        let mut dec = Decoder::new(raw);
+        dec.unpack(&mut self.producer_name);
+        dec.unpack(&mut self.authority);
+        return dec.get_pos();
+    }
+}

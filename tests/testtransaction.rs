@@ -28,9 +28,7 @@ pub mod testtransaction {
 
         #[chain(action="test")]
         pub fn test(&self) {
-            let raw_tx = read_transaction();
-            let mut tx = Transaction::default();
-            tx.unpack(&raw_tx);
+            let tx = read_transaction();
             eosio_println!("++++test:", tx.expiration().utc_seconds());
             let actions = tx.actions();
             check(actions.len() == 1, "bad actions");

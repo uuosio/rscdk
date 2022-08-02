@@ -108,45 +108,6 @@ impl Encoder {
     }
 
     ///
-    pub fn pack_bytes(&mut self, bs: &Vec<u8>) -> usize {
-        let var = VarUint32::new(bs.len() as u32);
-        self.pack(&var);
-        self.buf.extend(bs);
-        return bs.len() + var.size();
-    }
-
-    ///
-    pub fn pack_vec<T: Packer>(&mut self, bs: &Vec<T>) -> usize {
-        let pos = self.buf.len();
-        let var = VarUint32::new(bs.len() as u32);
-        self.pack(&var);
-        for i in 0..bs.len() {
-            self.pack(&bs[i]);
-        }
-        return self.buf.len() - pos;
-    }
-
-    ///
-    pub fn pack_u32(&mut self, mut n: u32) -> usize {
-        let size: usize = size_of::<u32>();
-        for _ in 0..size {
-            self.buf.push((n & 0xff) as u8);
-            n >>= 8;
-        }
-        return size;
-    }
-
-    ///
-    pub fn pack_u64(&mut self, mut n: u64) -> usize {
-        let size: usize = size_of::<u64>();
-        for _ in 0..size {
-            self.buf.push((n & 0xff) as u8);
-            n >>= 8;
-        }
-        return size;
-    }
-
-    ///
     pub fn pack_number<T>(&mut self, n: T) -> usize {
         let size: usize = size_of::<T>();
         let vec_size = self.buf.len();
@@ -180,20 +141,15 @@ impl<'a> Decoder<'a> {
     }
 
     ///
-    pub fn unpack_vec<T>(&mut self, vv: &mut Vec<T>) -> usize
-    where T: Packer + Default,
+    pub fn unpack_number<T>(&mut self) -> T 
+    where T: Default
     {
-        let pos = self.get_pos();
-
-        let mut size = VarUint32{n:0};
-        self.unpack(&mut size);
-
-        vv.resize_with(size.n as usize, Default::default);
-
-        for v in vv {
-            self.unpack(v);
-        }
-        self.get_pos() - pos
+        let size: usize = size_of::<T>();
+        let n = T::default();
+        check(self.pos + size <= self.buf.len(), "Decoder::unpack_number: buffer overflow!");
+        eosio_memcpy(&n as *const T as *mut T as *mut u8, self.buf[self.pos..].as_ptr(), size);
+        self.pos += size;
+        return n;
     }
 
     ///
@@ -271,8 +227,6 @@ impl<T> Packer for Vec<T> where T: Packer + Default {
         return dec.get_pos();
     }
 }
-
-// pub enum Option<T> {
 
 impl<T> Packer for Option<T> where T: Packer + Default {
     ///

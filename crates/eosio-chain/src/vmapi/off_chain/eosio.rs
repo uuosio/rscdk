@@ -1,6 +1,23 @@
 use crate::structs::*;
+
+use crate::transaction::{
+	Transaction,
+};
+
+use crate::action::{
+	PermissionLevel,
+};
+
+use crate::privileged::{
+	BlockchainParameters,
+};
+
 use crate::name::{
 	Name,
+};
+
+use crate::serializer::{
+	Packer,
 };
 
 use crate::{
@@ -40,14 +57,39 @@ pub fn get_active_producers() -> Vec<Name> {
 	return Vec::new();
 }
 
-///
-pub fn get_permission_last_used( _account: Name, _permission: Name ) -> TimePoint {
-	return TimePoint{elapsed: 0};
+//permissions.h
+/// Checks if a transaction is authorized by a provided set of keys and permissions
+pub fn check_transaction_authorization(
+	trx: &Transaction,
+	perms: &Vec<PermissionLevel>,
+	pubkeys: &Vec<PublicKey>
+) -> i32 {
+	get_vm_api_client().check_transaction_authorization(trx.pack(), pubkeys.pack(), perms.pack()).unwrap()
+}
+
+/// Checks if a permission is authorized by a provided delay and a provided set of keys and permissions
+pub fn check_permission_authorization(
+	account: Name,
+	permission: Name,
+	perms: &Vec<PermissionLevel>,
+	pubkeys: &Vec<PublicKey>,
+	delay_us: u64
+) -> i32 {
+	let perms_data = perms.pack();
+	let pubkeys_data = pubkeys.pack();
+	get_vm_api_client().check_permission_authorization(account.n.into(), permission.n.into(), pubkeys_data, perms_data, delay_us.into()).unwrap()
 }
 
 ///
-pub fn get_account_creation_time( _account: Name ) -> TimePoint {
-	return TimePoint{elapsed: 0};
+pub fn get_permission_last_used(account: Name, permission: Name ) -> TimePoint {
+	let elapsed = get_vm_api_client().get_permission_last_used(account.n.into(), permission.n.into()).unwrap();
+	return TimePoint{elapsed: elapsed as u64};
+}
+
+///
+pub fn get_account_creation_time(account: Name) -> TimePoint {
+	let elapsed = get_vm_api_client().get_account_creation_time(account.n.into()).unwrap();
+	return TimePoint{elapsed: elapsed as u64};
 }
 
 ///
@@ -122,14 +164,7 @@ pub fn eosio_assert_message(test: u32, msg: *const u8, msg_len: u32) {
         slice::from_raw_parts(msg, msg_len as usize)
     };
 
-	match get_vm_api_client().eosio_assert_message(false, dst.into()) {
-		Ok(()) => {
-
-		},
-		Err(err) => {
-			panic!("{:?}", err);
-		}
-	}
+	get_vm_api_client().eosio_assert_message(false, dst.into()).unwrap();
 }
 
 ///
@@ -172,44 +207,53 @@ pub fn get_sender() -> Name {
 	return Name{n: n};
 }
 
-///
-pub fn get_resource_limits( _account: Name) -> (i64, i64, i64) {
-	return (0, 0, 0);
+/// return resource limits of ram, net, and cpu.
+pub fn get_resource_limits(account: Name) -> (i64, i64, i64) {
+	let ret = get_vm_api_client().get_resource_limits(account.n.into()).unwrap();
+	(ret.ram_bytes.unwrap(), ret.net_weight.unwrap(), ret.cpu_weight.unwrap())
 }
 
 ///
-pub fn set_resource_limits( _account: Name, _ram_bytes: i64, _net_weight: i64, _cpu_weight: i64) {
-}
-
-//TODO:
-///
-pub fn set_proposed_producers(_producer_keys: &[ProducerKey]) -> i64 {
-	return -1;
+pub fn set_resource_limits(account: Name, ram_bytes: i64, net_weight: i64, cpu_weight: i64) {
+	get_vm_api_client().set_resource_limits(account.n.into(), ram_bytes, net_weight, cpu_weight).unwrap()
 }
 
 //TODO:
 ///
-pub fn set_proposed_producers_ex(_producer_data_format: u64, _producer_keys: &[ProducerKey]) -> i64 {
-	return -1;
+pub fn set_proposed_producers(producer_keys: &Vec<ProducerKey>) -> i64 {
+	let packed = producer_keys.pack();
+	get_vm_api_client().set_proposed_producers(packed).unwrap()
+}
+
+//TODO:
+///
+pub fn set_proposed_producers_ex(producer_keys: &Vec<ProducerAuthority>) -> i64 {
+	let packed = producer_keys.pack();
+	get_vm_api_client().set_proposed_producers_ex(1u64.into(), packed).unwrap()
 }
 
 ///
-pub fn is_privileged(_account: Name) -> bool {
-	return false;
+pub fn is_privileged(account: Name) -> bool {
+	return get_vm_api_client().is_privileged(account.n.into()).unwrap();
 }
 
 ///
-pub fn set_privileged( _account: Name, _is_priv: bool) {
-}
-
-//TODO
-///
-pub fn set_blockchain_parameters_packed(_data: &[u8]) {
+pub fn set_privileged(account: Name, is_priv: bool) {
+	get_vm_api_client().set_privileged(account.n.into(), is_priv).unwrap();
 }
 
 ///
-pub fn get_blockchain_parameters_packed() -> Vec<u8> {
-	return Vec::new();
+pub fn set_blockchain_parameters(params: &BlockchainParameters) {
+	let data = params.pack();
+	get_vm_api_client().set_blockchain_parameters_packed(data).unwrap();
+}
+
+///
+pub fn get_blockchain_parameters() -> BlockchainParameters {
+	let mut ret = BlockchainParameters::default();
+	let data = get_vm_api_client().get_blockchain_parameters_packed().unwrap();
+	ret.unpack(&data);
+	return ret;
 }
 
 ///
@@ -234,8 +278,11 @@ pub fn cancel_deferred(sender_id: &Uint128) -> i32 {
 }
 
 ///
-pub fn read_transaction() -> Vec<u8> {
-	get_vm_api_client().read_transaction().unwrap()
+pub fn read_transaction() -> Transaction {
+	let data = get_vm_api_client().read_transaction().unwrap();
+	let mut ret = Transaction::default();
+	ret.unpack(&data);
+	return ret;
 }
 
 ///

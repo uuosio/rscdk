@@ -146,3 +146,9 @@ impl Packer for Transaction {
         return dec.get_pos();
     }
 }
+
+// bool
+// check_transaction_authorization( const transaction&                 trx,
+//                                  const std::set<permission_level>&  provided_permissions ,
+//                                  const std::set<public_key>&        provided_keys = std::set<public_key>()
+//                                )

@@ -38,12 +38,39 @@ pub mod test {
         pub fn test(&self) {
             let mut enc = Encoder::new(10);
             enc.pack_number(10u8);
+            enc.pack_number(10i8);
+            enc.pack_number(10u16);
+            enc.pack_number(10i16);
+            enc.pack_number(10u32);
+            enc.pack_number(10i32);
 
-            let v = enc.get_bytes();
-            let mut dec = Decoder::new(&v);
-            let mut n = 0u8;
-            dec.unpack(&mut n);
-            check(n == 10, "bad value!");
+            let v1 = vec![1u8;256];
+            enc.pack(&v1);
+
+            let raw = enc.get_bytes();
+            let mut dec = Decoder::new(&raw);
+
+            let n = dec.unpack_number::<u8>();
+            check(n == 10, "bad value");
+
+            let n = dec.unpack_number::<i8>();
+            check(n == 10, "bad value");
+
+            let n = dec.unpack_number::<u16>();
+            check(n == 10, "bad value");
+
+            let n = dec.unpack_number::<i16>();
+            check(n == 10, "bad value");
+
+            let n = dec.unpack_number::<u32>();
+            check(n == 10, "bad value");
+
+            let n = dec.unpack_number::<i32>();
+            check(n == 10, "bad value");
+            
+            let mut v2: Vec<u8> = Vec::new();
+            dec.unpack(&mut v2);
+            check(v1 == v2, "v.len() == v2.len()");
         }
     }
 }

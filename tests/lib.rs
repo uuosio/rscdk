@@ -83,7 +83,8 @@ mod testall {
 #[cfg(feature="std")]
 #[no_mangle]
 fn native_apply(_receiver: u64, _first_receiver: u64, _action: u64) {
-    // testcrypto::testcrypto::native_apply(_receiver, _first_receiver, _action);
+    testintrinsics::testintrinsics::native_apply(_receiver, _first_receiver, _action);
+    // testserializer::test::native_apply(_receiver, _first_receiver, _action);
 }
 
 #[cfg(test)]
@@ -505,6 +506,73 @@ mod tests {
         // tester.enable_debug_contract("hello", true).unwrap();
 
         deploy_contract(&mut tester, "testcrypto");
+
+        let args = r#"
+        {
+            "msg": "hello,world",
+            "digest": "77df263f49123356d28a4a8715d25bf5b980beeeb503cab46ea61ac9f3320eda",
+            "sig": "SIG_K1_KXdabr1z4G6e2o2xmi7jPhzxH3Lj5igjR5v3q9LY7KbLWyXBZyES748bPzfM2MhQQVsLrouJzXT9YFfw1CywzMVCcNVMGH",
+            "pubkey": "EOS87J9kj21dvniKhqd7A7QPXRz498ek3H3doXoQVPf4VnHHNtt1M"
+        }
+        "#;
+
+        let permissions = r#"
+        {
+            "hello": "active"
+        }
+        "#;
+        tester.push_action("hello", "test", args.into(), permissions).unwrap();
+        tester.produce_block();
+    }
+
+    #[test]
+    fn test_serializer() {
+        let abi = &testintrinsics::generate_abi();
+        fs::write(Path::new("./testserializer/target/testserializer.abi"), abi).unwrap();
+
+        let mut tester = ChainTester::new();
+        tester.enable_debug_contract("hello", true).unwrap();
+
+        deploy_contract(&mut tester, "testserializer");
+
+        let args = r#"
+        {
+        }
+        "#;
+
+        let permissions = r#"
+        {
+            "hello": "active"
+        }
+        "#;
+        tester.push_action("hello", "test", args.into(), permissions).unwrap();
+        tester.produce_block();
+    }
+    
+    #[test]
+    fn test_intrinsics() {
+        let abi = &testintrinsics::generate_abi();
+        fs::write(Path::new("./testintrinsics/target/testintrinsics.abi"), abi).unwrap();
+
+        let mut tester = ChainTester::new();
+        tester.enable_debug_contract("hello", true).unwrap();
+
+        deploy_contract(&mut tester, "testintrinsics");
+
+        let args = r#"
+        {
+            "account": "hello",
+            "is_priv": true
+        }
+        "#;
+
+        let permissions = r#"
+        {
+            "eosio": "active"
+        }
+        "#;
+        tester.push_action("eosio", "setpriv", args.into(), permissions).unwrap();
+        tester.produce_block();
 
         let args = r#"
         {

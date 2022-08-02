@@ -1,7 +1,23 @@
 use crate::structs::*;
 use crate::vmapi::system;
 
+use crate::transaction::{
+	Transaction,
+};
+
+use crate::action::{
+	PermissionLevel,
+};
+
+use crate::privileged::{
+	BlockchainParameters,
+};
+
 use crate::name::{ Name };
+
+use crate::serializer::{
+	Packer,
+};
 
 use crate::{
 	vec,
@@ -18,8 +34,22 @@ mod intrinsics {
 
 		pub fn get_active_producers(producers: *const u8, datalen: u32) -> u32;
 	
-		pub fn get_permission_last_used( account: u64, permission: u64 ) -> u64;
-	
+
+		// permission.h
+        pub fn check_transaction_authorization(
+			trx_data: *const u8, trx_size: u32,
+			pubkeys_data: *const u8, pubkeys_size: u32,
+            perms_data: *const u8, perms_size: u32,
+        ) -> i32;
+
+		pub fn check_permission_authorization(
+			account: u64, permission: u64,
+			pubkeys_data: *const u8, pubkeys_size: u32,
+			perms_data: *const u8, perms_size: u32,
+			delay_us: u64
+		) -> i32;
+
+		pub fn get_permission_last_used( account: u64, permission: u64 ) -> u64;	
 		pub fn get_account_creation_time( account: u64 ) -> u64;
 	
 		pub fn read_action_data( msg: *mut u8, len: u32 ) -> u32;
@@ -59,11 +89,9 @@ mod intrinsics {
 	
 		pub fn set_resource_limits( account: u64, ram_bytes: i64, net_weight: i64, cpu_weight: i64);
 	
-		// #[link_name = "set_proposed_producers"]
-		// fn set_proposed_producers(producer_data: *const u8, producer_data_size: usize ) -> i64;
+		pub fn set_proposed_producers(producer_data: *const u8, producer_data_size: usize ) -> i64;
 	
-		// #[link_name = "set_proposed_producers_ex"]
-		// fn set_proposed_producers_ex(producer_data_format: u64, producer_data: *mut u8, producer_data_size: u32) -> i64;
+		pub fn set_proposed_producers_ex(producer_data_format: u64, producer_data: *const u8, producer_data_size: u32) -> i64;
 	
 		pub fn is_privileged( account: u64 ) -> bool;
 	
@@ -114,6 +142,45 @@ pub fn get_active_producers() -> Vec<Name> {
 		intrinsics::get_active_producers(data.as_ptr() as *const u8 as *mut u8, datalen);
 		//		_get_active_producers(data.as_ptr() as *const u8 as *mut u8, datalen);
 		return data;
+	}
+}
+
+//permissions.h
+/// Checks if a transaction is authorized by a provided set of keys and permissions
+pub fn check_transaction_authorization(
+	trx: &Transaction,
+	perms: &Vec<PermissionLevel>,
+	pubkeys: &Vec<PublicKey>
+) -> i32 {
+	let trx_data = trx.pack();
+	let perms_data = perms.pack();
+	let pubkeys_data = pubkeys.pack();
+	unsafe {
+		return intrinsics::check_transaction_authorization(
+			trx_data.as_ptr(), trx_data.len() as u32,
+			pubkeys_data.as_ptr(), pubkeys_data.len() as u32,
+			perms_data.as_ptr(), perms_data.len() as u32
+		);	
+	}
+}
+
+/// Checks if a permission is authorized by a provided delay and a provided set of keys and permissions
+pub fn check_permission_authorization(
+	account: Name,
+	permission: Name,
+	perms: &Vec<PermissionLevel>,
+	pubkeys: &Vec<PublicKey>,
+	delay_us: u64
+) -> i32 {
+	let perms_data = perms.pack();
+	let pubkeys_data = pubkeys.pack();
+	unsafe {
+		return intrinsics::check_permission_authorization(
+			account.n.into(), permission.n.into(),
+			pubkeys_data.as_ptr(), pubkeys_data.len() as u32,
+			perms_data.as_ptr(), perms_data.len() as u32,
+			delay_us,
+		);
 	}
 }
 
@@ -267,7 +334,7 @@ pub fn get_sender() -> Name {
 	}
 }
 
-///
+/// return resource limits of ram, net, and cpu.
 pub fn get_resource_limits( account: Name) -> (i64, i64, i64) {
 	unsafe {
 		let mut ram_bytes = 0;
@@ -287,14 +354,20 @@ pub fn set_resource_limits( account: Name, ram_bytes: i64, net_weight: i64, cpu_
 
 //TODO:
 ///
-pub fn set_proposed_producers(_producer_keys: &[ProducerKey]) -> i64 {
-	return -1;
+pub fn set_proposed_producers(producer_keys: &Vec<ProducerKey>) -> i64 {
+	let packed = producer_keys.pack();
+	unsafe {
+		intrinsics::set_proposed_producers(packed.as_ptr(), packed.len())
+	}
 }
 
 //TODO:
 ///
-pub fn set_proposed_producers_ex(_producer_data_format: u64, _producer_keys: &[ProducerKey]) -> i64 {
-	return -1;
+pub fn set_proposed_producers_ex(producer_data_format: u64, producer_keys: &Vec<ProducerAuthority>) -> i64 {
+	let packed = producer_keys.pack();
+	unsafe {
+		intrinsics::set_proposed_producers_ex(producer_data_format, packed.as_ptr(), packed.len() as u32)
+	}
 }
 
 ///
@@ -311,24 +384,23 @@ pub fn set_privileged( account: Name, is_priv: bool) {
 	}
 }
 
-//TODO
 ///
-pub fn set_blockchain_parameters_packed(data: &[u8]) {
+pub fn set_blockchain_parameters(params: &BlockchainParameters) {
+	let data = params.pack();
 	unsafe {
 		intrinsics::set_blockchain_parameters_packed(data.as_ptr(), data.len() as u32);
 	}
 }
 
 ///
-pub fn get_blockchain_parameters_packed() -> Vec<u8> {
+pub fn get_blockchain_parameters() -> BlockchainParameters {
 	unsafe {
 		let size = intrinsics::get_blockchain_parameters_packed(0 as *mut u8, 0);
-		if size <= 0 {
-			return Vec::new();
-		}
 		let mut data: Vec<u8> = vec![0; size as usize];
 		intrinsics::get_blockchain_parameters_packed(data.as_mut_ptr(), data.len() as u32);
-		return data;
+		let mut ret = BlockchainParameters::default();
+		ret.unpack(&data);
+		return ret;
 	}
 }
 
@@ -354,9 +426,8 @@ pub fn cancel_deferred(sender_id: &Uint128) -> i32 {
 	}
 }
 
-//TODO:
 ///
-pub fn read_transaction() -> Vec<u8> {
+pub fn read_transaction() -> Transaction {
 	unsafe {
 		let size = intrinsics::transaction_size();
 		if size <= 0 {
@@ -364,7 +435,9 @@ pub fn read_transaction() -> Vec<u8> {
 		}
 		let mut data: Vec<u8> = vec![0; size];
 		intrinsics::read_transaction(data.as_mut_ptr(), data.len());
-		return data;
+		let ret = Transaction::default();
+		ret.unpack(data);
+		return ret;
 	}
 }
 

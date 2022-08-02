@@ -95,6 +95,11 @@ pub use self::transaction::{
 
 ///
 pub mod serializer;
+pub use serializer::{
+    Encoder,
+    Decoder,
+};
+
 ///
 pub mod db;
 
@@ -115,6 +120,8 @@ pub use asset::{
     Symbol,
 };
 
+mod privileged;
+
 ///
 pub mod crypto;
 pub use crypto::{
@@ -134,6 +141,8 @@ pub use crypto::{
 
 pub use self::vmapi::eosio:: {
     get_active_producers,
+    check_transaction_authorization,
+    check_permission_authorization,
     get_permission_last_used,
     get_account_creation_time,
     read_action_data,
@@ -159,8 +168,8 @@ pub use self::vmapi::eosio:: {
     set_proposed_producers_ex,
     is_privileged,
     set_privileged,
-    set_blockchain_parameters_packed,
-    get_blockchain_parameters_packed,
+    set_blockchain_parameters,
+    get_blockchain_parameters,
     preactivate_feature,
     send_deferred,
     cancel_deferred,
@@ -186,6 +195,11 @@ pub use name::{
 
 ///
 pub mod action;
+
+pub use action::{
+    PermissionLevel,
+    Action,
+};
 
 ///
 pub mod utils;

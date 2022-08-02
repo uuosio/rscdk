@@ -950,6 +950,10 @@ pub trait TIPCChainTesterSyncClient {
   fn unpack_action_args(&mut self, id: i32, contract: String, action: String, raw_args: Vec<u8>) -> thrift::Result<Vec<u8>>;
   fn new_chain(&mut self) -> thrift::Result<i32>;
   fn free_chain(&mut self, id: i32) -> thrift::Result<i32>;
+  fn get_info(&mut self, id: i32) -> thrift::Result<String>;
+  fn get_account(&mut self, id: i32, account: String) -> thrift::Result<String>;
+  fn import_key(&mut self, pub_key: String, priv_key: String) -> thrift::Result<bool>;
+  fn get_required_keys(&mut self, id: i32, transaction: String, available_keys: Vec<String>) -> thrift::Result<String>;
   fn produce_block(&mut self, id: i32) -> thrift::Result<()>;
   fn push_action(&mut self, id: i32, account: String, action: String, arguments: String, permissions: String) -> thrift::Result<Vec<u8>>;
   fn push_actions(&mut self, id: i32, actions: Vec<Box<Action>>) -> thrift::Result<Vec<u8>>;
@@ -1197,6 +1201,114 @@ impl <C: TThriftClient + TIPCChainTesterSyncClientMarker> TIPCChainTesterSyncCli
       result.ok_or()
     }
   }
+  fn get_info(&mut self, id: i32) -> thrift::Result<String> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("get_info", TMessageType::Call, self.sequence_number());
+        let call_args = IPCChainTesterGetInfoArgs { id };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("get_info", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = IPCChainTesterGetInfoResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn get_account(&mut self, id: i32, account: String) -> thrift::Result<String> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("get_account", TMessageType::Call, self.sequence_number());
+        let call_args = IPCChainTesterGetAccountArgs { id, account };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("get_account", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = IPCChainTesterGetAccountResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn import_key(&mut self, pub_key: String, priv_key: String) -> thrift::Result<bool> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("import_key", TMessageType::Call, self.sequence_number());
+        let call_args = IPCChainTesterImportKeyArgs { pub_key, priv_key };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("import_key", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = IPCChainTesterImportKeyResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn get_required_keys(&mut self, id: i32, transaction: String, available_keys: Vec<String>) -> thrift::Result<String> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("get_required_keys", TMessageType::Call, self.sequence_number());
+        let call_args = IPCChainTesterGetRequiredKeysArgs { id, transaction, available_keys };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("get_required_keys", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = IPCChainTesterGetRequiredKeysResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
   fn produce_block(&mut self, id: i32) -> thrift::Result<()> {
     (
       {
@@ -1323,6 +1435,10 @@ pub trait IPCChainTesterSyncHandler {
   fn handle_unpack_action_args(&self, id: i32, contract: String, action: String, raw_args: Vec<u8>) -> thrift::Result<Vec<u8>>;
   fn handle_new_chain(&self) -> thrift::Result<i32>;
   fn handle_free_chain(&self, id: i32) -> thrift::Result<i32>;
+  fn handle_get_info(&self, id: i32) -> thrift::Result<String>;
+  fn handle_get_account(&self, id: i32, account: String) -> thrift::Result<String>;
+  fn handle_import_key(&self, pub_key: String, priv_key: String) -> thrift::Result<bool>;
+  fn handle_get_required_keys(&self, id: i32, transaction: String, available_keys: Vec<String>) -> thrift::Result<String>;
   fn handle_produce_block(&self, id: i32) -> thrift::Result<()>;
   fn handle_push_action(&self, id: i32, account: String, action: String, arguments: String, permissions: String) -> thrift::Result<Vec<u8>>;
   fn handle_push_actions(&self, id: i32, actions: Vec<Box<Action>>) -> thrift::Result<Vec<u8>>;
@@ -1365,6 +1481,18 @@ impl <H: IPCChainTesterSyncHandler> IPCChainTesterSyncProcessor<H> {
   }
   fn process_free_chain(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TIPCChainTesterProcessFunctions::process_free_chain(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_get_info(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TIPCChainTesterProcessFunctions::process_get_info(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_get_account(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TIPCChainTesterProcessFunctions::process_get_account(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_import_key(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TIPCChainTesterProcessFunctions::process_import_key(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_get_required_keys(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TIPCChainTesterProcessFunctions::process_get_required_keys(&self.handler, incoming_sequence_number, i_prot, o_prot)
   }
   fn process_produce_block(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TIPCChainTesterProcessFunctions::process_produce_block(&self.handler, incoming_sequence_number, i_prot, o_prot)
@@ -1690,6 +1818,154 @@ impl TIPCChainTesterProcessFunctions {
       },
     }
   }
+  pub fn process_get_info<H: IPCChainTesterSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = IPCChainTesterGetInfoArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_get_info(args.id) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("get_info", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = IPCChainTesterGetInfoResult { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("get_info", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("get_info", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_get_account<H: IPCChainTesterSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = IPCChainTesterGetAccountArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_get_account(args.id, args.account) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("get_account", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = IPCChainTesterGetAccountResult { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("get_account", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("get_account", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_import_key<H: IPCChainTesterSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = IPCChainTesterImportKeyArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_import_key(args.pub_key, args.priv_key) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("import_key", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = IPCChainTesterImportKeyResult { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("import_key", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("import_key", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_get_required_keys<H: IPCChainTesterSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = IPCChainTesterGetRequiredKeysArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_get_required_keys(args.id, args.transaction, args.available_keys) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("get_required_keys", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = IPCChainTesterGetRequiredKeysResult { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("get_required_keys", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("get_required_keys", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
   pub fn process_produce_block<H: IPCChainTesterSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     let args = IPCChainTesterProduceBlockArgs::read_from_in_protocol(i_prot)?;
     match handler.handle_produce_block(args.id) {
@@ -1870,6 +2146,18 @@ impl <H: IPCChainTesterSyncHandler> TProcessor for IPCChainTesterSyncProcessor<H
       },
       "free_chain" => {
         self.process_free_chain(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "get_info" => {
+        self.process_get_info(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "get_account" => {
+        self.process_get_account(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "import_key" => {
+        self.process_import_key(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "get_required_keys" => {
+        self.process_get_required_keys(message_ident.sequence_number, i_prot, o_prot)
       },
       "produce_block" => {
         self.process_produce_block(message_ident.sequence_number, i_prot, o_prot)
@@ -2811,6 +3099,504 @@ impl IPCChainTesterFreeChainResult {
 }
 
 //
+// IPCChainTesterGetInfoArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct IPCChainTesterGetInfoArgs {
+  id: i32,
+}
+
+impl IPCChainTesterGetInfoArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<IPCChainTesterGetInfoArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<i32> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_i32()?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("IPCChainTesterGetInfoArgs.id", &f_1)?;
+    let ret = IPCChainTesterGetInfoArgs {
+      id: f_1.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("get_info_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("id", TType::I32, 1))?;
+    o_prot.write_i32(self.id)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// IPCChainTesterGetInfoResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct IPCChainTesterGetInfoResult {
+  result_value: Option<String>,
+}
+
+impl IPCChainTesterGetInfoResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<IPCChainTesterGetInfoResult> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<String> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = i_prot.read_string()?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = IPCChainTesterGetInfoResult {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("IPCChainTesterGetInfoResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(ref fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::String, 0))?;
+      o_prot.write_string(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<String> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for IPCChainTesterGetInfo"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// IPCChainTesterGetAccountArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct IPCChainTesterGetAccountArgs {
+  id: i32,
+  account: String,
+}
+
+impl IPCChainTesterGetAccountArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<IPCChainTesterGetAccountArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<i32> = None;
+    let mut f_2: Option<String> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_i32()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = i_prot.read_string()?;
+          f_2 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("IPCChainTesterGetAccountArgs.id", &f_1)?;
+    verify_required_field_exists("IPCChainTesterGetAccountArgs.account", &f_2)?;
+    let ret = IPCChainTesterGetAccountArgs {
+      id: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      account: f_2.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("get_account_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("id", TType::I32, 1))?;
+    o_prot.write_i32(self.id)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("account", TType::String, 2))?;
+    o_prot.write_string(&self.account)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// IPCChainTesterGetAccountResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct IPCChainTesterGetAccountResult {
+  result_value: Option<String>,
+}
+
+impl IPCChainTesterGetAccountResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<IPCChainTesterGetAccountResult> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<String> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = i_prot.read_string()?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = IPCChainTesterGetAccountResult {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("IPCChainTesterGetAccountResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(ref fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::String, 0))?;
+      o_prot.write_string(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<String> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for IPCChainTesterGetAccount"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// IPCChainTesterImportKeyArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct IPCChainTesterImportKeyArgs {
+  pub_key: String,
+  priv_key: String,
+}
+
+impl IPCChainTesterImportKeyArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<IPCChainTesterImportKeyArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<String> = None;
+    let mut f_2: Option<String> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_string()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = i_prot.read_string()?;
+          f_2 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("IPCChainTesterImportKeyArgs.pub_key", &f_1)?;
+    verify_required_field_exists("IPCChainTesterImportKeyArgs.priv_key", &f_2)?;
+    let ret = IPCChainTesterImportKeyArgs {
+      pub_key: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      priv_key: f_2.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("import_key_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("pub_key", TType::String, 1))?;
+    o_prot.write_string(&self.pub_key)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("priv_key", TType::String, 2))?;
+    o_prot.write_string(&self.priv_key)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// IPCChainTesterImportKeyResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct IPCChainTesterImportKeyResult {
+  result_value: Option<bool>,
+}
+
+impl IPCChainTesterImportKeyResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<IPCChainTesterImportKeyResult> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<bool> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = i_prot.read_bool()?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = IPCChainTesterImportKeyResult {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("IPCChainTesterImportKeyResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::Bool, 0))?;
+      o_prot.write_bool(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<bool> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for IPCChainTesterImportKey"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// IPCChainTesterGetRequiredKeysArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct IPCChainTesterGetRequiredKeysArgs {
+  id: i32,
+  transaction: String,
+  available_keys: Vec<String>,
+}
+
+impl IPCChainTesterGetRequiredKeysArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<IPCChainTesterGetRequiredKeysArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<i32> = None;
+    let mut f_2: Option<String> = None;
+    let mut f_3: Option<Vec<String>> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_i32()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = i_prot.read_string()?;
+          f_2 = Some(val);
+        },
+        3 => {
+          let list_ident = i_prot.read_list_begin()?;
+          let mut val: Vec<String> = Vec::with_capacity(list_ident.size as usize);
+          for _ in 0..list_ident.size {
+            let list_elem_0 = i_prot.read_string()?;
+            val.push(list_elem_0);
+          }
+          i_prot.read_list_end()?;
+          f_3 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("IPCChainTesterGetRequiredKeysArgs.id", &f_1)?;
+    verify_required_field_exists("IPCChainTesterGetRequiredKeysArgs.transaction", &f_2)?;
+    verify_required_field_exists("IPCChainTesterGetRequiredKeysArgs.available_keys", &f_3)?;
+    let ret = IPCChainTesterGetRequiredKeysArgs {
+      id: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      transaction: f_2.expect("auto-generated code should have checked for presence of required fields"),
+      available_keys: f_3.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("get_required_keys_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("id", TType::I32, 1))?;
+    o_prot.write_i32(self.id)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("transaction", TType::String, 2))?;
+    o_prot.write_string(&self.transaction)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("available_keys", TType::List, 3))?;
+    o_prot.write_list_begin(&TListIdentifier::new(TType::String, self.available_keys.len() as i32))?;
+    for e in &self.available_keys {
+      o_prot.write_string(e)?;
+    }
+    o_prot.write_list_end()?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// IPCChainTesterGetRequiredKeysResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct IPCChainTesterGetRequiredKeysResult {
+  result_value: Option<String>,
+}
+
+impl IPCChainTesterGetRequiredKeysResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<IPCChainTesterGetRequiredKeysResult> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<String> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = i_prot.read_string()?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = IPCChainTesterGetRequiredKeysResult {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("IPCChainTesterGetRequiredKeysResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(ref fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::String, 0))?;
+      o_prot.write_string(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<String> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for IPCChainTesterGetRequiredKeys"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
 // IPCChainTesterProduceBlockArgs
 //
 
@@ -3082,8 +3868,8 @@ impl IPCChainTesterPushActionsArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<Box<Action>> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_0 = Box::new(Action::read_from_in_protocol(i_prot)?);
-            val.push(list_elem_0);
+            let list_elem_1 = Box::new(Action::read_from_in_protocol(i_prot)?);
+            val.push(list_elem_1);
           }
           i_prot.read_list_end()?;
           f_2 = Some(val);
@@ -3588,8 +4374,8 @@ impl PushActionsPushActionsArgs {
           let list_ident = i_prot.read_list_begin()?;
           let mut val: Vec<Action> = Vec::with_capacity(list_ident.size as usize);
           for _ in 0..list_ident.size {
-            let list_elem_1 = Action::read_from_in_protocol(i_prot)?;
-            val.push(list_elem_1);
+            let list_elem_2 = Action::read_from_in_protocol(i_prot)?;
+            val.push(list_elem_2);
           }
           i_prot.read_list_end()?;
           f_1 = Some(val);
@@ -4147,11 +4933,11 @@ pub trait TApplySyncClient {
   fn get_resource_limits(&mut self, account: Uint64) -> thrift::Result<GetResourceLimitsReturn>;
   fn set_resource_limits(&mut self, account: Uint64, ram_bytes: i64, net_weight: i64, cpu_weight: i64) -> thrift::Result<()>;
   fn set_proposed_producers(&mut self, producer_data: Vec<u8>) -> thrift::Result<i64>;
-  fn set_proposed_producers_ex(&mut self, producer_data_format: Uint64, producer_data: Uint64) -> thrift::Result<i64>;
+  fn set_proposed_producers_ex(&mut self, producer_data_format: Uint64, producer_data: Vec<u8>) -> thrift::Result<i64>;
   fn is_privileged(&mut self, account: Uint64) -> thrift::Result<bool>;
   fn set_privileged(&mut self, account: Uint64, is_priv: bool) -> thrift::Result<()>;
   fn set_blockchain_parameters_packed(&mut self, data: Vec<u8>) -> thrift::Result<()>;
-  fn get_blockchain_parameters_packed(&mut self) -> thrift::Result<i32>;
+  fn get_blockchain_parameters_packed(&mut self) -> thrift::Result<Vec<u8>>;
   fn preactivate_feature(&mut self, feature_digest: Vec<u8>) -> thrift::Result<()>;
   fn check_transaction_authorization(&mut self, trx_data: Vec<u8>, pubkeys_data: Vec<u8>, perms_data: Vec<u8>) -> thrift::Result<i32>;
   fn check_permission_authorization(&mut self, account: Uint64, permission: Uint64, pubkeys_data: Vec<u8>, perms_data: Vec<u8>, delay_us: Uint64) -> thrift::Result<i32>;
@@ -4426,7 +5212,7 @@ impl <C: TThriftClient + TApplySyncClientMarker> TApplySyncClient for C {
       result.ok_or()
     }
   }
-  fn set_proposed_producers_ex(&mut self, producer_data_format: Uint64, producer_data: Uint64) -> thrift::Result<i64> {
+  fn set_proposed_producers_ex(&mut self, producer_data_format: Uint64, producer_data: Vec<u8>) -> thrift::Result<i64> {
     (
       {
         self.increment_sequence_number();
@@ -4534,7 +5320,7 @@ impl <C: TThriftClient + TApplySyncClientMarker> TApplySyncClient for C {
       result.ok_or()
     }
   }
-  fn get_blockchain_parameters_packed(&mut self) -> thrift::Result<i32> {
+  fn get_blockchain_parameters_packed(&mut self) -> thrift::Result<Vec<u8>> {
     (
       {
         self.increment_sequence_number();
@@ -7624,11 +8410,11 @@ pub trait ApplySyncHandler {
   fn handle_get_resource_limits(&self, account: Uint64) -> thrift::Result<GetResourceLimitsReturn>;
   fn handle_set_resource_limits(&self, account: Uint64, ram_bytes: i64, net_weight: i64, cpu_weight: i64) -> thrift::Result<()>;
   fn handle_set_proposed_producers(&self, producer_data: Vec<u8>) -> thrift::Result<i64>;
-  fn handle_set_proposed_producers_ex(&self, producer_data_format: Uint64, producer_data: Uint64) -> thrift::Result<i64>;
+  fn handle_set_proposed_producers_ex(&self, producer_data_format: Uint64, producer_data: Vec<u8>) -> thrift::Result<i64>;
   fn handle_is_privileged(&self, account: Uint64) -> thrift::Result<bool>;
   fn handle_set_privileged(&self, account: Uint64, is_priv: bool) -> thrift::Result<()>;
   fn handle_set_blockchain_parameters_packed(&self, data: Vec<u8>) -> thrift::Result<()>;
-  fn handle_get_blockchain_parameters_packed(&self) -> thrift::Result<i32>;
+  fn handle_get_blockchain_parameters_packed(&self) -> thrift::Result<Vec<u8>>;
   fn handle_preactivate_feature(&self, feature_digest: Vec<u8>) -> thrift::Result<()>;
   fn handle_check_transaction_authorization(&self, trx_data: Vec<u8>, pubkeys_data: Vec<u8>, perms_data: Vec<u8>) -> thrift::Result<i32>;
   fn handle_check_permission_authorization(&self, account: Uint64, permission: Uint64, pubkeys_data: Vec<u8>, perms_data: Vec<u8>, delay_us: Uint64) -> thrift::Result<i32>;
@@ -13616,14 +14402,14 @@ impl ApplySetProposedProducersResult {
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 struct ApplySetProposedProducersExArgs {
   producer_data_format: Uint64,
-  producer_data: Uint64,
+  producer_data: Vec<u8>,
 }
 
 impl ApplySetProposedProducersExArgs {
   fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplySetProposedProducersExArgs> {
     i_prot.read_struct_begin()?;
     let mut f_1: Option<Uint64> = None;
-    let mut f_2: Option<Uint64> = None;
+    let mut f_2: Option<Vec<u8>> = None;
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -13636,7 +14422,7 @@ impl ApplySetProposedProducersExArgs {
           f_1 = Some(val);
         },
         2 => {
-          let val = Uint64::read_from_in_protocol(i_prot)?;
+          let val = i_prot.read_bytes()?;
           f_2 = Some(val);
         },
         _ => {
@@ -13660,8 +14446,8 @@ impl ApplySetProposedProducersExArgs {
     o_prot.write_field_begin(&TFieldIdentifier::new("producer_data_format", TType::Struct, 1))?;
     self.producer_data_format.write_to_out_protocol(o_prot)?;
     o_prot.write_field_end()?;
-    o_prot.write_field_begin(&TFieldIdentifier::new("producer_data", TType::Struct, 2))?;
-    self.producer_data.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("producer_data", TType::String, 2))?;
+    o_prot.write_bytes(&self.producer_data)?;
     o_prot.write_field_end()?;
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
@@ -14069,13 +14855,13 @@ impl ApplyGetBlockchainParametersPackedArgs {
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 struct ApplyGetBlockchainParametersPackedResult {
-  result_value: Option<i32>,
+  result_value: Option<Vec<u8>>,
 }
 
 impl ApplyGetBlockchainParametersPackedResult {
   fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyGetBlockchainParametersPackedResult> {
     i_prot.read_struct_begin()?;
-    let mut f_0: Option<i32> = None;
+    let mut f_0: Option<Vec<u8>> = None;
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -14084,7 +14870,7 @@ impl ApplyGetBlockchainParametersPackedResult {
       let field_id = field_id(&field_ident)?;
       match field_id {
         0 => {
-          let val = i_prot.read_i32()?;
+          let val = i_prot.read_bytes()?;
           f_0 = Some(val);
         },
         _ => {
@@ -14102,15 +14888,15 @@ impl ApplyGetBlockchainParametersPackedResult {
   fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     let struct_ident = TStructIdentifier::new("ApplyGetBlockchainParametersPackedResult");
     o_prot.write_struct_begin(&struct_ident)?;
-    if let Some(fld_var) = self.result_value {
-      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::I32, 0))?;
-      o_prot.write_i32(fld_var)?;
+    if let Some(ref fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::String, 0))?;
+      o_prot.write_bytes(fld_var)?;
       o_prot.write_field_end()?
     }
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
   }
-  fn ok_or(self) -> thrift::Result<i32> {
+  fn ok_or(self) -> thrift::Result<Vec<u8>> {
     if self.result_value.is_some() {
       Ok(self.result_value.unwrap())
     } else {
