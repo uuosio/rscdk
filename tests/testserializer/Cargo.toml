@@ -1,0 +1,19 @@
+[package]
+name = "testserializer"
+version = "0.0.1"
+authors = [""]
+edition = "2021"
+
+[dependencies]
+eosio-chain = { version = "0.2", path = "../../crates/eosio-chain", default-features = false }
+
+[lib]
+name = "testserializer"
+path = "lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["std"]
+std = [
+    "eosio-chain/std",
+]
