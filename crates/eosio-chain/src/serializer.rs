@@ -192,14 +192,14 @@ impl<T> Packer for Vec<T> where T: Packer + Default {
     ///
     fn size(&self) -> usize {
         if self.len() == 0 {
-            return 0;
+            return 1;
         }
 
         let mut size: usize = 0;
         for i in 0..self.len() {
             size += self[i].size();
         }
-        return size;
+        return VarUint32::new(size as u32).size() + size;
     }
 
     ///
