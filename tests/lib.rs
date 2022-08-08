@@ -83,7 +83,7 @@ mod testall {
 #[cfg(feature="std")]
 #[no_mangle]
 fn native_apply(_receiver: u64, _first_receiver: u64, _action: u64) {
-    testintrinsics::testintrinsics::native_apply(_receiver, _first_receiver, _action);
+    // testintrinsics::testintrinsics::native_apply(_receiver, _first_receiver, _action);
     // testserializer::test::native_apply(_receiver, _first_receiver, _action);
 }
 
@@ -531,7 +531,7 @@ mod tests {
         fs::write(Path::new("./testserializer/target/testserializer.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
-        tester.enable_debug_contract("hello", true).unwrap();
+        // tester.enable_debug_contract("hello", true).unwrap();
 
         deploy_contract(&mut tester, "testserializer");
 
@@ -555,7 +555,7 @@ mod tests {
         fs::write(Path::new("./testintrinsics/target/testintrinsics.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
-        tester.enable_debug_contract("hello", true).unwrap();
+        // tester.enable_debug_contract("hello", true).unwrap();
 
         deploy_contract(&mut tester, "testintrinsics");
 
