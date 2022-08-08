@@ -591,4 +591,17 @@ mod tests {
         tester.push_action("hello", "test", args.into(), permissions).unwrap();
         tester.produce_block();
     }
+
+    #[test]
+    fn test_chain() {
+        let mut tester = ChainTester::new();
+        let ret = tester.get_info().unwrap();
+        println!("+++:{}", ret);
+        println!("+++:{}", ret["chain_id"]);
+
+        let ret = tester.get_account("hello").unwrap();
+        println!("+++:{}", ret);
+        println!("++++:{}", ret["head_block_time"]);
+        tester.import_key("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV", "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3");
+    }
 }

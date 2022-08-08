@@ -297,6 +297,48 @@ pub struct ChainTester {
     id: i32,
 }
 
+fn parse_ret(ret: &thrift::Result<String>) -> Result<Value> {
+    match ret {
+        Ok(ret) => {
+            let tx: Value = serde_json::from_str(&ret).map_err(|err| {
+                ChainTesterError{json: None, error_string: Some(err.to_string())}
+            })?;
+
+            if tx.get("except").is_some() {
+                Err(ChainTesterError{json: Some(tx), error_string: None})
+            } else {
+                Ok(tx)
+            }
+        }
+        Err(err) => {
+            Err(ChainTesterError{
+                json: None, error_string: Some(format!("{:?}", err)),
+            })
+        }
+    }
+}
+
+fn parse_ret2(ret: &thrift::Result<Vec<u8>>) -> Result<Value> {
+    match ret {
+        Ok(ret) => {
+            let tx: Value = serde_json::from_slice(ret).map_err(|err| {
+                ChainTesterError{json: None, error_string: Some(err.to_string())}
+            })?;
+
+            if tx.get("except").is_some() {
+                Err(ChainTesterError{json: Some(tx), error_string: None})
+            } else {
+                Ok(tx)
+            }
+        }
+        Err(err) => {
+            Err(ChainTesterError{
+                json: None, error_string: Some(format!("{:?}", err)),
+            })
+        }
+    }
+}
+
 impl ChainTester {
     pub fn new() -> Self {
         Self { id: get_chain_tester_client().new_chain().unwrap() }
@@ -320,6 +362,20 @@ impl ChainTester {
 
     pub fn is_debug_contract_enabled(&mut self, contract: &str) -> thrift::Result<bool> {
         self.client().is_debug_contract_enabled(self.id, contract.into())
+    }
+
+    pub fn import_key(&mut self, pub_key: &str, priv_key: &str) -> bool {
+        self.client().import_key(self.id, pub_key.into(), priv_key.into()).unwrap()
+    }
+
+    pub fn get_info(&mut self) -> Result<Value> {
+        let ret = self.client().get_info(self.id);
+        parse_ret(&ret)
+    }
+
+    pub fn get_account(&mut self, account: &str) -> Result<Value> {
+        let ret = self.client().get_account(self.id, account.into());
+        parse_ret(&ret)
     }
 
     pub fn push_action(&mut self, account: &str, action: &str, arguments: ActionArguments, permissions: &str) -> Result<TransactionReturn> {
@@ -421,37 +477,12 @@ impl ChainTester {
             actions.push(Box::new(setabi));    
         }
 
-        let ret = self.client().push_actions(self.id, actions).unwrap();
-        let tx: Value = serde_json::from_slice(&ret).map_err(|err| {
-            ChainTesterError{json: None, error_string: Some(err.to_string())}
-        })?;
-
-        if tx.get("except").is_some() {
-            Err(ChainTesterError{json: Some(tx), error_string: None})
-        } else {
-            Ok(tx)
-        }
+        self.push_actions(actions)
     }
 
     pub fn push_actions(&mut self, actions: Vec<Box<Action>>) -> Result<Value> {
-        match self.client().push_actions(self.id, actions) {
-            Ok(ret) => {
-                let tx: Value = serde_json::from_slice(&ret).map_err(|err| {
-                    ChainTesterError{json: None, error_string: Some(err.to_string())}
-                })?;
-        
-                if tx.get("except").is_some() {
-                    Err(ChainTesterError{json: Some(tx), error_string: None})
-                } else {
-                    Ok(tx)
-                }
-            }
-            Err(err) => {
-                Err(ChainTesterError{
-                    json: None, error_string: Some(format!("{:?}", err)),
-                })
-            }
-        }
+        let ret = self.client().push_actions(self.id, actions);
+        parse_ret2(&ret)
     }
 
     pub fn get_table_rows<'a>(&mut self, json: bool, code: &'a str, scope: &'a str, table: &'a str, lower_bound: &'a str, upper_bound: &'a str, limit: i64) -> Result<Value> {
@@ -486,24 +517,8 @@ impl ChainTester {
             params.reverse,
             params.show_payer,
         );
-
-        match &ret {
-            Ok(s) => {
-                let tx: Value = serde_json::from_str(s).map_err(|err| {
-                    ChainTesterError{json: None, error_string: Some(err.to_string())}
-                })?;
-        
-                return Ok(tx);
-            }
-            Err(err) => {
-                return Err(ChainTesterError{
-                    json: None,
-                    error_string: Some(format!("{}", err))
-                });
-            }
-        }
-
-    }    
+        parse_ret(&ret)
+    }
 }
 
 pub enum ActionArguments {
