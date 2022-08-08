@@ -27,13 +27,19 @@ build_variant:
 build_crypto:
 	cd testcrypto;rust-contract build-contract 
 
+build_serializer:
+	cd testserializer;rust-contract build-contract 
+
+build_intrinsics:
+	cd testintrinsics;rust-contract build-contract 
+
 build_notify:
 	cd testnotify/receiver;rust-contract build 
 	cd testnotify/sender;rust-contract build
 
 all_builds = build_hello build_abi build_mod \
 	build_inline build_asset build_optional build_variant \
-	build_notify build_crypto
+	build_notify build_crypto build_serializer build_intrinsics
 
 test_crypto: build_crypto
 	rust-contract build
