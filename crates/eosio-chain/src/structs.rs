@@ -396,9 +396,13 @@ impl Packer for PublicKey {
                 *self = PublicKey::R1(pub_key);
             },
             2 => {
-
+                let mut pub_key = WebAuthNPublicKey::default();
+                dec.unpack(&mut pub_key);
+                *self = PublicKey::WebAuth(pub_key);
             }
-            _ => {}
+            _ => {
+                check(false, "invalid public key type");
+            }
         }
         return dec.get_pos();
     }

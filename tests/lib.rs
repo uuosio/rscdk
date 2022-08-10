@@ -512,7 +512,9 @@ mod tests {
             "msg": "hello,world",
             "digest": "77df263f49123356d28a4a8715d25bf5b980beeeb503cab46ea61ac9f3320eda",
             "sig": "SIG_K1_KXdabr1z4G6e2o2xmi7jPhzxH3Lj5igjR5v3q9LY7KbLWyXBZyES748bPzfM2MhQQVsLrouJzXT9YFfw1CywzMVCcNVMGH",
-            "pubkey": "EOS87J9kj21dvniKhqd7A7QPXRz498ek3H3doXoQVPf4VnHHNtt1M"
+            "k1": "EOS87J9kj21dvniKhqd7A7QPXRz498ek3H3doXoQVPf4VnHHNtt1M",
+            "r1": "PUB_R1_6FPFZqw5ahYrR9jD96yDbbDNTdKtNqRbze6oTDLntrsANgQKZu",
+            "web_auth_n": "PUB_WA_8PPYTWYNkRqrveNAoX7PJWDtSqDUp3c29QGBfr6MD9EaLocaPBmsk5QAHWq4vEQt2"
         }
         "#;
 
@@ -604,4 +606,5 @@ mod tests {
         println!("++++:{}", ret["head_block_time"]);
         tester.import_key("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV", "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3");
     }
+
 }
