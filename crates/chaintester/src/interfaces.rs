@@ -954,7 +954,7 @@ pub trait TIPCChainTesterSyncClient {
   fn get_account(&mut self, id: i32, account: String) -> thrift::Result<String>;
   fn import_key(&mut self, id: i32, pub_key: String, priv_key: String) -> thrift::Result<bool>;
   fn get_required_keys(&mut self, id: i32, transaction: String, available_keys: Vec<String>) -> thrift::Result<String>;
-  fn produce_block(&mut self, id: i32) -> thrift::Result<()>;
+  fn produce_block(&mut self, id: i32, next_block_skip_seconds: i32) -> thrift::Result<()>;
   fn push_action(&mut self, id: i32, account: String, action: String, arguments: String, permissions: String) -> thrift::Result<Vec<u8>>;
   fn push_actions(&mut self, id: i32, actions: Vec<Box<Action>>) -> thrift::Result<Vec<u8>>;
   fn get_table_rows(&mut self, id: i32, json: bool, code: String, scope: String, table: String, lower_bound: String, upper_bound: String, limit: i64, key_type: String, index_position: String, reverse: bool, show_payer: bool) -> thrift::Result<String>;
@@ -1309,12 +1309,12 @@ impl <C: TThriftClient + TIPCChainTesterSyncClientMarker> TIPCChainTesterSyncCli
       result.ok_or()
     }
   }
-  fn produce_block(&mut self, id: i32) -> thrift::Result<()> {
+  fn produce_block(&mut self, id: i32, next_block_skip_seconds: i32) -> thrift::Result<()> {
     (
       {
         self.increment_sequence_number();
         let message_ident = TMessageIdentifier::new("produce_block", TMessageType::Call, self.sequence_number());
-        let call_args = IPCChainTesterProduceBlockArgs { id };
+        let call_args = IPCChainTesterProduceBlockArgs { id, next_block_skip_seconds };
         self.o_prot_mut().write_message_begin(&message_ident)?;
         call_args.write_to_out_protocol(self.o_prot_mut())?;
         self.o_prot_mut().write_message_end()?;
@@ -1439,7 +1439,7 @@ pub trait IPCChainTesterSyncHandler {
   fn handle_get_account(&self, id: i32, account: String) -> thrift::Result<String>;
   fn handle_import_key(&self, id: i32, pub_key: String, priv_key: String) -> thrift::Result<bool>;
   fn handle_get_required_keys(&self, id: i32, transaction: String, available_keys: Vec<String>) -> thrift::Result<String>;
-  fn handle_produce_block(&self, id: i32) -> thrift::Result<()>;
+  fn handle_produce_block(&self, id: i32, next_block_skip_seconds: i32) -> thrift::Result<()>;
   fn handle_push_action(&self, id: i32, account: String, action: String, arguments: String, permissions: String) -> thrift::Result<Vec<u8>>;
   fn handle_push_actions(&self, id: i32, actions: Vec<Box<Action>>) -> thrift::Result<Vec<u8>>;
   fn handle_get_table_rows(&self, id: i32, json: bool, code: String, scope: String, table: String, lower_bound: String, upper_bound: String, limit: i64, key_type: String, index_position: String, reverse: bool, show_payer: bool) -> thrift::Result<String>;
@@ -1968,7 +1968,7 @@ impl TIPCChainTesterProcessFunctions {
   }
   pub fn process_produce_block<H: IPCChainTesterSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     let args = IPCChainTesterProduceBlockArgs::read_from_in_protocol(i_prot)?;
-    match handler.handle_produce_block(args.id) {
+    match handler.handle_produce_block(args.id, args.next_block_skip_seconds) {
       Ok(_) => {
         let message_ident = TMessageIdentifier::new("produce_block", TMessageType::Reply, incoming_sequence_number);
         o_prot.write_message_begin(&message_ident)?;
@@ -3614,12 +3614,14 @@ impl IPCChainTesterGetRequiredKeysResult {
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 struct IPCChainTesterProduceBlockArgs {
   id: i32,
+  next_block_skip_seconds: i32,
 }
 
 impl IPCChainTesterProduceBlockArgs {
   fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<IPCChainTesterProduceBlockArgs> {
     i_prot.read_struct_begin()?;
     let mut f_1: Option<i32> = None;
+    let mut f_2: Option<i32> = None;
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -3631,6 +3633,10 @@ impl IPCChainTesterProduceBlockArgs {
           let val = i_prot.read_i32()?;
           f_1 = Some(val);
         },
+        2 => {
+          let val = i_prot.read_i32()?;
+          f_2 = Some(val);
+        },
         _ => {
           i_prot.skip(field_ident.field_type)?;
         },
@@ -3639,8 +3645,10 @@ impl IPCChainTesterProduceBlockArgs {
     }
     i_prot.read_struct_end()?;
     verify_required_field_exists("IPCChainTesterProduceBlockArgs.id", &f_1)?;
+    verify_required_field_exists("IPCChainTesterProduceBlockArgs.next_block_skip_seconds", &f_2)?;
     let ret = IPCChainTesterProduceBlockArgs {
       id: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      next_block_skip_seconds: f_2.expect("auto-generated code should have checked for presence of required fields"),
     };
     Ok(ret)
   }
@@ -3649,6 +3657,9 @@ impl IPCChainTesterProduceBlockArgs {
     o_prot.write_struct_begin(&struct_ident)?;
     o_prot.write_field_begin(&TFieldIdentifier::new("id", TType::I32, 1))?;
     o_prot.write_i32(self.id)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("next_block_skip_seconds", TType::I32, 2))?;
+    o_prot.write_i32(self.next_block_skip_seconds)?;
     o_prot.write_field_end()?;
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()

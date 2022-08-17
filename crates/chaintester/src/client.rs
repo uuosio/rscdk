@@ -353,7 +353,11 @@ impl ChainTester {
     }
 
     pub fn produce_block(&mut self) {
-        self.client().produce_block(self.id).unwrap()
+        self.client().produce_block(self.id, 0).unwrap()
+    }
+
+    pub fn produce_block_ex(&mut self, next_block_skip_seconds: i32) {
+        self.client().produce_block(self.id, next_block_skip_seconds).unwrap()
     }
 
     pub fn enable_debug_contract(&mut self, contract: &str, enable: bool) -> thrift::Result<()> {

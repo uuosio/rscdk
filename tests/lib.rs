@@ -592,6 +592,11 @@ mod tests {
         "#;
         tester.push_action("hello", "test", args.into(), permissions).unwrap();
         tester.produce_block();
+
+        tester.push_action("hello", "testtime", "{}".into(), permissions).unwrap();
+        tester.produce_block_ex(10);
+
+        tester.push_action("hello", "testtime", "{}".into(), permissions).unwrap();
     }
 
     #[test]

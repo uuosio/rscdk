@@ -57,6 +57,8 @@ pub mod testintrinsics {
         get_blockchain_parameters,
         preactivate_feature,
 
+        current_time,
+
         check,
         eosio_println,
         name,
@@ -212,6 +214,11 @@ pub mod testintrinsics {
             eosio_println!("++++++prods.len():", prods.len());
             check(prods.len() == 1, "prods.len() == 1");
             check(prods[0] == name!("eosio"), "bad value");
+        }
+
+        #[chain(action="testtime")]
+        pub fn test_block_time(&self) {
+            eosio_println!("+++++++current_time:", current_time().elapsed);
         }
     }
 }
