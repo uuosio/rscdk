@@ -356,7 +356,7 @@ impl ChainTester {
         self.client().produce_block(self.id, 0).unwrap()
     }
 
-    pub fn produce_block_ex(&mut self, next_block_skip_seconds: i32) {
+    pub fn produce_block_ex(&mut self, next_block_skip_seconds: i64) {
         self.client().produce_block(self.id, next_block_skip_seconds).unwrap()
     }
 

@@ -954,7 +954,7 @@ pub trait TIPCChainTesterSyncClient {
   fn get_account(&mut self, id: i32, account: String) -> thrift::Result<String>;
   fn import_key(&mut self, id: i32, pub_key: String, priv_key: String) -> thrift::Result<bool>;
   fn get_required_keys(&mut self, id: i32, transaction: String, available_keys: Vec<String>) -> thrift::Result<String>;
-  fn produce_block(&mut self, id: i32, next_block_skip_seconds: i32) -> thrift::Result<()>;
+  fn produce_block(&mut self, id: i32, next_block_skip_seconds: i64) -> thrift::Result<()>;
   fn push_action(&mut self, id: i32, account: String, action: String, arguments: String, permissions: String) -> thrift::Result<Vec<u8>>;
   fn push_actions(&mut self, id: i32, actions: Vec<Box<Action>>) -> thrift::Result<Vec<u8>>;
   fn get_table_rows(&mut self, id: i32, json: bool, code: String, scope: String, table: String, lower_bound: String, upper_bound: String, limit: i64, key_type: String, index_position: String, reverse: bool, show_payer: bool) -> thrift::Result<String>;
@@ -1309,7 +1309,7 @@ impl <C: TThriftClient + TIPCChainTesterSyncClientMarker> TIPCChainTesterSyncCli
       result.ok_or()
     }
   }
-  fn produce_block(&mut self, id: i32, next_block_skip_seconds: i32) -> thrift::Result<()> {
+  fn produce_block(&mut self, id: i32, next_block_skip_seconds: i64) -> thrift::Result<()> {
     (
       {
         self.increment_sequence_number();
@@ -1439,7 +1439,7 @@ pub trait IPCChainTesterSyncHandler {
   fn handle_get_account(&self, id: i32, account: String) -> thrift::Result<String>;
   fn handle_import_key(&self, id: i32, pub_key: String, priv_key: String) -> thrift::Result<bool>;
   fn handle_get_required_keys(&self, id: i32, transaction: String, available_keys: Vec<String>) -> thrift::Result<String>;
-  fn handle_produce_block(&self, id: i32, next_block_skip_seconds: i32) -> thrift::Result<()>;
+  fn handle_produce_block(&self, id: i32, next_block_skip_seconds: i64) -> thrift::Result<()>;
   fn handle_push_action(&self, id: i32, account: String, action: String, arguments: String, permissions: String) -> thrift::Result<Vec<u8>>;
   fn handle_push_actions(&self, id: i32, actions: Vec<Box<Action>>) -> thrift::Result<Vec<u8>>;
   fn handle_get_table_rows(&self, id: i32, json: bool, code: String, scope: String, table: String, lower_bound: String, upper_bound: String, limit: i64, key_type: String, index_position: String, reverse: bool, show_payer: bool) -> thrift::Result<String>;
@@ -3614,14 +3614,14 @@ impl IPCChainTesterGetRequiredKeysResult {
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 struct IPCChainTesterProduceBlockArgs {
   id: i32,
-  next_block_skip_seconds: i32,
+  next_block_skip_seconds: i64,
 }
 
 impl IPCChainTesterProduceBlockArgs {
   fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<IPCChainTesterProduceBlockArgs> {
     i_prot.read_struct_begin()?;
     let mut f_1: Option<i32> = None;
-    let mut f_2: Option<i32> = None;
+    let mut f_2: Option<i64> = None;
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -3634,7 +3634,7 @@ impl IPCChainTesterProduceBlockArgs {
           f_1 = Some(val);
         },
         2 => {
-          let val = i_prot.read_i32()?;
+          let val = i_prot.read_i64()?;
           f_2 = Some(val);
         },
         _ => {
@@ -3658,8 +3658,8 @@ impl IPCChainTesterProduceBlockArgs {
     o_prot.write_field_begin(&TFieldIdentifier::new("id", TType::I32, 1))?;
     o_prot.write_i32(self.id)?;
     o_prot.write_field_end()?;
-    o_prot.write_field_begin(&TFieldIdentifier::new("next_block_skip_seconds", TType::I32, 2))?;
-    o_prot.write_i32(self.next_block_skip_seconds)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("next_block_skip_seconds", TType::I64, 2))?;
+    o_prot.write_i64(self.next_block_skip_seconds)?;
     o_prot.write_field_end()?;
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
