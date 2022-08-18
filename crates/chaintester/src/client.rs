@@ -300,6 +300,7 @@ pub struct ChainTester {
 fn parse_ret(ret: &thrift::Result<String>) -> Result<Value> {
     match ret {
         Ok(ret) => {
+            println!("+++++++parse_ret:{}", ret);
             let tx: Value = serde_json::from_str(&ret).map_err(|err| {
                 ChainTesterError{json: None, error_string: Some(err.to_string())}
             })?;
@@ -377,8 +378,23 @@ impl ChainTester {
         parse_ret(&ret)
     }
 
+    pub fn create_key(&mut self) -> Result<Value> {
+        let ret = self.client().create_key("K1".into());
+        parse_ret(&ret)
+    }
+
+    pub fn create_key_ex(&mut self, key_type: &str) -> Result<Value> {
+        let ret = self.client().create_key(key_type.into());
+        parse_ret(&ret)
+    }
+
     pub fn get_account(&mut self, account: &str) -> Result<Value> {
         let ret = self.client().get_account(self.id, account.into());
+        parse_ret(&ret)
+    }
+
+    pub fn create_account(&mut self, creator: &str, account: &str, owner_key: &str, active_key: &str, ram_bytes: i64, stake_net: i64, stake_cpu: i64) -> Result<Value> {
+        let ret = self.client().create_account(self.id, creator.into(), account.into(), owner_key.into(), active_key.into(), ram_bytes, stake_net, stake_cpu);
         parse_ret(&ret)
     }
 
@@ -458,7 +474,6 @@ impl ChainTester {
             let abi = fs::read_to_string(abi_file).unwrap();
             let raw_abi = self.client().pack_abi(abi).unwrap();
             let hex_raw_abi = hex::encode(raw_abi);
-    
             let set_abi_args = format!(
                 r#"
                 {{

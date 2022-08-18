@@ -1,0 +1,1 @@
+rust-contract build

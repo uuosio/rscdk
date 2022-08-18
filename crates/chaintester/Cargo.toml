@@ -1,5 +1,5 @@
 [package]
-name = "eosio-chaintester"
+name = "chaintester"
 version = "0.2.3"
 authors = ["learnforpractice@gmail.com"]
 edition = "2021"

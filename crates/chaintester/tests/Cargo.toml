@@ -1,0 +1,25 @@
+[package]
+name = "tests"
+version = "0.1.0"
+authors = [""]
+edition = "2021"
+
+[dependencies]
+chaintester = { version="0.2.3", path="..", default-features = false, optional=true }
+
+[lib]
+name = "tests"
+path = "lib.rs"
+crate-type = [
+    "cdylib", 
+    #Used by abigen, DO NOT remove it
+    "rlib"
+]
+
+[features]
+default = ["std"]
+std = [
+    "chaintester",
+]
+
+[workspace]
