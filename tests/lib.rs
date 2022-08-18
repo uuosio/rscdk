@@ -7,7 +7,7 @@ mod testdestructor;
 mod testbinaryextension;
 mod testtransaction;
 
-#[eosio_chain::contract]
+#[rust_chain::contract]
 mod testall {
 
     use super::testmi::testmi::TestMI;
@@ -17,7 +17,7 @@ mod testall {
     use super::testbinaryextension::testbinaryextension::TestBinaryExtension;
     use super::testtransaction::testtransaction::TestTransaction;
 
-    use eosio_chain::{
+    use rust_chain::{
         Name,
         Asset,
         BinaryExtension,
@@ -90,9 +90,9 @@ fn native_apply(_receiver: u64, _first_receiver: u64, _action: u64) {
 #[cfg(test)]
 mod tests {
 
-    use eosio_chain::ChainTester;
-    use eosio_chain::serializer::Packer as _;
-    use eosio_chain::chaintester;
+    use rust_chain::ChainTester;
+    use rust_chain::serializer::Packer as _;
+    use rust_chain::chaintester;
     use std::{
         fs,
         path::Path,

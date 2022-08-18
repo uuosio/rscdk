@@ -526,7 +526,7 @@ impl Contract {
             });
 
             let packed = quote_spanned!(span =>
-                impl ::eosio_chain::serializer::Packer for #ident {
+                impl ::rust_chain::serializer::Packer for #ident {
                     fn size(&self) -> usize {
                         let mut _size: usize = 0;
                         #( #get_size )*
@@ -534,13 +534,13 @@ impl Contract {
                     }
                 
                     fn pack(&self) -> Vec<u8> {
-                        let mut enc = ::eosio_chain::serializer::Encoder::new(self.size());
+                        let mut enc = ::rust_chain::serializer::Encoder::new(self.size());
                         #( #serialize )*
                         return enc.get_bytes();
                     }
                 
                     fn unpack(&mut self, data: &[u8]) -> usize {
-                        let mut dec = ::eosio_chain::serializer::Decoder::new(data);
+                        let mut dec = ::rust_chain::serializer::Decoder::new(data);
                         #( #deserialize )*
                         return dec.get_pos();
                     }
@@ -631,7 +631,7 @@ impl Contract {
             let error_lit = proc_macro2::Literal::string(&error_name);
 
             let packed = quote_spanned!(span =>
-                impl ::eosio_chain::serializer::Packer for #struct_name_ident {
+                impl ::rust_chain::serializer::Packer for #struct_name_ident {
                     fn size(&self) -> usize {
                         #[allow(unused_mut)]
                         let mut _size: usize = 0;
@@ -641,15 +641,15 @@ impl Contract {
 
                     fn pack(&self) -> Vec<u8> {
                         #[allow(unused_mut)]
-                        let mut enc = ::eosio_chain::serializer::Encoder::new(self.size());
+                        let mut enc = ::rust_chain::serializer::Encoder::new(self.size());
                         #( #serialize )*
                         return enc.get_bytes();
                     }
 
                     fn unpack<'a>(&mut self, data: &'a [u8]) -> usize {
-                        eosio_chain::check(data.len() >= self.size(), #error_lit);
+                        rust_chain::check(data.len() >= self.size(), #error_lit);
                         #[allow(unused_mut)]
-                        let mut dec = ::eosio_chain::serializer::Decoder::new(data);
+                        let mut dec = ::rust_chain::serializer::Decoder::new(data);
                         #( #deserialize )*
                         return dec.get_pos();
                     }
@@ -657,8 +657,8 @@ impl Contract {
             );
 
             quote! {
-                #[cfg_attr(feature = "std", derive(::eosio_chain::eosio_scale_info::TypeInfo))]
-                #[cfg_attr(feature = "std", scale_info(crate = ::eosio_chain::eosio_scale_info))]
+                #[cfg_attr(feature = "std", derive(::rust_chain::eosio_scale_info::TypeInfo))]
+                #[cfg_attr(feature = "std", scale_info(crate = ::rust_chain::eosio_scale_info))]
                 #[derive(Default)]
                 pub struct #struct_name_ident {
                     # ( #fields ), *
@@ -705,7 +705,7 @@ impl Contract {
                         }
 
                         primary_impl = Some(quote_spanned!(span =>
-                            impl ::eosio_chain::db::PrimaryValueInterface for #table_ident {
+                            impl ::rust_chain::db::PrimaryValueInterface for #table_ident {
                                 fn get_primary(&self) -> u64 {
                                     return self.#field_ident.into();
                                 }
@@ -794,15 +794,15 @@ impl Contract {
                 });
     
                 secondary_impls = quote_spanned!(span =>
-                    impl ::eosio_chain::db::SecondaryValueInterface for #table_ident {
+                    impl ::rust_chain:db::SecondaryValueInterface for #table_ident {
                         #[allow(unused_variables, unused_mut)]
-                        fn get_secondary_value(&self, i: usize) -> eosio_chain::db::SecondaryValue {
+                        fn get_secondary_value(&self, i: usize) -> rust_chain::db::SecondaryValue {
                             #( #secondary_getter_impls )*
-                            return eosio_chain::db::SecondaryValue::None;
+                            return rust_chain::db::SecondaryValue::None;
                         }
         
                         #[allow(unused_variables, unused_mut)]
-                        fn set_secondary_value(&mut self, i: usize, value: eosio_chain::db::SecondaryValue) {
+                        fn set_secondary_value(&mut self, i: usize, value: rust_chain::db::SecondaryValue) {
                             #( #secondary_setter_impls )*
                         }
                     }
@@ -826,9 +826,9 @@ impl Contract {
             } else {
                 let table_name = proc_macro2::Literal::string(&table.table_name.str());
                 action_structs_code.push(quote_spanned!(span =>
-                    impl ::eosio_chain::db::PrimaryValueInterface for #table_ident {
+                    impl ::rust_chain::db::PrimaryValueInterface for #table_ident {
                         fn get_primary(&self) -> u64 {
-                            return eosio_chain::name!(#table_name).value();
+                            return rust_chain::name!(#table_name).value();
                         }
                     }
 
@@ -859,27 +859,27 @@ impl Contract {
                 match secondary_type_name {
                     Some("Idx64") => {
                         return quote! {
-                            eosio_chain::db::SecondaryType::Idx64
+                            rust_chain::db::SecondaryType::Idx64
                         }
                     }
                     Some("Idx128") => {
                         return quote! {
-                            eosio_chain::db::SecondaryType::Idx128
+                            rust_chain::db::SecondaryType::Idx128
                         }
                     }
                     Some("Idx256") => {
                         return quote! {
-                            eosio_chain::db::SecondaryType::Idx256
+                            rust_chain::db::SecondaryType::Idx256
                         }
                     }
                     Some("IdxF64") => {
                         return quote! {
-                            eosio_chain::db::SecondaryType::IdxF64
+                            rust_chain:db::SecondaryType::IdxF64
                         }
                     }
                     Some("IdxF128") => {
                         return quote! {
-                            eosio_chain::db::SecondaryType::IdxF128
+                            rust_chain::db::SecondaryType::IdxF128
                         }
                     }
                     _ => {
@@ -913,8 +913,8 @@ impl Contract {
                             let method_ident = syn::Ident::new(&method_name, span);
                             return quote_spanned!(span =>
                                 #[allow(dead_code)]
-                                fn #method_ident(&self) -> ::eosio_chain::db::IdxTableProxy<#ty, #idx_type> {
-                                    return ::eosio_chain::db::IdxTableProxy::<#ty, #idx_type>::new(self.mi.idxdbs[#i].as_ref());
+                                fn #method_ident(&self) -> ::rust_chain::db::IdxTableProxy<#ty, #idx_type> {
+                                    return ::rust_chain::db::IdxTableProxy::<#ty, #idx_type>::new(self.mi.idxdbs[#i].as_ref());
                                 }
                             )
                         }
@@ -927,25 +927,25 @@ impl Contract {
             if table.singleton {
                 return quote_spanned!(span =>
                     pub struct #mi_ident {
-                        mi: ::eosio_chain::mi::MultiIndex<#table_ident>
+                        mi: ::rust_chain::mi::MultiIndex<#table_ident>
                     }
                 
                     #[allow(dead_code)]
                     impl #mi_ident {
                         ///
-                        pub fn new(code: eosio_chain::Name, scope: eosio_chain::Name, table: eosio_chain::Name) -> Self {
+                        pub fn new(code: rust_chain::Name, scope: rust_chain::Name, table: rust_chain::Name) -> Self {
                             Self {
-                                mi: ::eosio_chain::mi::MultiIndex::<#table_ident>::new(code, scope, table, &[eosio_chain::db::SecondaryType::Idx64; 0]),
+                                mi: ::rust_chain::mi::MultiIndex::<#table_ident>::new(code, scope, table, &[rust_chain::db::SecondaryType::Idx64; 0]),
                             }
                         }
 
                         fn get(&self) -> Option<#table_ident> {
-                            let it = self.mi.find(eosio_chain::Name::new(#table_name).value());
+                            let it = self.mi.find(rust_chain::Name::new(#table_name).value());
                             return self.mi.get(&it);
                         }
 
-                        fn set(&self, value: &#table_ident, payer: eosio_chain::Name) {
-                            let it = self.mi.find(eosio_chain::Name::new(#table_name).value());
+                        fn set(&self, value: &#table_ident, payer: rust_chain::Name) {
+                            let it = self.mi.find(rust_chain::Name::new(#table_name).value());
                             if it.is_ok() {
                                 self.mi.update(&it, value, payer);
                             } else {
@@ -956,13 +956,13 @@ impl Contract {
 
                     impl #table_ident {
                         #[allow(dead_code)]
-                        fn new_table_with_scope(code: eosio_chain::Name, scope: eosio_chain::Name) -> Box<#mi_ident> {
-                            return Box::new(#mi_ident::new(code, scope, eosio_chain::Name::new(#table_name)));
+                        fn new_table_with_scope(code: rust_chain::Name, scope: rust_chain:Name) -> Box<#mi_ident> {
+                            return Box::new(#mi_ident::new(code, scope, rust_chain::Name::new(#table_name)));
                         }
 
                         #[allow(dead_code)]
-                        fn new_table(code: eosio_chain::Name) -> Box<#mi_ident> {
-                            #table_ident::new_table_with_scope(code, eosio_chain::Name{n: 0})
+                        fn new_table(code: rust_chain::Name) -> Box<#mi_ident> {
+                            #table_ident::new_table_with_scope(code, rust_chain::Name{n: 0})
                         }
                     }
                 );
@@ -971,31 +971,31 @@ impl Contract {
             return quote_spanned!(span =>
 
                 pub struct #mi_ident {
-                    mi: ::eosio_chain::mi::MultiIndex<#table_ident>
+                    mi: ::rust_chain::mi::MultiIndex<#table_ident>
                 }
             
                 #[allow(dead_code)]
                 impl #mi_ident {
 
-                    pub fn new(code: eosio_chain::Name, scope: eosio_chain::Name, table: eosio_chain::Name, indices: &[eosio_chain::db::SecondaryType]) -> Self {
+                    pub fn new(code: rust_chain::Name, scope: rust_chain::Name, table: rust_chain::Name, indices: &[rust_chain::db::SecondaryType]) -> Self {
                         Self {
-                            mi: ::eosio_chain::mi::MultiIndex::<#table_ident>::new(code, scope, table, indices),
+                            mi: ::rust_chain::mi::MultiIndex::<#table_ident>::new(code, scope, table, indices),
                         }
                     }
 
-                    pub fn store(&self, value: &#table_ident, payer: eosio_chain::Name) -> ::eosio_chain::db::Iterator<#table_ident> {
+                    pub fn store(&self, value: &#table_ident, payer: rust_chain::Name) -> ::rust_chain::db::Iterator<#table_ident> {
                         return self.mi.store(value, payer);
                     }
                 
-                    pub fn update(&self, iterator: &::eosio_chain::db::Iterator<#table_ident>, value: &#table_ident, payer: eosio_chain::Name) {
+                    pub fn update(&self, iterator: &::rust_chain::db::Iterator<#table_ident>, value: &#table_ident, payer: rust_chain:Name) {
                         return self.mi.update(iterator, value, payer);
                     }
                 
-                    pub fn remove(&self, iterator: &::eosio_chain::db::Iterator<#table_ident>) {
+                    pub fn remove(&self, iterator: &::rust_chain::db::Iterator<#table_ident>) {
                         return self.mi.remove(iterator);
                     }
                 
-                    pub fn get(&self, iterator: &::eosio_chain::db::Iterator<#table_ident>) -> Option<#table_ident> {
+                    pub fn get(&self, iterator: &::rust_chain::db::Iterator<#table_ident>) -> Option<#table_ident> {
                         return self.mi.get(iterator)
                     }
                 
@@ -1003,35 +1003,35 @@ impl Contract {
                         return self.mi.get_by_primary(primary);
                     }
 
-                    pub fn next(&self, iterator: &::eosio_chain::db::Iterator<#table_ident>) -> ::eosio_chain::db::Iterator<#table_ident> {
+                    pub fn next(&self, iterator: &::rust_chain::db::Iterator<#table_ident>) -> ::rust_chain::db::Iterator<#table_ident> {
                         return self.mi.db.next(iterator);
                     }
 
-                    pub fn previous(&self, iterator: &::eosio_chain::db::Iterator<#table_ident>) -> ::eosio_chain::db::Iterator<#table_ident> {
+                    pub fn previous(&self, iterator: &::rust_chain::db::Iterator<#table_ident>) -> ::rust_chain::db::Iterator<#table_ident> {
                         return self.mi.db.previous(iterator);
                     }
 
-                    pub fn find(&self, id: u64) -> ::eosio_chain::db::Iterator<#table_ident> {
+                    pub fn find(&self, id: u64) -> ::rust_chain::db::Iterator<#table_ident> {
                         return self.mi.db.find(id);
                     }
                 
-                    pub fn lower_bound(&self, id: u64) -> ::eosio_chain::db::Iterator<#table_ident> {
+                    pub fn lower_bound(&self, id: u64) -> ::rust_chain::db::Iterator<#table_ident> {
                         return self.mi.db.lower_bound(id);
                     }
                 
-                    pub fn upper_bound(&self, id: u64) -> ::eosio_chain::db::Iterator<#table_ident> {
+                    pub fn upper_bound(&self, id: u64) -> ::rust_chain::db::Iterator<#table_ident> {
                         return self.mi.db.upper_bound(id);
                     }
                 
-                    pub fn end(&self) -> ::eosio_chain::db::Iterator<#table_ident> {
+                    pub fn end(&self) -> ::rust_chain::db::Iterator<#table_ident> {
                         return self.mi.db.end();
                     }
                 
-                    pub fn get_idx_db(&self, i: usize) -> &dyn ::eosio_chain::db::IdxTable {
+                    pub fn get_idx_db(&self, i: usize) -> &dyn ::rust_chain::db::IdxTable {
                         return self.mi.idxdbs[i].as_ref();
                     }
                 
-                    pub fn idx_update(&self, it: &::eosio_chain::db::SecondaryIterator, value: ::eosio_chain::db::SecondaryValue, payer: eosio_chain::Name) {
+                    pub fn idx_update(&self, it: &::rust_chain::db::SecondaryIterator, value: ::rust_chain::db::SecondaryValue, payer: rust_chain::Name) {
                         self.mi.idx_update(it, value, payer);
                     }
 
@@ -1040,14 +1040,14 @@ impl Contract {
 
                 impl #table_ident {
                     #[allow(dead_code)]
-                    fn new_table_with_scope(code: eosio_chain::Name, scope: eosio_chain::Name) -> Box<#mi_ident> {
-                        let indices: [eosio_chain::db::SecondaryType; #len_secondary] = [#( #secondary_types ),*];
-                        return Box::new(#mi_ident::new(code, scope, eosio_chain::Name::new(#table_name), &indices));
+                    fn new_table_with_scope(code: rust_chain::Name, scope: rust_chain::Name) -> Box<#mi_ident> {
+                        let indices: [rust_chain::db::SecondaryType; #len_secondary] = [#( #secondary_types ),*];
+                        return Box::new(#mi_ident::new(code, scope, rust_chain::Name::new(#table_name), &indices));
                     }
 
                     #[allow(dead_code)]
-                    fn new_table(code: eosio_chain::Name) -> Box<#mi_ident> {
-                        #table_ident::new_table_with_scope(code, eosio_chain::Name{n: 0})
+                    fn new_table(code: rust_chain::Name) -> Box<#mi_ident> {
+                        #table_ident::new_table_with_scope(code, rust_chain::Name{n: 0})
                     }
                 }
             );
@@ -1100,7 +1100,7 @@ impl Contract {
             quote! {
                 #action_name_n => {
                     let mut action: #struct_name_ident = Default::default();
-                    action.unpack(&::eosio_chain::vmapi::eosio::read_action_data());
+                    action.unpack(&::rust_chain::vmapi::eosio::read_action_data());
                     contract.#ident(#( #args ),*);
                 }
             }
@@ -1353,7 +1353,7 @@ impl Contract {
                 let table_name_lit = proc_macro2::Literal::string(&table.table_name.str());
                 quote!{
                     info.tables.push(
-                        ::eosio_chain::abi::TableInfo {
+                        ::rust_chain::abi::TableInfo {
                             name: String::from(#table_name_lit),
                             info: #ident::type_info(),
                         });
@@ -1370,7 +1370,7 @@ impl Contract {
                 let struct_name_ident = proc_macro2::Ident::new(&struct_name, proc_macro2::Span::call_site());
                 quote!{
                     info.actions.push(
-                        ::eosio_chain::abi::ActionInfo {
+                        ::rust_chain::abi::ActionInfo {
                             name: String::from(#action_name_lit),
                             info: #struct_name_ident::type_info(),
                         });
@@ -1381,7 +1381,7 @@ impl Contract {
         return Ok(quote!{
             #[cfg(feature = "std")]
             pub fn generate_abi() -> String {
-                let mut info = ::eosio_chain::abi::ABIInfo {
+                let mut info = ::rust_chain:abi::ABIInfo {
                     actions: Vec::new(),
                     tables: Vec::new(),
                     structs: Vec::new(),
@@ -1390,7 +1390,7 @@ impl Contract {
                 #( #structs_code ) *
                 #( #action_scale_info_code ) *
                 #( #table_scale_info_code ) *
-                return ::eosio_chain::abi::parse_abi_info(&mut info);
+                return ::rust_chain::abi::parse_abi_info(&mut info);
             }
         });
     }
@@ -1405,9 +1405,9 @@ impl Contract {
         let action_handle_code = self.generate_action_handle_code(false);
         quote!{
             pub fn contract_apply(receiver: u64, first_receiver: u64, action: u64) {
-                let _receiver = eosio_chain::Name{n: receiver};
-                let _first_receiver = eosio_chain::Name{n: first_receiver};
-                let _action = eosio_chain::Name{n: action};
+                let _receiver = rust_chain:Name{n: receiver};
+                let _first_receiver = rust_chain::Name{n: first_receiver};
+                let _action = rust_chain::Name{n: action};
                 #[allow(unused_mut)]
                 let mut contract: #ident = #ident::new(_receiver, _first_receiver, _action);
                 if receiver == first_receiver {
@@ -1433,7 +1433,7 @@ impl Contract {
 
 
             #[cfg(feature = "std")]
-            use eosio_chain::chaintester::interfaces::TApplySyncClient;
+            use rust_chain::chaintester::interfaces::TApplySyncClient;
 
             #[cfg(feature = "std")]
             pub fn native_apply(receiver: u64, first_receiver: u64, action: u64) {
@@ -1510,7 +1510,7 @@ impl Contract {
                     }
                 }
 
-                impl ::eosio_chain::serializer::Packer for #variant_ident {
+                impl ::rust_chain:serializer::Packer for #variant_ident {
                     fn size(&self) -> usize {
                         let mut _size: usize = 0;
                         match self {
@@ -1521,7 +1521,7 @@ impl Contract {
                     }
                 
                     fn pack(&self) -> Vec<u8> {
-                        let mut enc = ::eosio_chain::serializer::Encoder::new(self.size());
+                        let mut enc = ::rust_chain:serializer::Encoder::new(self.size());
                         match self {
                             #( #pack_code )*
                             _=> {}
@@ -1530,13 +1530,13 @@ impl Contract {
                     }
                 
                     fn unpack<'a>(&mut self, data: &'a [u8]) -> usize {
-                        let mut dec = ::eosio_chain::serializer::Decoder::new(data);
+                        let mut dec = ::rust_chain::serializer::Decoder::new(data);
                         let mut variant_type_index: u8 = 0;
                         dec.unpack(&mut variant_type_index);
                         match variant_type_index {
                             #( #unpack_code )*
                             _ => {
-                                ::eosio_chain::vmapi::eosio::eosio_assert(false, "bad variant index!");
+                                ::rust_chain::vmapi::eosio::eosio_assert(false, "bad variant index!");
                             }
                         }
                         return dec.get_pos();
@@ -1578,8 +1578,8 @@ impl Contract {
                         packer.ident == x.ident
                     }) {
                         quote!{
-                            #[cfg_attr(feature = "std", derive(eosio_chain::eosio_scale_info::TypeInfo))]
-                            #[cfg_attr(feature = "std", scale_info(crate = ::eosio_chain::eosio_scale_info))]
+                            #[cfg_attr(feature = "std", derive(rust_chain::eosio_scale_info::TypeInfo))]
+                            #[cfg_attr(feature = "std", scale_info(crate = ::rust_chain::eosio_scale_info))]
                             #[derive(Default)]
                             #item
                         }
@@ -1594,8 +1594,8 @@ impl Contract {
                         variant.ident == x.ident
                     }) {
                         quote!{
-                            #[cfg_attr(feature = "std", derive(eosio_chain::eosio_scale_info::TypeInfo))]
-                            #[cfg_attr(feature = "std", scale_info(crate = ::eosio_chain::eosio_scale_info))]
+                            #[cfg_attr(feature = "std", derive(rust_chain::eosio_scale_info::TypeInfo))]
+                            #[cfg_attr(feature = "std", scale_info(crate = ::rust_chain::eosio_scale_info))]
                             #item
                         }
                     } else {
@@ -1617,24 +1617,24 @@ impl Contract {
         Ok(quote! {
             #( #attrs )*
             #vis mod #ident {
-                use eosio_chain::{
+                use rust_chain::{
                     vec,
                     vec::Vec,
                     boxed::Box,
                     string::String,
                 };
 
-                use eosio_chain::{
+                use rust_chain::{
                     serializer::Packer as _,
                     db::SecondaryType as _,
                     print::Printable as _,
                 };
 
                 #[cfg(feature = "std")]
-                use eosio_chain::eosio_scale_info::TypeInfo as _;
+                use rust_chain::eosio_scale_info::TypeInfo as _;
     
                 #[cfg(feature = "std")]
-                use eosio_chain::eosio_scale_info;
+                use rust_chain::eosio_scale_info;
 
                 #( #items ) *
                 #packers_code

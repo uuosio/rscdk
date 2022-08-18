@@ -1,9 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 
-#[eosio_chain::contract]
+#[rust_chain:contract]
 mod tester {
-    use eosio_chain::{
+    use rust_chain::{
         Name,
     };
 
@@ -31,15 +31,15 @@ mod tests {
 
     use sayhello;
     use saygoodbye;
-    use eosio_chain::{
+    use rust_chain::{
         name::{
             s2n,
         }
     };
     
-    use eosio_chain::ChainTester;
-    use eosio_chain::serializer::Packer;
-    use eosio_chain::chaintester;
+    use rust_chain::ChainTester;
+    use rust_chain::serializer::Packer;
+    use rust_chain::chaintester;
  
     #[no_mangle]
     fn native_apply(receiver: u64, first_receiver: u64, action: u64) {

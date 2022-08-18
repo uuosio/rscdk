@@ -1,12 +1,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use eosio_chain as chain;
+use rust_chain as chain;
 mod mymod;
 
 #[chain::contract]
 mod hello {
     use super::mymod;
-    use eosio_chain::{
+    use rust_chain::{
         Asset,
         Name,
         eosio_print,
@@ -18,8 +18,8 @@ mod hello {
         BB
     };
     ///
-    #[cfg_attr(feature = "std", derive(eosio_chain::eosio_scale_info::TypeInfo))]
-    #[cfg_attr(feature = "std", scale_info(crate = ::eosio_chain::eosio_scale_info))]
+    #[cfg_attr(feature = "std", derive(rust_chain::eosio_scale_info::TypeInfo))]
+    #[cfg_attr(feature = "std", scale_info(crate = ::rust_chain::eosio_scale_info))]
     #[derive(Clone, Eq, PartialEq, Default)]
     pub struct MyChecksum {
         data: [u8; 20],

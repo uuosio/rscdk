@@ -1,8 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[eosio_chain::contract]
+#[rust_chain::contract]
 mod testall {
-    use eosio_chain::{
+    use rust_chain::{
         Name,
         Asset,
         BinaryExtension,
@@ -31,9 +31,9 @@ fn native_apply(receiver: u64, first_receiver: u64, action: u64) {
 #[cfg(test)]
 mod tests {
 
-    use eosio_chain::ChainTester;
-    use eosio_chain::serializer::Packer as _;
-    use eosio_chain::chaintester::{
+    use rust_chain::ChainTester;
+    use rust_chain::serializer::Packer as _;
+    use rust_chain::chaintester::{
         GetTableRowsPrams,
     };
     use std::{

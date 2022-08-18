@@ -1,9 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 
-#[eosio_chain::contract]
+#[rust_chain::contract]
 mod token {
-    use eosio_chain::{
+    use rust_chain::{
         require_auth,
         check,
         is_account,

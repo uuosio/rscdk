@@ -1,8 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[eosio_chain::contract]
+#[rust_chain::contract]
 pub mod saygoodbye {
-    use eosio_chain::{
+    use rust_chain::{
         Name,
         Float128,
         Uint256,
@@ -71,8 +71,8 @@ pub mod saygoodbye {
 
 #[cfg(test)]
 mod tests {
-    use eosio_chain::ChainTester;
-    use eosio_chain::serializer::Packer;
+    use rust_chain::ChainTester;
+    use rust_chain::serializer::Packer;
     use crate::saygoodbye;
 
     #[no_mangle]

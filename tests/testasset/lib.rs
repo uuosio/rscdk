@@ -1,8 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[eosio_chain::contract]
+#[rust_chain::contract]
 mod test {
-    use eosio_chain::{
+    use rust_chain::{
         Asset,
         Name,
         Symbol,

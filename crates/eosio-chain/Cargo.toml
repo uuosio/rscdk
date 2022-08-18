@@ -1,5 +1,5 @@
 [package]
-name = "eosio-chain"
+name = "rust-chain"
 version = "0.2.3"
 authors = ["learnforpractice@gmail.com"]
 edition = "2021"
@@ -7,7 +7,7 @@ edition = "2021"
 license = "Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/uuosio/rscdk"
-documentation = "https://docs.rs/eosio-chain/"
+documentation = "https://docs.rs/rust-chain/"
 homepage = "https://github.com/uuosio/"
 description = "eosio chain module that wrapping intrinsics eosio APIs"
 keywords = ["wasm", "eosio", "webassembly", "blockchain"]

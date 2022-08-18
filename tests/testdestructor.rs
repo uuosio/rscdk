@@ -1,6 +1,6 @@
-#[eosio_chain::contract]
+#[rust_chain::contract]
 pub mod testdestructor {
-    use eosio_chain::{
+    use rust_chain::{
         Name,
         eosio_println,
     };

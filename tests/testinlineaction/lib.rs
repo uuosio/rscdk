@@ -1,13 +1,13 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[eosio_chain::contract]
+#[rust_chain:contract]
 pub mod test {
-    use eosio_chain::action::{
+    use rust_chain::action::{
         PermissionLevel,
         Action,
     };
 
-    use eosio_chain::{
+    use rust_chain::{
         Name,
         name,
         eosio_println,

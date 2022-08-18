@@ -1,10 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use eosio_chain as chain;
+use rust_chain as chain;
 
 #[chain::contract]
 mod hello {
-    use ::eosio_chain::{
+    use ::rust_chain::{
         Name,
         eosio_println,
         require_recipient,

@@ -180,7 +180,7 @@ mod tests {
             syn::parse_quote! {},
             syn::parse_quote! {
                 mod test {
-                    use eosio_chain::{
+                    use rust_chain::{
                         Name,
                         Asset,
                         Float128,
@@ -226,7 +226,7 @@ mod tests {
             syn::parse_quote! {},
             syn::parse_quote! {
                 mod test {
-                    use eosio_chain::{
+                    use rust_chain::{
                         Name,
                         Asset,
                         Float128,

@@ -97,7 +97,7 @@ authors = [""]
 edition = "2021"
 
 [dependencies]
-eosio_chain = { version = "0.1.0", path = "%s", default-features = false }
+rust_chain= { version = "0.1.0", path = "%s", default-features = false }
 
 [lib]
 name = "test"
@@ -111,7 +111,7 @@ lto = true
 [features]
 default = ["std"]
 std = [
-    "eosio_chain/std",
+    "rust_chain/std",
 ]
 
 # [workspace]
@@ -123,7 +123,7 @@ def run_test(code, error_message):
     try:
         test_dir = os.path.dirname(__file__)
         with open(os.path.join(temp_dir, 'Cargo.toml'), 'w') as f:
-            f.write(toml%(f'{test_dir}/../../crates/eosio-chain',))
+            f.write(toml%(f'{test_dir}/../../crates/rust-chain',))
 
         with open(os.path.join(temp_dir, 'lib.rs'), 'w') as f:
             f.write(code)
@@ -144,7 +144,7 @@ def test_bad_struct_name():
     return
     code = '''
 #![cfg_attr(not(feature = "std"), no_std)]
-use eosio_chain as chain;
+use rust_chain as chain;
 #[chain::contract]
 mod hello {
     struct AAA_ {

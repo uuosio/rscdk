@@ -5,7 +5,7 @@ authors = [""]
 edition = "2021"
 
 [dependencies]
-eosio-chain = { version="0.2", path = "../../crates/eosio-chain", default-features = false }
+rust-chain = { version="0.2", path = "../../crates/rust-chain", default-features = false }
 
 [lib]
 name = "secondaryindex"
@@ -19,5 +19,5 @@ crate-type = [
 [features]
 default = ["std"]
 std = [
-    "eosio-chain/std",
+    "rust-chain/std",
 ]

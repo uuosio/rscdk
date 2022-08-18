@@ -5,7 +5,7 @@ authors = [""]
 edition = "2021"
 
 [dependencies]
-eosio-chain = { path = "../../../crates/eosio-chain", default-features = false }
+rust-chain = { path = "../../../crates/rust-chain", default-features = false }
 
 [lib]
 name = "receiver"
@@ -15,6 +15,6 @@ crate-type = ["cdylib", "rlib"]
 [features]
 default = ["std"]
 std = [
-    "eosio-chain/std",
+    "rust-chain/std",
 ]
 

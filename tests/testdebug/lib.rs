@@ -1,9 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[eosio_chain::contract]
+#[rust_chain::contract]
 #[allow(dead_code)]
 mod hello {
-    use eosio_chain::{
+    use rust_chain::{
         Name,
         Float128,
         Uint256,
@@ -420,8 +420,8 @@ mod hello {
     // fn apply(receiver: u64, first_receiver: u64, action: u64) {
     //     prints("hello, debugger!!!");
     //     return;
-    //     use eosio_chain::chaintester;
-    //     use eosio_chain::chaintester::chaintester::TApplySyncClient;
+    //     use rust_chain::chaintester;
+    //     use rust_chain::chaintester::chaintester::TApplySyncClient;
     //     let mut client = chaintester::new_vm_api_client("127.0.0.1", 9092).unwrap();
     //     client.prints(String::from("hello, debugger!")).unwrap();            
     // }
@@ -435,10 +435,10 @@ mod hello {
 #[cfg(test)]
 mod tests {
 
-    use eosio_chain::ChainTester;
-    use eosio_chain::serializer::Packer;
+    use rust_chain::ChainTester;
+    use rust_chain::serializer::Packer;
     use crate::hello::sayhello;
-    use eosio_chain::chaintester;
+    use rust_chain::chaintester;
 
     #[no_mangle]
     fn native_apply(receiver: u64, first_receiver: u64, action: u64) {

@@ -1,6 +1,6 @@
-#[eosio_chain::contract]
+#[rust_chain::contract]
 pub mod testname {
-    use eosio_chain::{
+    use rust_chain::{
         Name,
         name,
         check,
