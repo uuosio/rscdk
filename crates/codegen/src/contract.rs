@@ -794,7 +794,7 @@ impl Contract {
                 });
     
                 secondary_impls = quote_spanned!(span =>
-                    impl ::rust_chain:db::SecondaryValueInterface for #table_ident {
+                    impl ::rust_chain::db::SecondaryValueInterface for #table_ident {
                         #[allow(unused_variables, unused_mut)]
                         fn get_secondary_value(&self, i: usize) -> rust_chain::db::SecondaryValue {
                             #( #secondary_getter_impls )*
@@ -874,7 +874,7 @@ impl Contract {
                     }
                     Some("IdxF64") => {
                         return quote! {
-                            rust_chain:db::SecondaryType::IdxF64
+                            rust_chain::db::SecondaryType::IdxF64
                         }
                     }
                     Some("IdxF128") => {
@@ -956,7 +956,7 @@ impl Contract {
 
                     impl #table_ident {
                         #[allow(dead_code)]
-                        fn new_table_with_scope(code: rust_chain::Name, scope: rust_chain:Name) -> Box<#mi_ident> {
+                        fn new_table_with_scope(code: rust_chain::Name, scope: rust_chain::Name) -> Box<#mi_ident> {
                             return Box::new(#mi_ident::new(code, scope, rust_chain::Name::new(#table_name)));
                         }
 
@@ -987,7 +987,7 @@ impl Contract {
                         return self.mi.store(value, payer);
                     }
                 
-                    pub fn update(&self, iterator: &::rust_chain::db::Iterator<#table_ident>, value: &#table_ident, payer: rust_chain:Name) {
+                    pub fn update(&self, iterator: &::rust_chain::db::Iterator<#table_ident>, value: &#table_ident, payer: rust_chain::Name) {
                         return self.mi.update(iterator, value, payer);
                     }
                 
@@ -1381,7 +1381,7 @@ impl Contract {
         return Ok(quote!{
             #[cfg(feature = "std")]
             pub fn generate_abi() -> String {
-                let mut info = ::rust_chain:abi::ABIInfo {
+                let mut info = ::rust_chain::abi::ABIInfo {
                     actions: Vec::new(),
                     tables: Vec::new(),
                     structs: Vec::new(),
@@ -1405,7 +1405,7 @@ impl Contract {
         let action_handle_code = self.generate_action_handle_code(false);
         quote!{
             pub fn contract_apply(receiver: u64, first_receiver: u64, action: u64) {
-                let _receiver = rust_chain:Name{n: receiver};
+                let _receiver = rust_chain::Name{n: receiver};
                 let _first_receiver = rust_chain::Name{n: first_receiver};
                 let _action = rust_chain::Name{n: action};
                 #[allow(unused_mut)]
@@ -1510,7 +1510,7 @@ impl Contract {
                     }
                 }
 
-                impl ::rust_chain:serializer::Packer for #variant_ident {
+                impl ::rust_chain::serializer::Packer for #variant_ident {
                     fn size(&self) -> usize {
                         let mut _size: usize = 0;
                         match self {
@@ -1521,7 +1521,7 @@ impl Contract {
                     }
                 
                     fn pack(&self) -> Vec<u8> {
-                        let mut enc = ::rust_chain:serializer::Encoder::new(self.size());
+                        let mut enc = ::rust_chain::serializer::Encoder::new(self.size());
                         match self {
                             #( #pack_code )*
                             _=> {}

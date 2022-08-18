@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use rust_chainas chain;
+use rust_chain as chain;
 
 #[chain::contract]
 pub mod hello {

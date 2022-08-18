@@ -123,7 +123,7 @@ def run_test(code, error_message):
     try:
         test_dir = os.path.dirname(__file__)
         with open(os.path.join(temp_dir, 'Cargo.toml'), 'w') as f:
-            f.write(toml%(f'{test_dir}/../../crates/rust-chain',))
+            f.write(toml%(f'{test_dir}/../../crates/chain',))
 
         with open(os.path.join(temp_dir, 'lib.rs'), 'w') as f:
             f.write(code)

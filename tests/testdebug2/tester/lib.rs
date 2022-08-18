@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 
-#[rust_chain:contract]
+#[rust_chain::contract]
 mod tester {
     use rust_chain::{
         Name,

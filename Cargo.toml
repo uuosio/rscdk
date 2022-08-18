@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/rust-chain",
+    "crates/chain",
     "crates/macro",
     "crates/codegen",
     "crates/chaintester",

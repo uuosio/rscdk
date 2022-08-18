@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[rust_chain:contract]
+#[rust_chain::contract]
 pub mod test {
     use rust_chain::action::{
         PermissionLevel,

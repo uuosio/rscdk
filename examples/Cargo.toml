@@ -5,7 +5,7 @@ authors = [""]
 edition = "2021"
 
 [dependencies]
-rust-chain = { version = "0.2", path = "../crates/rust-chain", default-features = false }
+rust-chain = { version = "0.2", path = "../crates/chain", default-features = false }
 counter = { path = "./counter", default-features = false }
 counter2 = { path = "./counter2", default-features = false }
 dbi64 = { path = "./dbi64", default-features = false }

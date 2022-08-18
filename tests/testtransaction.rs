@@ -1,4 +1,4 @@
-#[rust_chain:contract]
+#[rust_chain::contract]
 pub mod testtransaction {
     use rust_chain::{
         Name,
