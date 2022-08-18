@@ -669,7 +669,7 @@ impl Default for ProducerKey {
     ///
     #[inline]
     fn default() -> Self {
-        ProducerKey{..Default::default()}
+        ProducerKey { producer_name: Default::default(), block_signing_key: Default::default() }
     }
 }
 
