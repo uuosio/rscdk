@@ -420,9 +420,9 @@ mod hello {
     // fn apply(receiver: u64, first_receiver: u64, action: u64) {
     //     prints("hello, debugger!!!");
     //     return;
-    //     use eosio_chain::eosio_chaintester;
-    //     use eosio_chain::eosio_chaintester::chaintester::TApplySyncClient;
-    //     let mut client = eosio_chaintester::new_vm_api_client("127.0.0.1", 9092).unwrap();
+    //     use eosio_chain::chaintester;
+    //     use eosio_chain::chaintester::chaintester::TApplySyncClient;
+    //     let mut client = chaintester::new_vm_api_client("127.0.0.1", 9092).unwrap();
     //     client.prints(String::from("hello, debugger!")).unwrap();            
     // }
 
@@ -438,7 +438,7 @@ mod tests {
     use eosio_chain::ChainTester;
     use eosio_chain::serializer::Packer;
     use crate::hello::sayhello;
-    use eosio_chain::eosio_chaintester;
+    use eosio_chain::chaintester;
 
     #[no_mangle]
     fn native_apply(receiver: u64, first_receiver: u64, action: u64) {
@@ -452,7 +452,7 @@ mod tests {
         if !std::path::Path::new(&cur_dir2).exists() {
             cur_dir2 = format!("{cur_dir}");
         }
-        eosio_chaintester::build_contract("testdebug", &cur_dir2);
+        chaintester::build_contract("testdebug", &cur_dir2);
 
         let ref wasm_file = format!("{cur_dir2}/target/testdebug.wasm");
         let ref abi_file = format!("{cur_dir2}/target/testdebug.abi");

@@ -1433,7 +1433,7 @@ impl Contract {
 
 
             #[cfg(feature = "std")]
-            use eosio_chain::eosio_chaintester::interfaces::TApplySyncClient;
+            use eosio_chain::chaintester::interfaces::TApplySyncClient;
 
             #[cfg(feature = "std")]
             pub fn native_apply(receiver: u64, first_receiver: u64, action: u64) {

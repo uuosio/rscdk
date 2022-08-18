@@ -24,10 +24,10 @@ extern crate alloc;
 use cfg_if::cfg_if;
 
 #[cfg(feature = "std")]
-pub use eosio_chaintester;
+pub use chaintester;
 
 #[cfg(feature = "std")]
-pub use eosio_chaintester::{
+pub use chaintester::{
     ChainTester,
 };
 

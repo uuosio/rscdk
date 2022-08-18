@@ -34,7 +34,7 @@ use crate::{
 
 use core::slice;
 
-use eosio_chaintester::{
+use chaintester::{
     get_vm_api_client,
 	interfaces::{
 		TApplySyncClient,

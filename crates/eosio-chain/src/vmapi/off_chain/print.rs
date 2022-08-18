@@ -1,7 +1,7 @@
 use std::ffi::CStr;
-use eosio_chaintester::interfaces::TApplySyncClient;
+use chaintester::interfaces::TApplySyncClient;
 
-use eosio_chaintester::{
+use chaintester::{
     get_vm_api_client,
 };
 

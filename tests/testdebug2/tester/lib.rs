@@ -39,7 +39,7 @@ mod tests {
     
     use eosio_chain::ChainTester;
     use eosio_chain::serializer::Packer;
-    use eosio_chain::eosio_chaintester;
+    use eosio_chain::chaintester;
  
     #[no_mangle]
     fn native_apply(receiver: u64, first_receiver: u64, action: u64) {
@@ -54,11 +54,11 @@ mod tests {
         let mut cur_dir = std::env::current_dir().unwrap().into_os_string().into_string().unwrap();
         let say_hello_dir = format!("{cur_dir}/../sayhello");
         println!("+++++++say_hello_dir:{say_hello_dir}");
-        eosio_chaintester::build_contract("sayhello", &say_hello_dir);
+        chaintester::build_contract("sayhello", &say_hello_dir);
 
         let say_goodbye_dir = format!("{cur_dir}/../saygoodbye");
         println!("+++++++say_goodbye_dir:{say_goodbye_dir}");
-        eosio_chaintester::build_contract("saygoodbye", &say_goodbye_dir);
+        chaintester::build_contract("saygoodbye", &say_goodbye_dir);
     }
 
     fn deploy_contract(tester: &mut ChainTester) {

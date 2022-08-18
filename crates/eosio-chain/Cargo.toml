@@ -20,7 +20,7 @@ serde = { version = "1.0", default-features = false, features = ["derive", "allo
 serde_json = {version = "1.0.32", features = ["preserve_order"], optional = true}
 
 eosio-macro = { version = "0.2", path = "../macro", default-features = false }
-eosio-chaintester = { version = "0.2", path = "../chaintester", default-features = false, optional = true }
+chaintester = { version = "0.2", path = "../chaintester", default-features = false, optional = true }
 eosio-scale-info = { version="2.1.3",  default-features = false, features = ["derive"], optional = true }
 
 [features]
@@ -31,5 +31,5 @@ std = [
     "serde_json",
     "eosio-scale-info",
     "eosio-scale-info/std",
-    "eosio-chaintester"
+    "chaintester"
 ]

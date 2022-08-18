@@ -33,7 +33,7 @@ mod tests {
 
     use eosio_chain::ChainTester;
     use eosio_chain::serializer::Packer as _;
-    use eosio_chain::eosio_chaintester::{
+    use eosio_chain::chaintester::{
         GetTableRowsPrams,
     };
     use std::{

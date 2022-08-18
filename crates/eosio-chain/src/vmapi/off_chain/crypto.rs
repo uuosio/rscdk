@@ -1,6 +1,6 @@
 use crate::structs::*;
 
-use eosio_chaintester::{
+use chaintester::{
     get_vm_api_client,
 	interfaces::{
 		TApplySyncClient,
