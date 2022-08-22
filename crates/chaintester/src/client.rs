@@ -342,7 +342,11 @@ fn parse_ret2(ret: &thrift::Result<Vec<u8>>) -> Result<Value> {
 
 impl ChainTester {
     pub fn new() -> Self {
-        Self { id: get_chain_tester_client().new_chain().unwrap() }
+        Self { id: get_chain_tester_client().new_chain(true).unwrap() }
+    }
+
+    pub fn new_ex(initialize: bool) -> Self {
+        Self { id: get_chain_tester_client().new_chain(initialize).unwrap() }
     }
 
     fn client(&mut self) -> MutexGuard<'static, ChainTesterClient> {
