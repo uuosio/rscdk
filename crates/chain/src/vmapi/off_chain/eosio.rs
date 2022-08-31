@@ -61,7 +61,8 @@ pub fn eosio_memcpy( dst: *mut u8, src: *const u8, length: usize) -> *mut u8 {
 
 ///
 pub fn get_active_producers() -> Vec<Name> {
-	let data = get_vm_api_client().get_active_producers().unwrap();
+	let ret = get_vm_api_client().get_active_producers();
+	let data = ret.unwrap();
 	let mut ret: Vec<Name> = vec![Name::default();data.len()/8];
 	let mut i = 0usize;
 	for v in &mut ret {
@@ -78,7 +79,8 @@ pub fn check_transaction_authorization(
 	perms: &Vec<PermissionLevel>,
 	pubkeys: &Vec<PublicKey>
 ) -> i32 {
-	get_vm_api_client().check_transaction_authorization(trx.pack(), pubkeys.pack(), perms.pack()).unwrap()
+	let ret = get_vm_api_client().check_transaction_authorization(trx.pack(), pubkeys.pack(), perms.pack());
+    ret.unwrap()
 }
 
 /// Checks if a permission is authorized by a provided delay and a provided set of keys and permissions
@@ -91,81 +93,96 @@ pub fn check_permission_authorization(
 ) -> i32 {
 	let perms_data = perms.pack();
 	let pubkeys_data = pubkeys.pack();
-	get_vm_api_client().check_permission_authorization(account.n.into(), permission.n.into(), pubkeys_data, perms_data, delay_us.into()).unwrap()
+	let ret = get_vm_api_client().check_permission_authorization(account.n.into(), permission.n.into(), pubkeys_data, perms_data, delay_us.into());
+    ret.unwrap()
 }
 
 ///
 pub fn get_permission_last_used(account: Name, permission: Name ) -> TimePoint {
-	let elapsed = get_vm_api_client().get_permission_last_used(account.n.into(), permission.n.into()).unwrap();
+	let ret = get_vm_api_client().get_permission_last_used(account.n.into(), permission.n.into());
+    let elapsed = ret.unwrap();
 	return TimePoint{elapsed: elapsed as u64};
 }
 
 ///
 pub fn get_account_creation_time(account: Name) -> TimePoint {
-	let elapsed = get_vm_api_client().get_account_creation_time(account.n.into()).unwrap();
+	let ret = get_vm_api_client().get_account_creation_time(account.n.into());
+    let elapsed = ret.unwrap();
 	return TimePoint{elapsed: elapsed as u64};
 }
 
 ///
 pub fn read_action_data() -> Vec<u8> {
-	return get_vm_api_client().read_action_data().unwrap();
+	let ret = get_vm_api_client().read_action_data();
+    ret.unwrap()
 }
 
 ///
 pub fn action_data_size() -> usize {
-	get_vm_api_client().action_data_size().unwrap() as usize
+	let ret = get_vm_api_client().action_data_size();
+    ret.unwrap() as usize
 }
 
 ///
 pub fn require_recipient(name: Name) {
-	get_vm_api_client().require_recipient(name.n.into()).unwrap()
+	let ret = get_vm_api_client().require_recipient(name.n.into());
+    ret.unwrap()
 }
 
 ///
 pub fn require_auth(name: Name) {
-	get_vm_api_client().require_auth(name.n.into()).unwrap()
+	let ret = get_vm_api_client().require_auth(name.n.into());
+    ret.unwrap()
 }
 
 ///
 pub fn has_auth(name: Name) -> bool {
-	get_vm_api_client().has_auth(name.n.into()).unwrap()
+	let ret = get_vm_api_client().has_auth(name.n.into());
+    ret.unwrap()
 }
 
 ///
 pub fn require_auth2(name: Name, permission: Name) {
-	get_vm_api_client().require_auth2(name.n.into(), permission.n.into()).unwrap()
+	let ret = get_vm_api_client().require_auth2(name.n.into(), permission.n.into());
+    ret.unwrap()
 }
 
 ///
 pub fn is_account(name: Name) -> bool {
-	get_vm_api_client().is_account(name.n.into()).unwrap()
+	let ret = get_vm_api_client().is_account(name.n.into());
+    ret.unwrap()
 }
 
 ///
 pub fn send_inline(_serialized_action: &[u8]) {
-	get_vm_api_client().send_inline(_serialized_action.to_vec()).unwrap();
+	let ret = get_vm_api_client().send_inline(_serialized_action.to_vec());
+    ret.unwrap();
 }
 
 ///
 pub fn send_context_free_inline(_serialized_action: &[u8]) {
-	get_vm_api_client().send_context_free_inline(_serialized_action.to_vec()).unwrap();
+	let ret = get_vm_api_client().send_context_free_inline(_serialized_action.to_vec());
+    ret.unwrap();
 }
 
 ///
 pub fn publication_time() -> TimePoint {
-	let elapsed = get_vm_api_client().publication_time().unwrap();
+	let ret = get_vm_api_client().publication_time();
+    let elapsed = ret.unwrap();
 	return TimePoint{elapsed: elapsed.into()};
 }
 
 ///
 pub fn current_receiver() -> Name {
-	let n = get_vm_api_client().current_receiver().unwrap();
+	let ret = get_vm_api_client().current_receiver();
+    let n = ret.unwrap();
 	return Name{n: n.into()};
 }
 
 ///
 pub fn eosio_assert(test: bool, msg: &str) {
-	get_vm_api_client().eosio_assert(test, msg.into()).unwrap()
+	let ret = get_vm_api_client().eosio_assert(test, msg.into());
+    ret.unwrap()
 }
 
 ///
@@ -178,7 +195,8 @@ pub fn eosio_assert_message(test: u32, msg: *const u8, msg_len: u32) {
         slice::from_raw_parts(msg, msg_len as usize)
     };
 
-	get_vm_api_client().eosio_assert_message(false, dst.into()).unwrap();
+	let ret = get_vm_api_client().eosio_assert_message(false, dst.into());
+    ret.unwrap();
 }
 
 ///
@@ -187,7 +205,8 @@ pub fn eosio_assert_code(test: u32, code: u64) {
 		0 => false,
 		_ => true,
 	};
-	get_vm_api_client().eosio_assert_code(_test, code.into()).unwrap()
+	let ret = get_vm_api_client().eosio_assert_code(_test, code.into());
+    ret.unwrap()
 }
 
 
@@ -201,73 +220,89 @@ pub fn check(test: bool, msg: &str) {
 
 ///
 pub fn eosio_exit(code: i32) {
-	get_vm_api_client().eosio_exit(code).unwrap()
+	let ret = get_vm_api_client().eosio_exit(code);
+    ret.unwrap()
 }
 
 ///
 pub fn current_time() -> TimePoint {
-	let elapsed = get_vm_api_client().current_time().unwrap().into();
+	let ret = get_vm_api_client().current_time();
+    let elapsed = ret.unwrap().into();
 	return TimePoint{elapsed: elapsed};
 }
 
 ///
 pub fn is_feature_activated(feature_digest: &Checksum256) -> bool {
-	get_vm_api_client().is_feature_activated(feature_digest.data.into()).unwrap()
+	let ret = get_vm_api_client().is_feature_activated(feature_digest.data.into());
+    ret.unwrap()
 }
 
 ///
 pub fn get_sender() -> Name {
-	let n = get_vm_api_client().get_sender().unwrap().into();
+	let ret = get_vm_api_client().get_sender();
+    let n = ret.unwrap().into();
 	return Name{n: n};
 }
 
 /// return resource limits of ram, net, and cpu.
 pub fn get_resource_limits(account: Name) -> (i64, i64, i64) {
-	let ret = get_vm_api_client().get_resource_limits(account.n.into()).unwrap();
-	(ret.ram_bytes.unwrap(), ret.net_weight.unwrap(), ret.cpu_weight.unwrap())
+	let _ret = get_vm_api_client().get_resource_limits(account.n.into());
+    let ret = _ret.unwrap();
+	(
+		ret.ram_bytes.unwrap(),
+	    ret.net_weight.unwrap(),
+    	ret.cpu_weight.unwrap(),
+    )
 }
 
 ///
 pub fn set_resource_limits(account: Name, ram_bytes: i64, net_weight: i64, cpu_weight: i64) {
-	get_vm_api_client().set_resource_limits(account.n.into(), ram_bytes, net_weight, cpu_weight).unwrap()
+	let ret = get_vm_api_client().set_resource_limits(account.n.into(), ram_bytes, net_weight, cpu_weight);
+    ret.unwrap()
 }
 
 //TODO:
 ///
 pub fn set_proposed_producers(producer_keys: &Vec<ProducerKey>) -> i64 {
 	let packed = producer_keys.pack();
-	get_vm_api_client().set_proposed_producers(packed).unwrap()
+	let ret = get_vm_api_client().set_proposed_producers(packed);
+    ret.unwrap()
 }
 
 //TODO:
 ///
 pub fn set_proposed_producers_ex(producer_keys: &Vec<ProducerAuthority>) -> i64 {
 	let packed = producer_keys.pack();
-	get_vm_api_client().set_proposed_producers_ex(1u64.into(), packed).unwrap()
+	let ret = get_vm_api_client().set_proposed_producers_ex(1u64.into(), packed);
+    ret.unwrap()
 }
 
 ///
 pub fn is_privileged(account: Name) -> bool {
-	return get_vm_api_client().is_privileged(account.n.into()).unwrap();
+	let ret = get_vm_api_client().is_privileged(account.n.into());
+    ret.unwrap()
 }
 
 ///
 pub fn set_privileged(account: Name, is_priv: bool) {
-	get_vm_api_client().set_privileged(account.n.into(), is_priv).unwrap();
+	let ret = get_vm_api_client().set_privileged(account.n.into(), is_priv);
+    ret.unwrap();
 }
 
 ///
 pub fn set_blockchain_parameters(params: &BlockchainParameters) {
 	let data = params.pack();
-	get_vm_api_client().set_blockchain_parameters_packed(data).unwrap();
+	let ret = get_vm_api_client().set_blockchain_parameters_packed(data);
+    ret.unwrap();
 }
 
 ///
 pub fn get_blockchain_parameters() -> BlockchainParameters {
-	let mut ret = BlockchainParameters::default();
-	let data = get_vm_api_client().get_blockchain_parameters_packed().unwrap();
-	ret.unpack(&data);
-	return ret;
+	let mut params = BlockchainParameters::default();
+	let ret = get_vm_api_client().get_blockchain_parameters_packed();
+    let data = ret.unwrap();
+	params.unpack(&data);
+	return params;
 }
 
 ///
@@ -280,7 +315,8 @@ pub fn send_deferred(sender_id: &Uint128, payer: Name, serialized_transaction: &
         slice::from_raw_parts(sender_id as *const Uint128 as *const u8, 16)
     };
 
-	get_vm_api_client().send_deferred(_sender_id.into(), payer.n.into(), serialized_transaction.into(), replace_existing as i32).unwrap()
+	let ret = get_vm_api_client().send_deferred(_sender_id.into(), payer.n.into(), serialized_transaction.into(), replace_existing as i32);
+    ret.unwrap()
 }
 
 ///
@@ -288,12 +324,14 @@ pub fn cancel_deferred(sender_id: &Uint128) -> i32 {
     let _sender_id = unsafe {
         slice::from_raw_parts(sender_id as *const Uint128 as *const u8, 16)
     };
-	get_vm_api_client().cancel_deferred(_sender_id.into()).unwrap()
+	let ret = get_vm_api_client().cancel_deferred(_sender_id.into());
+    ret.unwrap()
 }
 
 ///
 pub fn read_transaction() -> Transaction {
-	let data = get_vm_api_client().read_transaction().unwrap();
+	let ret = get_vm_api_client().read_transaction();
+    let data = ret.unwrap();
 	let mut ret = Transaction::default();
 	ret.unpack(&data);
 	return ret;
@@ -301,30 +339,36 @@ pub fn read_transaction() -> Transaction {
 
 ///
 pub fn transaction_size() -> usize {
-	get_vm_api_client().transaction_size().unwrap() as usize
+	let ret = get_vm_api_client().transaction_size();
+    ret.unwrap() as usize
 }
 
 ///
 pub fn tapos_block_num() -> i32 {
-	get_vm_api_client().tapos_block_num().unwrap()
+	let ret = get_vm_api_client().tapos_block_num();
+    ret.unwrap()
 }
 
 ///
 pub fn tapos_block_prefix() -> i32 {
-	get_vm_api_client().tapos_block_prefix().unwrap()
+	let ret = get_vm_api_client().tapos_block_prefix();
+    ret.unwrap()
 }
 
 ///
 pub fn expiration() -> u32 {
-	get_vm_api_client().expiration().unwrap() as u32
+	let ret = get_vm_api_client().expiration();
+    ret.unwrap() as u32
 }
 
 ///
 pub fn get_action(tp: u32, index: u32) -> Vec<u8> {
-	get_vm_api_client().get_action(tp as i32, index as i32).unwrap()
+	let ret = get_vm_api_client().get_action(tp as i32, index as i32);
+    ret.unwrap()
 }
 
 ///
 pub fn get_context_free_data(index: u32) -> Vec<u8> {
-	get_vm_api_client().get_context_free_data(index as i32).unwrap()
+	let ret = get_vm_api_client().get_context_free_data(index as i32);
+    ret.unwrap()
 }
