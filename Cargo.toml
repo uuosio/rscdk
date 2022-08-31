@@ -9,7 +9,7 @@ members = [
 
 exclude = [
     "examples/",
-    "tests",
+    "tests"
 ]
 
 [profile.release]

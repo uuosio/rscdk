@@ -146,6 +146,7 @@ impl<'a> Default for GetTableRowsPrams<'a> {
 
 pub struct VMAPIClient {
     vm_api_client: Option<ApplySyncClient<ClientInputProtocol, ClientOutputProtocol>>,
+    apply: Option<fn(u64, u64, u64)>,
 }
 
 pub struct ChainTesterClient {
@@ -175,7 +176,7 @@ pub fn close_vm_api_client() {
 
 impl VMAPIClient {
     fn new() -> Self {
-        VMAPIClient{vm_api_client: None}
+        VMAPIClient{vm_api_client: None, apply: None}
     }
 
     pub fn init(&mut self) {
@@ -185,6 +186,14 @@ impl VMAPIClient {
             let client = new_vm_api_client(&host, port).unwrap();
             self.vm_api_client = Some(client);
         }
+    }
+
+    pub fn set_apply(&mut self, apply: fn(u64, u64, u64)) {
+        self.apply = Some(apply);
+    }
+
+    pub fn get_apply(&self) -> Option<fn(u64, u64, u64)> {
+        return self.apply;
     }
 
     pub fn close(&mut self) {
@@ -653,3 +662,6 @@ pub fn n2s(value: u64) -> String {
     return r;
 }
 
+pub fn set_apply(apply: fn(u64, u64, u64)) {
+    get_vm_api_client().set_apply(apply);
+}

@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[rust_chain::contract]
-mod hello {
+pub mod hello {
     use rust_chain::{
         Name,
         eosio_println,

@@ -308,8 +308,9 @@ impl ApplyRequestSyncHandler for ApplyRequestHandler {
         let _action = action.into();
 
         let result = panic::catch_unwind(|| {
-            unsafe {
-                native_apply(_receiver, _first_receiver, _action);
+            let apply: Option<fn(u64, u64, u64)> = crate::get_vm_api_client().get_apply();
+            if let Some(_apply) =  apply {
+                _apply(_receiver, _first_receiver, _action);
             }
         });
         match result {

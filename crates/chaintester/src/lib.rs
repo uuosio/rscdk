@@ -28,6 +28,7 @@ pub use client::{
     ChainTester,
     get_vm_api_client,
     close_vm_api_client,
+    set_apply,
     GetTableRowsPrams,
 };
 

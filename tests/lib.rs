@@ -80,13 +80,6 @@ mod testall {
     }
 }
 
-#[cfg(feature="std")]
-#[no_mangle]
-fn native_apply(_receiver: u64, _first_receiver: u64, _action: u64) {
-    // testintrinsics::testintrinsics::native_apply(_receiver, _first_receiver, _action);
-    // testserializer::test::native_apply(_receiver, _first_receiver, _action);
-}
-
 #[cfg(test)]
 mod tests {
 
@@ -97,6 +90,23 @@ mod tests {
         fs,
         path::Path,
     };
+
+
+    use std::sync::Once;    
+    static INIT: Once = Once::new();
+
+    fn native_apply(_receiver: u64, _first_receiver: u64, _action: u64) {
+        hello::hello::native_apply(_receiver, _first_receiver, _action);
+        // testintrinsics::testintrinsics::native_apply(_receiver, _first_receiver, _action);
+        // testserializer::test::native_apply(_receiver, _first_receiver, _action);
+    }
+    
+    #[cfg(feature="std")]
+    pub fn initialize() {
+        INIT.call_once(|| {
+            chaintester::set_apply(native_apply);
+        });
+    }
 
     fn deploy_contract(tester: &mut ChainTester, package_name: &str) {
         let ref wasm_file = format!("./{package_name}/target/{package_name}.wasm");
@@ -134,11 +144,13 @@ mod tests {
 
     #[test]
     fn test_sayhello() {
+        initialize();
+
         let abi = &hello::generate_abi();
         fs::write(Path::new("./hello/target/hello.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
-        // tester.enable_debug_contract("hello", true).unwrap();
+        tester.enable_debug_contract("hello", true).unwrap();
 
         deploy_contract(&mut tester, "hello");
         update_auth(&mut tester);
