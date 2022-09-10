@@ -1,4 +1,6 @@
 ![build](https://github.com/uuosio/rscdk/actions/workflows/pr-any.yml/badge.svg?event=push)
+[![codecov](https://codecov.io/gh/uuosio/rscdk/branch/main/graph/badge.svg?token=GG76LHX28E)](https://codecov.io/gh/uuosio/rscdk)
+
 
 Rust Smart Contracts Development Kit
 
