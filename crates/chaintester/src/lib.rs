@@ -29,6 +29,7 @@ pub use client::{
     get_vm_api_client,
     close_vm_api_client,
     set_apply,
+    get_globals,
     GetTableRowsPrams,
 };
 

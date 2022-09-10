@@ -82,8 +82,7 @@ jobs:
           cargo install grcov
           rustup component add llvm-tools-preview
           export CARGO_INCREMENTAL=0
-          export RUSTDOCFLAGS="-Cpanic=abort"
-          export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
+          export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off"
           cargo test -- --test-threads=1
           curl -S -f https://codecov.io/bash -o codecov
           chmod +x codecov

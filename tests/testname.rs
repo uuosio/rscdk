@@ -7,6 +7,7 @@ pub mod testname {
         eosio_println,
     };
 
+    #[chain(sub)]
     #[allow(dead_code)]
     pub struct NameTest {
         receiver: Name,

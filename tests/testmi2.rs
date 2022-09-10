@@ -21,6 +21,7 @@ pub mod testmi2 {
         eosio_println,
     };
 
+    #[chain(sub)]
     #[allow(dead_code)]
     pub struct TestMI2 {
         receiver: Name,

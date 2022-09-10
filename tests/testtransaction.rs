@@ -9,6 +9,7 @@ pub mod testtransaction {
         Transaction,
     };
 
+    #[chain(sub)]
     #[allow(dead_code)]
     pub struct TestTransaction {
         receiver: Name,

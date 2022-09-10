@@ -78,6 +78,7 @@ impl Attribute {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum AttributeArgKind {
     MainStruct,
+    SubStruct,
     Action,
     Notify,
     Packer,
@@ -92,6 +93,7 @@ impl core::fmt::Display for AttributeArgKind {
     fn fmt(&self, f: &mut core::fmt::Formatter) -> Result<(), core::fmt::Error> {
         match self {
             Self::MainStruct => write!(f, "main"),
+            Self::SubStruct => write!(f, "sub"),
             Self::Table => write!(f, "table"),
             Self::Singleton => write!(f, "singleton"),
             Self::Packer => write!(f, "packer"),
@@ -107,6 +109,7 @@ impl core::fmt::Display for AttributeArgKind {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum AttributeArg {
     MainStruct,
+    SubStruct,
     Action(FixedString),
     Notify,
     Packer,
@@ -122,6 +125,7 @@ impl AttributeArg {
     pub fn kind(&self) -> AttributeArgKind {
         match self {
             Self::MainStruct => AttributeArgKind::MainStruct,
+            Self::SubStruct => AttributeArgKind::SubStruct,
             Self::Action(_) => AttributeArgKind::Action,
             Self::Notify => AttributeArgKind::Notify,
             Self::Packer => AttributeArgKind::Packer,
@@ -195,6 +199,7 @@ impl TryFrom<syn::NestedMeta> for AttributeFrag {
                             .ok_or_else(|| format_err_spanned!(meta, "unknown chain attribute (path)"))
                             .and_then(|ident| match ident.as_str() {
                                 "main" => Ok(AttributeArg::MainStruct),
+                                "sub" => Ok(AttributeArg::SubStruct),
                                 "singleton" => Ok(AttributeArg::Singleton),
                                 "packer" => Ok(AttributeArg::Packer),
                                 "variant" => Ok(AttributeArg::Variant),

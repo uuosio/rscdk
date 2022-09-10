@@ -82,25 +82,51 @@ mod testall {
 
 #[cfg(test)]
 mod tests {
+    use super::testmi::testmi::TestMI;
+    use super::testmi;
+    use super::testmi2;
+    use super::testname;
+    use super::testdestructor;
+    use super::testbinaryextension;
+    use super::testtransaction;
 
     use rust_chain::ChainTester;
     use rust_chain::serializer::Packer as _;
     use rust_chain::chaintester;
+    use rust_chain::chaintester::{
+        get_globals,
+    };
     use std::{
         fs,
         path::Path,
     };
 
-
     use std::sync::Once;    
     static INIT: Once = Once::new();
 
+    use rust_chain::serializer::Packer as _;
+
     fn native_apply(_receiver: u64, _first_receiver: u64, _action: u64) {
-        hello::hello::native_apply(_receiver, _first_receiver, _action);
-        // testintrinsics::testintrinsics::native_apply(_receiver, _first_receiver, _action);
-        // testserializer::test::native_apply(_receiver, _first_receiver, _action);
+        let test_case = get_globals().get_current_test_case();
+        if test_case == "testasset" {
+            testasset::test::native_apply(_receiver, _first_receiver, _action);
+            return;
+        } else if test_case == "hello" {
+            hello::hello::native_apply(_receiver, _first_receiver, _action);
+            return;
+        }
+
+        if test_case == "testmi" ||
+            test_case == "testmi2" ||
+            test_case ==  "testname" ||
+            test_case == "testdestructor" ||
+            test_case == "testbinaryextension" ||
+            test_case == "testtransaction" {
+                super::testall::native_apply(_receiver, _first_receiver, _action);
+                return;
+        }
     }
-    
+
     #[cfg(feature="std")]
     pub fn initialize() {
         INIT.call_once(|| {
@@ -150,7 +176,7 @@ mod tests {
         fs::write(Path::new("./hello/target/hello.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
-        tester.enable_debug_contract("hello", true).unwrap();
+        tester.enable_debug_contract("hello", get_globals().get_debug_mode()).unwrap();
 
         deploy_contract(&mut tester, "hello");
         update_auth(&mut tester);
@@ -176,7 +202,7 @@ mod tests {
         fs::write(Path::new("./testasset/target/testasset.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
-        // tester.enable_debug_contract("hello", true).unwrap();
+        tester.enable_debug_contract("hello", get_globals().get_debug_mode()).unwrap();
 
         deploy_contract(&mut tester, "testasset");
         update_auth(&mut tester);
@@ -245,7 +271,7 @@ mod tests {
         fs::write(Path::new("./testoptional/target/testoptional.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
-        // tester.enable_debug_contract("hello", true).unwrap();
+        tester.enable_debug_contract("hello", get_globals().get_debug_mode()).unwrap();
 
         deploy_contract(&mut tester, "testoptional");
     
@@ -274,7 +300,7 @@ mod tests {
         fs::write(Path::new("./testvariant/target/testvariant.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
-        // tester.enable_debug_contract("hello", true).unwrap();
+        tester.enable_debug_contract("hello", get_globals().get_debug_mode()).unwrap();
 
         deploy_contract(&mut tester, "testvariant");
     
@@ -297,6 +323,8 @@ mod tests {
         fs::write(Path::new("./target/testall.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
+        tester.enable_debug_contract("hello", get_globals().get_debug_mode()).unwrap();
+
         let ref wasm_file = format!("./target/testall.wasm");
         let ref abi_file = format!("./target/testall.abi");
         tester.deploy_contract("hello", wasm_file, abi_file).unwrap();
@@ -325,6 +353,8 @@ mod tests {
         fs::write(Path::new("./target/testall.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
+        tester.enable_debug_contract("hello", get_globals().get_debug_mode()).unwrap();
+
         let ref wasm_file = format!("./target/testall.wasm");
         let ref abi_file = format!("./target/testall.abi");
         tester.deploy_contract("hello", wasm_file, abi_file).unwrap();
@@ -349,6 +379,8 @@ mod tests {
         fs::write(Path::new("./target/testall.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
+        tester.enable_debug_contract("hello", get_globals().get_debug_mode()).unwrap();
+
         let ref wasm_file = format!("./target/testall.wasm");
         let ref abi_file = format!("./target/testall.abi");
         tester.deploy_contract("hello", wasm_file, abi_file).unwrap();
@@ -400,6 +432,8 @@ mod tests {
         fs::write(Path::new("./target/testall.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
+        tester.enable_debug_contract("hello", get_globals().get_debug_mode()).unwrap();
+
         let ref wasm_file = format!("./target/testall.wasm");
         let ref abi_file = format!("./target/testall.abi");
         tester.deploy_contract("hello", wasm_file, abi_file).unwrap();
@@ -424,7 +458,7 @@ mod tests {
         fs::write(Path::new("./testabi/target/testabi.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
-        // tester.enable_debug_contract("hello", true).unwrap();
+        tester.enable_debug_contract("hello", get_globals().get_debug_mode()).unwrap();
 
         deploy_contract(&mut tester, "testabi");
     
@@ -484,6 +518,8 @@ mod tests {
         fs::write(Path::new("./target/testall.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
+        tester.enable_debug_contract("hello", get_globals().get_debug_mode()).unwrap();
+
         let ref wasm_file = format!("./target/testall.wasm");
         let ref abi_file = format!("./target/testall.abi");
         tester.deploy_contract("hello", wasm_file, abi_file).unwrap();
@@ -515,7 +551,7 @@ mod tests {
         fs::write(Path::new("./testcrypto/target/testcrypto.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
-        // tester.enable_debug_contract("hello", true).unwrap();
+        tester.enable_debug_contract("hello", get_globals().get_debug_mode()).unwrap();
 
         deploy_contract(&mut tester, "testcrypto");
 
@@ -545,7 +581,7 @@ mod tests {
         fs::write(Path::new("./testserializer/target/testserializer.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
-        // tester.enable_debug_contract("hello", true).unwrap();
+        tester.enable_debug_contract("hello", get_globals().get_debug_mode()).unwrap();
 
         deploy_contract(&mut tester, "testserializer");
 
@@ -569,7 +605,7 @@ mod tests {
         fs::write(Path::new("./testintrinsics/target/testintrinsics.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
-        // tester.enable_debug_contract("hello", true).unwrap();
+        tester.enable_debug_contract("hello", get_globals().get_debug_mode()).unwrap();
 
         deploy_contract(&mut tester, "testintrinsics");
 
@@ -624,4 +660,29 @@ mod tests {
         tester.import_key("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV", "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3");
     }
 
+    #[test]
+    fn test_coverage() {
+        initialize();
+
+        get_globals().set_debug_mode(true);
+        get_globals().set_current_test_case("hello");
+        test_sayhello();
+
+        get_globals().set_current_test_case("testasset");
+        test_asset();
+
+        get_globals().set_current_test_case("testmi");
+        test_mi();
+        get_globals().set_current_test_case("testname");
+        test_name();
+
+        get_globals().set_current_test_case("testdestructor");
+        test_destructor();
+
+        get_globals().set_current_test_case("testbinaryextension");
+        test_binext();
+
+        get_globals().set_current_test_case("testtransaction");
+        test_trx();
+    }
 }

@@ -29,6 +29,7 @@ pub mod testmi {
         a6: Float128,
     }
 
+    #[chain(sub)]
     #[allow(dead_code)]
     pub struct TestMI {
         receiver: Name,
@@ -39,8 +40,8 @@ pub mod testmi {
 
     #[chain(packer)]
     pub struct MyStruct {
-        amount: i64,
-        symbol: u64,
+        pub amount: i64,
+        pub symbol: u64,
     }
 
     impl TestMI {

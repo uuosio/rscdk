@@ -10,6 +10,7 @@ pub mod testdestructor {
         count: u64
     }
 
+    #[chain(sub)]
     #[allow(dead_code)]
     pub struct TestDestructor {
         receiver: Name,

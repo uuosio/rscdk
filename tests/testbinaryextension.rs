@@ -8,6 +8,7 @@ pub mod testbinaryextension {
         eosio_println,
     };
 
+    #[chain(sub)]
     #[allow(dead_code)]
     pub struct TestBinaryExtension {
         receiver: Name,

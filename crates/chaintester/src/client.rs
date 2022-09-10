@@ -161,6 +161,41 @@ lazy_static! {
     static ref CHAIN_TESTER_CLIENT: Mutex<ChainTesterClient> = Mutex::new(ChainTesterClient::new());
 }
 
+pub struct GlobalVariables {
+    pub current_test_case: String,
+    pub debug_mode: bool,
+}
+
+impl GlobalVariables {
+    pub fn new() -> Self {
+        GlobalVariables{current_test_case: "".into(), debug_mode: false}
+    }
+
+    pub fn get_current_test_case(&self) -> String {
+        return self.current_test_case.clone();
+    }
+
+    pub fn set_current_test_case(&mut self, test_case: &str) {
+        self.current_test_case = test_case.into();
+    }
+
+    pub fn set_debug_mode(&mut self, enable: bool) {
+        self.debug_mode = enable;
+    }
+
+    pub fn get_debug_mode(&self) -> bool {
+        return self.debug_mode;
+    }
+}
+
+lazy_static! {
+    static ref GLOBAL_VARIABLES: Mutex<GlobalVariables> = Mutex::new(GlobalVariables::new());
+}
+
+pub fn get_globals() -> MutexGuard<'static, GlobalVariables> {
+    return GLOBAL_VARIABLES.lock().unwrap();
+}
+
 pub fn init_vm_api_client() {
     let mut ret = VM_API_CLIENT.lock().unwrap();
     if ret.vm_api_client.is_none() {

@@ -36,6 +36,7 @@ pub struct Contract {
     vis: syn::Visibility,
     ident: Ident,
     main_struct: Option<syn::ItemStruct>,
+    sub_struct: Option<syn::ItemStruct>,
     items: Vec<syn::Item>,
     variants: Vec<syn::ItemEnum>,
     actions: Vec<Action>,
@@ -67,6 +68,7 @@ impl TryFrom<syn::ItemMod> for Contract {
             ident: module.ident,
             vis: module.vis,
             main_struct: None,
+            sub_struct: None,
             items: items,
             variants: Vec::new(),
             actions: Vec::new(),
@@ -102,6 +104,10 @@ impl Contract {
 
     pub fn has_main_struct(&self) -> bool {
         return self.main_struct.is_some();
+    }
+
+    pub fn has_sub_struct(&self) -> bool {
+        return self.sub_struct.is_some();
     }
 
     fn verify_variant(item: &syn::ItemEnum) -> Result<(), syn::Error> {
@@ -214,6 +220,9 @@ impl Contract {
                     match arg {
                         attrs::AttributeArg::MainStruct => {
                             self.main_struct = Some(x.clone())
+                        }
+                        attrs::AttributeArg::SubStruct => {
+                            self.sub_struct = Some(x.clone())
                         }
                         attrs::AttributeArg::Packer | attrs::AttributeArg::Table(_) => {
                             let length = x.fields.len();
@@ -1396,11 +1405,34 @@ impl Contract {
     }
 
     fn generate_apply_code(&self) -> TokenStream2 {
-        if self.main_struct.is_none() {
+        if self.main_struct.is_none() && self.sub_struct.is_none() {
             return quote!{};
         }
 
-        let ident = &self.main_struct.as_ref().unwrap().ident;
+        let ident;
+        if self.main_struct.is_some() {
+            ident = &self.main_struct.as_ref().unwrap().ident;
+        } else if self.sub_struct.is_some() {
+            ident = &self.sub_struct.as_ref().unwrap().ident;
+        } else {
+            panic!("invalid ident");
+        }
+
+        let entry_code = match self.main_struct {
+            Some(_) => {
+                quote!{
+                    #[cfg(not(feature = "std"))]
+                    #[no_mangle]
+                    pub fn apply(receiver: u64, first_receiver: u64, action: u64) {
+                        contract_apply(receiver, first_receiver, action);
+                    }        
+                }
+            }
+            None => {
+                quote!{}
+            }
+        };
+        
         let notify_handle_code = self.generate_action_handle_code(true);
         let action_handle_code = self.generate_action_handle_code(false);
         quote!{
@@ -1425,12 +1457,8 @@ impl Contract {
                 }
             }
 
-            #[cfg(not(feature = "std"))]
-            #[no_mangle]
-            pub fn apply(receiver: u64, first_receiver: u64, action: u64) {
-                contract_apply(receiver, first_receiver, action);
-            }
 
+            #entry_code
 
             #[cfg(feature = "std")]
             use rust_chain::chaintester::interfaces::TApplySyncClient;
@@ -1565,7 +1593,7 @@ impl Contract {
         let variants_code = self.generate_variants_code()?;
         let scale_info: Option<TokenStream2>;
 
-        if self.has_main_struct() {
+        if self.has_main_struct() || self.has_sub_struct() {
             scale_info = Some(self.gather_scale_info()?);
         } else {
             scale_info  = None;
