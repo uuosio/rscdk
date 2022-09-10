@@ -69,22 +69,22 @@ extern "Rust" {
 	pub fn __eosio_generate_abi() -> String;
 }
 
-pub fn generate_abi_file(package_name: &str) {
-	let abi = unsafe {
-		__eosio_generate_abi()
-	};
+// pub fn generate_abi_file(package_name: &str) {
+// 	let abi = unsafe {
+// 		__eosio_generate_abi()
+// 	};
 
-    // let package_name = env!("CARGO_PKG_NAME");
-    let abi_file = format!("./target/{}.abi", package_name);
-	match std::fs::write(std::path::Path::new(&abi_file), abi) {
-        Ok(()) => {
+//     // let package_name = env!("CARGO_PKG_NAME");
+//     let abi_file = format!("./target/{}.abi", package_name);
+// 	match std::fs::write(std::path::Path::new(&abi_file), abi) {
+//         Ok(()) => {
 
-        }
-        Err(err) => {
-            panic!("{}", err);
-        }
-    }
-}
+//         }
+//         Err(err) => {
+//             panic!("{}", err);
+//         }
+//     }
+// }
 
 lazy_static! {
     static ref BUILD_CONTRACT_MUTEX: Mutex<std::collections::HashMap<String, String>> = Mutex::new(std::collections::HashMap::new());
@@ -135,6 +135,6 @@ pub fn build_contract(package_name: &str, project_dir: &str) {
     let wasm = std::fs::read(in_wasm_file).unwrap();
     std::fs::write(out_wasm_file, wasm).unwrap();
 
-    generate_abi_file(package_name);
+    // generate_abi_file(package_name);
 }
 

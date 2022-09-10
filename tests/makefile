@@ -41,11 +41,6 @@ all_builds = build_hello build_abi build_mod \
 	build_inline build_asset build_optional build_variant \
 	build_notify build_crypto build_serializer build_intrinsics
 
-test_crypto: build_crypto
-	rust-contract build
-	cargo test test_crypto
-
-
 test_all: $(all_builds)
 	rust-contract build
-	cargo test
+	cargo test -- --test-threads=1
