@@ -161,6 +161,13 @@ lazy_static! {
     static ref CHAIN_TESTER_CLIENT: Mutex<ChainTesterClient> = Mutex::new(ChainTesterClient::new());
 }
 
+pub fn init_vm_api_client() {
+    let mut ret = VM_API_CLIENT.lock().unwrap();
+    if ret.vm_api_client.is_none() {
+        ret.init();
+    }
+}
+
 pub fn get_vm_api_client() -> MutexGuard<'static, VMAPIClient> {
     let mut ret = VM_API_CLIENT.lock().unwrap();
     if ret.vm_api_client.is_none() {
@@ -258,10 +265,10 @@ impl ChainTesterClient {
     
         let mut client = IPCChainTesterSyncClient::new(i_prot, o_prot);
         client.init_vm_api().unwrap();
-        let _ = get_vm_api_client(); //init vm api client
+        init_vm_api_client(); //init vm api client
 
         client.init_apply_request().unwrap();
-        let _= crate::server::get_apply_request_server(); //init apply request server
+        crate::server::init_apply_request_server(); //init apply request server
 
         self.client = Some(client);
 
