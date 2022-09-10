@@ -76,8 +76,6 @@ jobs:
         working-directory: tests
         run: |
           PYTHON_SHARED_LIB_PATH=${{ env.pythonLocation }}/lib/libpython3.9.so make -j3 -S
-      # - name: Setup upterm session
-      #   uses: lhotari/action-upterm@v1
       - name: code coverage report
         working-directory: tests
         run: |
@@ -90,7 +88,8 @@ jobs:
           curl -S -f https://codecov.io/bash -o codecov
           chmod +x codecov
           ./codecov -x "/usr/lib/llvm-12/bin/llvm-cov gcov" -Z
-examples:
+
+  examples:
     strategy:
       matrix:
         python-version: [3.9]
