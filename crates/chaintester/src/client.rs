@@ -267,7 +267,7 @@ impl DerefMut for VMAPIClient {
 
 impl ChainTesterClient {
     fn new() -> Self {
-        better_panic::install();
+        // better_panic::install();
         ChainTesterClient{client: None}
     }
 

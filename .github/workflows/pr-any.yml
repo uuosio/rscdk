@@ -83,10 +83,12 @@ jobs:
           rustup component add llvm-tools-preview
           export CARGO_INCREMENTAL=0
           export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off"
-          cargo test -- --test-threads=1
+          cargo +nightly test -- --test-threads=1
+          grcov . -s ../crates/chain -t lcov --llvm --branch --ignore-not-existing -o chain.lcov
+          grcov . -s . -t lcov --llvm --branch --ignore-not-existing -o testall.lcov
           curl -S -f https://codecov.io/bash -o codecov
           chmod +x codecov
-          ./codecov -x "/usr/lib/llvm-12/bin/llvm-cov gcov" -Z
+          ./codecov -f chain.lcov
 
   examples:
     strategy:
