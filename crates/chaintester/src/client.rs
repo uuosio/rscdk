@@ -18,7 +18,7 @@ type ClientInputProtocol = TBinaryInputProtocol<TBufferedReadTransport<ReadHalf<
 type ClientOutputProtocol = TBinaryOutputProtocol<TBufferedWriteTransport<WriteHalf<TTcpChannel>>>;
 
 
-use std::convert::{From, Into};
+use std::convert::{From, Into, TryInto};
 
 use lazy_static::lazy_static; // 1.4.0
 use std::sync::{
@@ -559,7 +559,7 @@ impl ChainTester {
         parse_ret2(&ret)
     }
 
-    pub fn get_table_rows<'a>(&mut self, json: bool, code: &'a str, scope: &'a str, table: &'a str, lower_bound: &'a str, upper_bound: &'a str, limit: i64) -> Result<Value> {
+    pub fn get_table_rows(&mut self, json: bool, code: &str, scope: &str, table: &str, lower_bound: &str, upper_bound: &str, limit: i64) -> Result<Value> {
         let param = GetTableRowsPrams {
             json: json,
             code: code,
@@ -592,6 +592,40 @@ impl ChainTester {
             params.show_payer,
         );
         parse_ret(&ret)
+    }
+
+    pub fn get_balance(&mut self, account: &str) -> u64 {
+        let ret = self.get_table_rows(false, "eosio.token", account, "accounts", "EOS", "", 1).unwrap();
+        let rows = ret["rows"].as_array().unwrap();
+        if rows.len() == 0 {
+            return 0;
+        }
+        let balance = rows[0].as_str().unwrap();
+        let _balance = hex::decode(balance).unwrap();
+        let amount: [u8;8] = match _balance[0..8].try_into() {
+            Ok(v) => v,
+            Err(_) => {
+                panic!("invalid value");
+            }
+        };
+        return u64::from_le_bytes(amount);
+    }
+
+    pub fn get_balance_ex(&mut self, account: &str, token_account: &str, symbol: &str) -> u64 {
+        let ret = self.get_table_rows(false, token_account, account, "accounts", symbol, "", 1).unwrap();
+        let rows = ret["rows"].as_array().unwrap();
+        if rows.len() == 0 {
+            return 0;
+        }
+        let balance = rows[0].as_str().unwrap();
+        let _balance = hex::decode(balance).unwrap();
+        let amount: [u8;8] = match _balance[0..8].try_into() {
+            Ok(v) => v,
+            Err(_) => {
+                panic!("invalid value");
+            }
+        };
+        return u64::from_le_bytes(amount);
     }
 }
 

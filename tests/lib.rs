@@ -658,6 +658,8 @@ mod tests {
         println!("+++:{}", ret);
         println!("++++:{}", ret["head_block_time"]);
         tester.import_key("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV", "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3");
+        let amount = tester.get_balance("hello");
+        println!("+++++++++amount: {}", amount);
     }
 
     #[test]
