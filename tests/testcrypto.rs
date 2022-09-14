@@ -33,7 +33,7 @@ pub mod testcrypto {
         pub a2: u64,
     }
 
-    #[chain(main)]
+    #[chain(sub)]
     #[allow(dead_code)]
     pub struct TestSerialzier {
         receiver: Name,

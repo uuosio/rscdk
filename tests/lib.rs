@@ -6,23 +6,48 @@ mod testname;
 mod testdestructor;
 mod testbinaryextension;
 mod testtransaction;
+mod testoptional;
+mod testvariant;
+mod testserializer;
+mod testintrinsics;
+mod testasset;
+mod testhello;
+mod testcrypto;
+mod testabi;
 
 #[rust_chain::contract]
 mod testall {
-
-    use super::testmi::testmi::TestMI;
-    use super::testmi2::testmi2::TestMI2;
-    use super::testname::testname::NameTest;
-    use super::testdestructor::testdestructor::TestDestructor;
-    use super::testbinaryextension::testbinaryextension::TestBinaryExtension;
-    use super::testtransaction::testtransaction::TestTransaction;
+    use super::testmi;
+    use super::testmi2;
+    use super::testoptional; 
+    use super::testvariant;
+    use super::testintrinsics;
+    use super::testasset;
+    use super::testhello;
+    use super::testcrypto;
+    use super::testabi;
+    use super::testserializer;
+    use super::testname;
+    use super::testtransaction;
+    use super::testdestructor;
+    use super::testbinaryextension;
 
     use rust_chain::{
         Name,
         Asset,
         BinaryExtension,
+        read_action_data,
+
+        name,
+        check,
+        eosio_println,
     };
 
+    #[chain(table="testcase", singleton)]
+    pub struct TestCase {
+        pub name: String
+    }
+    
     #[chain(main)]
     struct Main {
         receiver: Name, first_receiver: Name, action: Name
@@ -35,60 +60,101 @@ mod testall {
                 receiver, first_receiver, action
             }
         }
-        #[chain(action="mitest1")]
-        pub fn mitest1(&self) {
-            let test = TestMI::new(self.receiver, self.first_receiver, self.action);
-            test.test1();    
+
+        #[chain(action="sayhello")]
+        pub fn say_hello(&self, name: String) {
+            eosio_println!("++++++hello, world!");
         }
 
-        #[chain(action="mitest2")]
-        pub fn mitest2(&self) {
-            let test = TestMI::new(self.receiver, self.first_receiver, self.action);
-            test.test2();    
+        #[chain(action="settest")]
+        pub fn set_test(&self) {
+            let table = TestCase::new_table(self.receiver);
+            let data = read_action_data();
+            let mut testcase = TestCase{name: "".into()};
+            testcase.unpack(&data);
+            table.set(&testcase, self.receiver);
+        }
+    }
+
+    pub fn contract_apply(receiver: u64, first_receiver: u64, action: u64) {
+        let _receiver = Name{n: receiver};
+        let _first_receiver = Name{n: first_receiver};
+        let _action = Name{n: action};
+
+        if action == name!("settest").n {
+            Main::new(_receiver, _first_receiver, _action).set_test();
+            return;
         }
 
-        #[chain(action="mi2test")]
-        pub fn mi2test(&self) {
-            let test = TestMI2::new(self.receiver, self.first_receiver, self.action);
-            test.test();    
-        }
+        let table = TestCase::new_table(Name{n: receiver});
+        let mut testcase = table.get().unwrap_or_else(|| {
+            check(false, "invalid test case");
+            TestCase{name: "".into()}
+        });
 
-        /// name test
-        #[chain(action="nametest")]
-        pub fn nametest(&self, a11: String, a12: Name, a21: String, a22: Name) {
-            let test = NameTest::new(self.receiver, self.first_receiver, self.action);
-            test.test(a11, a12, a21, a22);
+        eosio_println!("++++++++++++testcase:", testcase.name);
+        let test_name = &testcase.name;
+        if test_name == "testhello" {
+            testhello::testhello::contract_apply(receiver, first_receiver, action);
+        } else if test_name == "testasset" {
+            testasset::testasset::contract_apply(receiver, first_receiver, action);
+        } else if test_name == "testoptional" {
+            testoptional::testoptional::contract_apply(receiver, first_receiver, action);
+        } else if test_name == "testvariant" {
+            testvariant::testvariant::contract_apply(receiver, first_receiver, action);
+        } else if test_name == "testserializer" {
+            testserializer::testserializer::contract_apply(receiver, first_receiver, action);
+        } else if test_name == "testintrinsics" {
+            testintrinsics::testintrinsics::contract_apply(receiver, first_receiver, action);
+        } else if test_name == "testmi" {
+            testmi::testmi::contract_apply(receiver, first_receiver, action);
+        } else if test_name == "testmi2" {
+            testmi2::testmi2::contract_apply(receiver, first_receiver, action);
+        } else if test_name == "testcrypto" {
+            testcrypto::testcrypto::contract_apply(receiver, first_receiver, action);
+        } else if test_name ==  "testname" {
+            testname::testname::contract_apply(receiver, first_receiver, action);
+        } else if test_name == "testdestructor" {
+            testdestructor::testdestructor::contract_apply(receiver, first_receiver, action);
+        } else if test_name == "testbinaryextension" {
+            testbinaryextension::testbinaryextension::contract_apply(receiver, first_receiver, action);
+        } else if test_name == "testtransaction" {
+            testtransaction::testtransaction::contract_apply(receiver, first_receiver, action);
+        } else if test_name == "testabi" {
+            testabi::testabi::contract_apply(receiver, first_receiver, action);
+        } else {
+            check(false, "invalid test case");
         }
+    }
 
-        #[chain(action="destructtest")]
-        pub fn destructor_test(&self) {
-            let mut test = TestDestructor::new(self.receiver, self.first_receiver, self.action);
-            test.inc_count();
-        }
+    #[cfg(not(feature = "std"))]
+    #[no_mangle]
+    pub fn apply(receiver: u64, first_receiver: u64, action: u64) {
+        contract_apply(receiver, first_receiver, action);
+    }
 
-        #[chain(action="binexttest")]
-        pub fn binary_extension_test(&self, a: BinaryExtension<u64>) {
-            let test = TestBinaryExtension::new(self.receiver, self.first_receiver, self.action);
-            test.test(a);
-        }
-
-        #[chain(action="trxtest")]
-        pub fn transaction_test(&self) {
-            let test = TestTransaction::new(self.receiver, self.first_receiver, self.action);
-            test.test();
-        }
+    #[cfg(feature = "std")]
+    pub fn native_apply(receiver: u64, first_receiver: u64, action: u64) {
+        contract_apply(receiver, first_receiver, action);
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::testmi::testmi::TestMI;
     use super::testmi;
     use super::testmi2;
+    use super::testoptional; 
+    use super::testvariant;
+    use super::testintrinsics;
+    use super::testasset;
+    use super::testhello;
+    use super::testcrypto;
+    use super::testabi;
+    use super::testserializer;
     use super::testname;
+    use super::testtransaction;
     use super::testdestructor;
     use super::testbinaryextension;
-    use super::testtransaction;
 
     use rust_chain::ChainTester;
     use rust_chain::serializer::Packer as _;
@@ -105,34 +171,6 @@ mod tests {
     static INIT: Once = Once::new();
 
     use rust_chain::serializer::Packer as _;
-
-    fn native_apply(_receiver: u64, _first_receiver: u64, _action: u64) {
-        let test_case = get_globals().get_current_test_case();
-        if test_case == "testasset" {
-            testasset::test::native_apply(_receiver, _first_receiver, _action);
-            return;
-        } else if test_case == "hello" {
-            hello::hello::native_apply(_receiver, _first_receiver, _action);
-            return;
-        }
-
-        if test_case == "testmi" ||
-            test_case == "testmi2" ||
-            test_case ==  "testname" ||
-            test_case == "testdestructor" ||
-            test_case == "testbinaryextension" ||
-            test_case == "testtransaction" {
-                super::testall::native_apply(_receiver, _first_receiver, _action);
-                return;
-        }
-    }
-
-    #[cfg(feature="std")]
-    pub fn initialize() {
-        INIT.call_once(|| {
-            chaintester::set_apply(native_apply);
-        });
-    }
 
     fn deploy_contract(tester: &mut ChainTester, package_name: &str) {
         let ref wasm_file = format!("./{package_name}/target/{package_name}.wasm");
@@ -168,19 +206,42 @@ mod tests {
         tester.produce_block();
     }
 
+    pub fn init_test(tester: &mut ChainTester, test_case: &str) {
+        if std::env::var("TEST_COVERAGE").is_ok() {
+            get_globals().set_debug_mode(true);
+            tester.enable_debug_contract("hello", true).unwrap();
+        } else {
+            get_globals().set_debug_mode(false);
+            tester.enable_debug_contract("hello", false).unwrap();
+        }
+
+        INIT.call_once(|| {
+            update_auth(tester);
+            chaintester::set_apply(super::testall::native_apply);
+        });
+
+
+        let ref abi_file = format!("./target/{test_case}.abi");
+        let ref wasm_file = format!("./target/testall.wasm");
+        tester.deploy_contract("hello", wasm_file, abi_file).unwrap();
+
+        let permissions = r#"
+        {
+            "hello": "active"
+        }
+        "#;
+        let args = super::testall::TestCase{name: test_case.into()}.pack();
+        tester.push_action("hello", "settest", args.into(), permissions).unwrap();
+    }
+
     #[test]
     fn test_sayhello() {
-        initialize();
-
-        let abi = &hello::generate_abi();
-        fs::write(Path::new("./hello/target/hello.abi"), abi).unwrap();
+        let abi = &crate::testhello::generate_abi();
+        fs::write(Path::new("./target/testhello.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
-        tester.enable_debug_contract("hello", get_globals().get_debug_mode()).unwrap();
+        init_test(&mut tester, "testhello");
 
-        deploy_contract(&mut tester, "hello");
-        update_auth(&mut tester);
-    
         let args = r#"
         {
             "name": "rust"
@@ -198,14 +259,11 @@ mod tests {
 
     #[test]
     fn test_asset() {
-        let abi = &testasset::generate_abi();
-        fs::write(Path::new("./testasset/target/testasset.abi"), abi).unwrap();
+        let abi = testasset::generate_abi();
+        fs::write(Path::new("./target/testasset.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
-        tester.enable_debug_contract("hello", get_globals().get_debug_mode()).unwrap();
-
-        deploy_contract(&mut tester, "testasset");
-        update_auth(&mut tester);
+        init_test(&mut tester, "testasset");
     
         let args = r#"
         {
@@ -268,12 +326,10 @@ mod tests {
     #[test]
     fn test_optional() {
         let abi = &testoptional::generate_abi();
-        fs::write(Path::new("./testoptional/target/testoptional.abi"), abi).unwrap();
+        fs::write(Path::new("./target/testoptional.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
-        tester.enable_debug_contract("hello", get_globals().get_debug_mode()).unwrap();
-
-        deploy_contract(&mut tester, "testoptional");
+        init_test(&mut tester, "testoptional");
     
         let args = r#"
             {
@@ -297,12 +353,10 @@ mod tests {
     #[test]
     fn test_variant() {
         let abi = &testvariant::generate_abi();
-        fs::write(Path::new("./testvariant/target/testvariant.abi"), abi).unwrap();
+        fs::write(Path::new("./target/testvariant.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
-        tester.enable_debug_contract("hello", get_globals().get_debug_mode()).unwrap();
-
-        deploy_contract(&mut tester, "testvariant");
+        init_test(&mut tester, "testvariant");
     
         let args = r#"
             {"v": ["uint64", 10]}
@@ -319,15 +373,11 @@ mod tests {
 
     #[test]
     fn test_name() {
-        let abi = &crate::testall::generate_abi();
-        fs::write(Path::new("./target/testall.abi"), abi).unwrap();
+        let abi = &crate::testname::generate_abi();
+        fs::write(Path::new("./target/testname.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
-        tester.enable_debug_contract("hello", get_globals().get_debug_mode()).unwrap();
-
-        let ref wasm_file = format!("./target/testall.wasm");
-        let ref abi_file = format!("./target/testall.abi");
-        tester.deploy_contract("hello", wasm_file, abi_file).unwrap();
+        init_test(&mut tester, "testname");
 
         let args = r#"
         {
@@ -343,21 +393,17 @@ mod tests {
             "hello": "active"
         }
         "#;
-        tester.push_action("hello", "nametest", args.into(), permissions).unwrap();
+        tester.push_action("hello", "test", args.into(), permissions).unwrap();
         tester.produce_block();
     }
 
     #[test]
     fn test_trx() {
-        let abi = &crate::testall::generate_abi();
-        fs::write(Path::new("./target/testall.abi"), abi).unwrap();
+        let abi = &crate::testtransaction::generate_abi();
+        fs::write(Path::new("./target/testtransaction.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
-        tester.enable_debug_contract("hello", get_globals().get_debug_mode()).unwrap();
-
-        let ref wasm_file = format!("./target/testall.wasm");
-        let ref abi_file = format!("./target/testall.abi");
-        tester.deploy_contract("hello", wasm_file, abi_file).unwrap();
+        init_test(&mut tester, "testtransaction");
 
         let args = r#"
         {
@@ -369,21 +415,17 @@ mod tests {
             "hello": "active"
         }
         "#;
-        tester.push_action("hello", "trxtest", args.into(), permissions).unwrap();
+        tester.push_action("hello", "test", args.into(), permissions).unwrap();
         tester.produce_block();
     }
 
     #[test]
     fn test_binext() {
-        let abi = &crate::testall::generate_abi();
-        fs::write(Path::new("./target/testall.abi"), abi).unwrap();
+        let abi = &crate::testbinaryextension::generate_abi();
+        fs::write(Path::new("./target/testbinaryextension.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
-        tester.enable_debug_contract("hello", get_globals().get_debug_mode()).unwrap();
-
-        let ref wasm_file = format!("./target/testall.wasm");
-        let ref abi_file = format!("./target/testall.abi");
-        tester.deploy_contract("hello", wasm_file, abi_file).unwrap();
+        init_test(&mut tester, "testbinaryextension");
 
         let args = r#"
             {
@@ -396,12 +438,13 @@ mod tests {
             "hello": "active"
         }
         "#;
-        tester.push_action("hello", "binexttest", args.into(), permissions).unwrap();
+        tester.push_action("hello", "test", args.into(), permissions).unwrap();
         tester.produce_block();
     }
 
     #[test]
     fn test_notify() {
+        get_globals().set_debug_mode(false);
         let mut tester = ChainTester::new();
         let ref wasm_file = "./testnotify/sender/target/sender.wasm";
         let ref abi_file = "./testnotify/sender/target/sender.abi";
@@ -428,15 +471,11 @@ mod tests {
 
     #[test]
     fn test_destructor() {
-        let abi = &crate::testall::generate_abi();
-        fs::write(Path::new("./target/testall.abi"), abi).unwrap();
+        let abi = &crate::testdestructor::generate_abi();
+        fs::write(Path::new("./target/testdestructor.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
-        tester.enable_debug_contract("hello", get_globals().get_debug_mode()).unwrap();
-
-        let ref wasm_file = format!("./target/testall.wasm");
-        let ref abi_file = format!("./target/testall.abi");
-        tester.deploy_contract("hello", wasm_file, abi_file).unwrap();
+        init_test(&mut tester, "testdestructor");
 
         let args = r#"
             {
@@ -448,20 +487,18 @@ mod tests {
             "hello": "active"
         }
         "#;
-        tester.push_action("hello", "destructtest", args.into(), permissions).unwrap();
+        tester.push_action("hello", "inc", args.into(), permissions).unwrap();
         tester.produce_block();
     }
 
     #[test]
     fn test_abi() {
         let abi = &testabi::generate_abi();
-        fs::write(Path::new("./testabi/target/testabi.abi"), abi).unwrap();
+        fs::write(Path::new("./target/testabi.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
-        tester.enable_debug_contract("hello", get_globals().get_debug_mode()).unwrap();
+        init_test(&mut tester, "testabi");
 
-        deploy_contract(&mut tester, "testabi");
-    
         let args = r#"
             {
                 "a1": true,
@@ -511,18 +548,13 @@ mod tests {
         tester.produce_block();
     }
 
-
     #[test]
     fn test_mi() {
-        let abi = &crate::testall::generate_abi();
-        fs::write(Path::new("./target/testall.abi"), abi).unwrap();
+        let abi = &crate::testmi::generate_abi();
+        fs::write(Path::new("./target/testmi.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
-        tester.enable_debug_contract("hello", get_globals().get_debug_mode()).unwrap();
-
-        let ref wasm_file = format!("./target/testall.wasm");
-        let ref abi_file = format!("./target/testall.abi");
-        tester.deploy_contract("hello", wasm_file, abi_file).unwrap();
+        init_test(&mut tester, "testmi");
 
         let args = r#"
             {
@@ -534,26 +566,44 @@ mod tests {
             "hello": "active"
         }
         "#;
-        tester.push_action("hello", "mitest1", args.into(), permissions).unwrap();
+        tester.push_action("hello", "test1", args.into(), permissions).unwrap();
         tester.produce_block();
 
-        tester.push_action("hello", "mitest2", args.into(), permissions).unwrap();
+        tester.push_action("hello", "test2", args.into(), permissions).unwrap();
         tester.produce_block();
+    }
+
+    #[test]
+    fn test_mi2() {
+        let abi = &crate::testmi2::generate_abi();
+        fs::write(Path::new("./target/testmi2.abi"), abi).unwrap();
+
+        let mut tester = ChainTester::new();
+        init_test(&mut tester, "testmi2");
+
+        let args = r#"
+            {
+            }
+        "#;
+
+        let permissions = r#"
+        {
+            "hello": "active"
+        }
+        "#;
 
         tester = ChainTester::new();
-        tester.push_action("hello", "mi2test", args.into(), permissions).unwrap();
+        tester.push_action("hello", "test", args.into(), permissions).unwrap();
         tester.produce_block();
     }
 
     #[test]
     fn test_crypto() {
         let abi = &testcrypto::generate_abi();
-        fs::write(Path::new("./testcrypto/target/testcrypto.abi"), abi).unwrap();
+        fs::write(Path::new("./target/testcrypto.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
-        tester.enable_debug_contract("hello", get_globals().get_debug_mode()).unwrap();
-
-        deploy_contract(&mut tester, "testcrypto");
+        init_test(&mut tester, "testcrypto");
 
         let args = r#"
         {
@@ -577,13 +627,11 @@ mod tests {
 
     #[test]
     fn test_serializer() {
-        let abi = &testintrinsics::generate_abi();
-        fs::write(Path::new("./testserializer/target/testserializer.abi"), abi).unwrap();
+        let abi = &testserializer::generate_abi();
+        fs::write(Path::new("./target/testserializer.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
-        tester.enable_debug_contract("hello", get_globals().get_debug_mode()).unwrap();
-
-        deploy_contract(&mut tester, "testserializer");
+        init_test(&mut tester, "testserializer");
 
         let args = r#"
         {
@@ -602,12 +650,10 @@ mod tests {
     #[test]
     fn test_intrinsics() {
         let abi = &testintrinsics::generate_abi();
-        fs::write(Path::new("./testintrinsics/target/testintrinsics.abi"), abi).unwrap();
+        fs::write(Path::new("./target/testintrinsics.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
-        tester.enable_debug_contract("hello", get_globals().get_debug_mode()).unwrap();
-
-        deploy_contract(&mut tester, "testintrinsics");
+        init_test(&mut tester, "testintrinsics");
 
         let args = r#"
         {
@@ -660,31 +706,5 @@ mod tests {
         tester.import_key("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV", "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3");
         let amount = tester.get_balance("hello");
         println!("+++++++++amount: {}", amount);
-    }
-
-    #[test]
-    fn test_coverage() {
-        initialize();
-
-        get_globals().set_debug_mode(true);
-        get_globals().set_current_test_case("hello");
-        test_sayhello();
-
-        get_globals().set_current_test_case("testasset");
-        test_asset();
-
-        get_globals().set_current_test_case("testmi");
-        test_mi();
-        get_globals().set_current_test_case("testname");
-        test_name();
-
-        get_globals().set_current_test_case("testdestructor");
-        test_destructor();
-
-        get_globals().set_current_test_case("testbinaryextension");
-        test_binext();
-
-        get_globals().set_current_test_case("testtransaction");
-        test_trx();
     }
 }

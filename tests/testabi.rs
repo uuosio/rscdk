@@ -3,7 +3,7 @@
 use rust_chain as chain;
 
 #[chain::contract]
-mod test {
+pub mod testabi {
     use rust_chain::{
         VarUint32,
         Float128, //TODO:
@@ -35,7 +35,7 @@ mod test {
         pub a2: u64,
     }
 
-    #[chain(main)]
+    #[chain(sub)]
     #[allow(dead_code)]
     pub struct TestSerialzier {
         receiver: Name,

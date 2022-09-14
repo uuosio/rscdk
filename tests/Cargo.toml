@@ -6,14 +6,6 @@ edition = "2021"
 
 [dependencies]
 rust-chain = { version = "0.2", path = "../crates/chain", default-features = false }
-hello = { path = "./hello", default-features = false }
-testasset = { path = "./testasset", default-features = false }
-testoptional = { path = "./testoptional", default-features = false }
-testvariant = { path = "./testvariant", default-features = false }
-testabi = { path = "./testabi", default-features = false }
-testcrypto = { path = "./testcrypto", default-features = false }
-testintrinsics = { path = "./testintrinsics", default-features = false }
-testserializer = { path = "./testserializer", default-features = false }
 
 [lib]
 name = "testall"
@@ -25,14 +17,6 @@ doctest = false
 default = ["std"]
 std = [
     "rust-chain/std",
-    "hello/std",
-    "testasset/std",
-    "testoptional/std",
-    "testvariant/std",
-    "testabi/std",
-    "testcrypto/std",
-    "testintrinsics/std",
-    "testserializer/std"
 ]
 
 exclude = []

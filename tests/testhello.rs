@@ -1,19 +1,13 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[rust_chain::contract]
-mod hello {
+pub mod testhello {
     use rust_chain::{
         Name,
         eosio_println,
     };
 
-    #[chain(variant)]
-    pub enum MyVariant {
-        A(u32),
-        B(u64),
-    }
-
-    #[chain(main)]
+    #[chain(sub)]
     #[allow(dead_code)]
     pub struct Hello {
         receiver: Name,
@@ -31,11 +25,9 @@ mod hello {
             }
         }
 
-        #[chain(action="test")]
-        pub fn test(&self, v: MyVariant) {
-            if let MyVariant::B(b) = v {
-                eosio_println!("hello", b);
-            }
+        #[chain(action="sayhello")]
+        pub fn say_hello(&self, name: String) {
+            eosio_println!("++++hello", name);
         }
     }
 }

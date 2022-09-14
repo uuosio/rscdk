@@ -3,14 +3,14 @@
 use rust_chain as chain;
 
 #[chain::contract]
-mod test {
+pub mod testoptional {
     use rust_chain::{
         Name,
         check,
         eosio_println,
     };
 
-    #[chain(main)]
+    #[chain(sub)]
     #[allow(dead_code)]
     pub struct TestSerialzier {
         receiver: Name,

@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[rust_chain::contract]
-pub mod test {
+pub mod testserializer {
     use rust_chain::{
         Asset,
         Name,
@@ -14,7 +14,7 @@ pub mod test {
         eosio_println,
     };
 
-    #[chain(main)]
+    #[chain(sub)]
     #[allow(dead_code)]
     pub struct TestSerialzier {
         receiver: Name,
