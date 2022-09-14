@@ -94,6 +94,7 @@ pub mod testintrinsics {
 
         #[chain(action="test")]
         pub fn test(&self, msg: String, digest: Checksum256, sig: Signature, pubkey: PublicKey) {
+            eosio_println!("+++++++msg:", msg);
             if "goodbye" == msg {
                 return;
             }
@@ -114,7 +115,6 @@ pub mod testintrinsics {
 
             let ret = ripemd160(&data);
             assert_ripemd160(&data, &ret);
-            eosio_println!("intrinsics tests done!");
             check(is_privileged(name!("hello")), "not prviledged!");
             set_privileged(name!("hello"), true);
 
@@ -145,6 +145,8 @@ pub mod testintrinsics {
             // uint32_t read_action_data( void* msg, uint32_t len );
             let data = read_action_data();
             eosio_println!("+++data.len:", data.len());
+            
+            // test is a generated struct
             let mut test = test::default();
             test.unpack(&data);
             check(test.msg == "hello,world", "bad value");
@@ -172,9 +174,9 @@ pub mod testintrinsics {
             send_inline(&a.pack());
 
             // void send_context_free_inline(char *serialized_action, uint32_t size);
-            a.authorization = vec![];
-            eosio_println!("+++a.pack():", a.pack());
-            send_context_free_inline(&a.pack());
+            // a.authorization = vec![];
+            // eosio_println!("+++a.pack():", a.pack());
+            // send_context_free_inline(&a.pack());
 
             // uint64_t  publication_time();
             let time = publication_time();
@@ -214,6 +216,15 @@ pub mod testintrinsics {
             eosio_println!("++++++prods.len():", prods.len());
             check(prods.len() == 1, "prods.len() == 1");
             check(prods[0] == name!("eosio"), "bad value");
+            eosio_println!("intrinsics tests done!");
+        }
+
+        #[chain(action="testctxfree")]
+        pub fn test_context_free_action(&self) {
+            let mut a = Action::new(name!("hello"), name!("testsendfree"), &vec![], &MyData{a1:1, a2: 2});
+            a.authorization = vec![];
+            eosio_println!("+++a.pack():", a.pack());
+            send_context_free_inline(&a.pack());
         }
 
         #[chain(action="testtime")]

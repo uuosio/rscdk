@@ -34,7 +34,7 @@ pub mod testtransaction {
             let actions = tx.actions();
             check(actions.len() == 1, "bad actions");
             check(actions[0].account == name!("hello"), "bad action account");
-            check(actions[0].name == name!("trxtest"), "bad action name");
+            check(actions[0].name == name!("test"), "bad action name");
         }
     }
 }

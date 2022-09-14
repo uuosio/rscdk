@@ -84,11 +84,13 @@ mod testall {
         if action == name!("settest").n {
             Main::new(_receiver, _first_receiver, _action).set_test();
             return;
+        } else if action == name!("testsendfree").n {
+            return;
         }
 
         let table = TestCase::new_table(Name{n: receiver});
         let mut testcase = table.get().unwrap_or_else(|| {
-            check(false, "invalid test case");
+            check(false, "test case not set");
             TestCase{name: "".into()}
         });
 
@@ -123,7 +125,7 @@ mod testall {
         } else if test_name == "testabi" {
             testabi::testabi::contract_apply(receiver, first_receiver, action);
         } else {
-            check(false, "invalid test case");
+            check(false, "Invalid test case");
         }
     }
 
@@ -685,6 +687,9 @@ mod tests {
         }
         "#;
         tester.push_action("hello", "test", args.into(), permissions).unwrap();
+        tester.produce_block();
+
+        tester.push_action("hello", "testctxfree", "".into(), permissions).unwrap();
         tester.produce_block();
 
         tester.push_action("hello", "testtime", "{}".into(), permissions).unwrap();
