@@ -1675,7 +1675,7 @@ impl Contract {
 
             #[cfg(feature = "std")]
             pub fn generate_abi() -> String {
-                crate::#ident::generate_abi()
+                #ident::generate_abi()
             }
         })
     }
