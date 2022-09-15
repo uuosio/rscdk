@@ -243,6 +243,7 @@ impl<T> Packer for Option<T> where T: Packer + Default {
             Some(x) => {
                 let mut enc = Encoder::new(1 + x.size());
                 enc.pack_number(1u8);
+                enc.pack(x);
                 enc.get_bytes()
             }
             None => {
@@ -258,17 +259,14 @@ impl<T> Packer for Option<T> where T: Packer + Default {
         let mut value: T = Default::default();
         dec.unpack(&mut ty);
         if ty == 0 {
+            *self = None;
             return 1;
         }
 
         check(ty == 1, "bad option type!");
 
         dec.unpack(&mut value);
-        if ty == 0 {
-            *self = None;
-        } else {
-            *self = Some(value);
-        }
+        *self = Some(value);
         dec.get_pos()
     }
 }
