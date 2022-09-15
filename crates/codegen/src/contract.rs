@@ -1543,7 +1543,6 @@ impl Contract {
                         let mut _size: usize = 0;
                         match self {
                             #( #getsize_code )*
-                            _=> {}
                         }
                         return _size;
                     }
@@ -1552,7 +1551,6 @@ impl Contract {
                         let mut enc = ::rust_chain::serializer::Encoder::new(self.size());
                         match self {
                             #( #pack_code )*
-                            _=> {}
                         }
                         return enc.get_bytes();
                     }

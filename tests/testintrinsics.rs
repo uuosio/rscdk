@@ -170,7 +170,7 @@ pub mod testintrinsics {
             
             // void send_inline(char *serialized_action, uint32_t size);
             test.msg = "goodbye".into();
-            let mut a = Action::new(name!("hello"), name!("test"), &vec![PermissionLevel::new(name!("hello"), name!("active"))], &test);
+            let a = Action::new(name!("hello"), name!("test"), &vec![PermissionLevel::new(name!("hello"), name!("active"))], &test);
             send_inline(&a.pack());
 
             // void send_context_free_inline(char *serialized_action, uint32_t size);

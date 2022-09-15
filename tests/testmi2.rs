@@ -5,7 +5,7 @@ pub mod testmi2 {
         db::{
             SecondaryType,
             SecondaryValue,
-            SecondaryIterator,
+            // SecondaryIterator,
             MultiIndexValue,
             PrimaryValueInterface,
             SecondaryValueInterface,
@@ -17,7 +17,7 @@ pub mod testmi2 {
         },
 
         name,
-        check,
+        // check,
         eosio_println,
     };
 
@@ -55,11 +55,11 @@ pub mod testmi2 {
 
     impl SecondaryValueInterface for MyStruct {
         ///
-        fn get_secondary_value(&self, i: usize) -> SecondaryValue {
+        fn get_secondary_value(&self, _i: usize) -> SecondaryValue {
             return SecondaryValue::Idx64(1);
         }
         ///
-        fn set_secondary_value(&mut self, i: usize, value: SecondaryValue) {
+        fn set_secondary_value(&mut self, _i: usize, value: SecondaryValue) {
             if let SecondaryValue::Idx64(x) = value {
                 self.amount = x as i64;
             }

@@ -17,10 +17,6 @@ use thrift::TransportErrorKind;
 use crate::interfaces::{Uint64};
 use crate::interfaces::TApplySyncClient;
 
-extern "Rust" {
-	fn native_apply(receiver: u64, first_receiver: u64, action: u64);
-}
-
 pub struct IPCServer<PRC, RTF, IPF, WTF, OPF>
 where
     PRC: TProcessor + Send + Sync + 'static,

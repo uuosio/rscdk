@@ -754,9 +754,6 @@ impl Packer for BlockSigningAuthority {
     fn size(&self) -> usize {
         return 1 + match self {
             BlockSigningAuthority::V0(x) => x.size(),
-            _ => {
-                0
-            }
         };
     }
 
@@ -766,9 +763,6 @@ impl Packer for BlockSigningAuthority {
         match self {
             BlockSigningAuthority::V0(x) => {
                 enc.pack(x);
-            }
-            _ => {
-
             }
         }
         return enc.get_bytes();

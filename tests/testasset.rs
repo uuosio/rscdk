@@ -43,7 +43,7 @@ pub mod testasset {
 
         #[chain(action="test2")]
         pub fn test2(&self, invalid_asset: Asset) {
-            //check(!invalid_asset.is_valid(), "test failed");
+            check(!invalid_asset.is_valid(), "test failed");
         }
 
         #[chain(action="test3")]

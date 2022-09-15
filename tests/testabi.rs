@@ -6,10 +6,10 @@ use rust_chain as chain;
 pub mod testabi {
     use rust_chain::{
         VarUint32,
-        Float128, //TODO:
+        // Float128, //TODO:
         TimePoint,
         TimePointSec,
-        BlockTimeStampType,
+        // BlockTimeStampType,
         Name,
         Checksum160,
         Checksum256,
@@ -107,6 +107,11 @@ pub mod testabi {
             a30: Asset,
             a31: ExtendedAsset,
         ) {
+            let _ = a17;
+            let _ = a18;
+            let _ = a28;
+            let _ = a29;
+
             check(a1 == true, "bad a1 value!");
             check(a2 == -1, "bad a2 value!");
             

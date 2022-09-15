@@ -3,15 +3,15 @@
 #[rust_chain::contract]
 pub mod testserializer {
     use rust_chain::{
-        Asset,
+        // Asset,
         Name,
-        Symbol,
+        // Symbol,
 
         Encoder,
         Decoder,
 
         check,
-        eosio_println,
+        // eosio_println,
     };
 
     #[chain(sub)]

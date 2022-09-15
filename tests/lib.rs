@@ -34,8 +34,8 @@ mod testall {
 
     use rust_chain::{
         Name,
-        Asset,
-        BinaryExtension,
+        // Asset,
+        // BinaryExtension,
         read_action_data,
 
         name,
@@ -48,6 +48,7 @@ mod testall {
         pub name: String
     }
     
+    #[allow(dead_code)]
     #[chain(main)]
     struct Main {
         receiver: Name, first_receiver: Name, action: Name
@@ -63,7 +64,7 @@ mod testall {
 
         #[chain(action="sayhello")]
         pub fn say_hello(&self, name: String) {
-            eosio_println!("++++++hello, world!");
+            eosio_println!("++++++hello ", name);
         }
 
         #[chain(action="settest")]
@@ -90,7 +91,7 @@ mod testall {
         }
 
         let table = TestCase::new_table(Name{n: receiver});
-        let mut testcase = table.get().unwrap_or_else(|| {
+        let testcase = table.get().unwrap_or_else(|| {
             check(false, "test case not set");
             TestCase{name: "".into()}
         });
@@ -145,20 +146,20 @@ mod testall {
 
 #[cfg(test)]
 mod tests {
-    use super::testmi;
-    use super::testmi2;
+    // use super::testmi;
+    // use super::testmi2;
     use super::testoptional; 
     use super::testvariant;
     use super::testintrinsics;
     use super::testasset;
-    use super::testhello;
+    // use super::testhello;
     use super::testcrypto;
     use super::testabi;
     use super::testserializer;
-    use super::testname;
-    use super::testtransaction;
-    use super::testdestructor;
-    use super::testbinaryextension;
+    // use super::testname;
+    // use super::testtransaction;
+    // use super::testdestructor;
+    // use super::testbinaryextension;
 
     use rust_chain::ChainTester;
     use rust_chain::serializer::Packer as _;
@@ -174,13 +175,13 @@ mod tests {
     use std::sync::Once;    
     static INIT: Once = Once::new();
 
-    use rust_chain::serializer::Packer as _;
+    // use rust_chain::serializer::Packer as _;
 
-    fn deploy_contract(tester: &mut ChainTester, package_name: &str) {
-        let ref wasm_file = format!("./{package_name}/target/{package_name}.wasm");
-        let ref abi_file = format!("./{package_name}/target/{package_name}.abi");
-        tester.deploy_contract("hello", wasm_file, abi_file).unwrap();
-    }
+    // fn deploy_contract(tester: &mut ChainTester, package_name: &str) {
+    //     let ref wasm_file = format!("./{package_name}/target/{package_name}.wasm");
+    //     let ref abi_file = format!("./{package_name}/target/{package_name}.abi");
+    //     tester.deploy_contract("hello", wasm_file, abi_file).unwrap();
+    // }
 
     fn update_auth(tester: &mut ChainTester) {
         let updateauth_args = r#"{
@@ -305,7 +306,7 @@ mod tests {
             tester.produce_block();    
         }
         {
-            let mut args = r#"
+            let args = r#"
                 {
                     "error_asset": "1123A.0 EOS"
                 }
@@ -316,7 +317,7 @@ mod tests {
         }
 
         {
-            let mut args = r#"
+            let args = r#"
                 {
                     "error_asset": "11234.A EOS"
                 }

@@ -6,7 +6,6 @@ pub mod testtransaction {
         check,
         eosio_println,
         read_transaction,
-        Transaction,
     };
 
     #[chain(sub)]

@@ -59,6 +59,7 @@ pub mod testcrypto {
 
         #[chain(action="test")]
         pub fn test(&self, msg: String, digest: Checksum256, sig: Signature, k1: PublicKey, r1: PublicKey, web_auth_n: PublicKey) {
+            eosio_println!("++++++msg:", msg);
             let _pubkey = crypto::recover_key(&digest, &sig);
             check(_pubkey == k1, "_pubkey == k1");
             crypto::assert_recover_key(&digest, &sig, &k1);

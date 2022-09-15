@@ -1,12 +1,5 @@
 use crate::structs::*;
 
-use crate::{
-	eosio_println,
-	print::{
-		Printable,
-	},
-};
-
 use crate::transaction::{
 	Transaction,
 };

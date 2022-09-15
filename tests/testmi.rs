@@ -8,9 +8,8 @@ pub mod testmi {
         check,
         eosio_println,
         db::{
-            Iterator,
-            SecondaryValue,
             SecondaryIterator,
+            SecondaryValue,
         }
     };
 
@@ -403,14 +402,14 @@ pub mod testmi {
             let it = mydb.find(1111);
             check(mydb.get(&it) == None, "bad value");
 
-            let mut it = mydb.find(11);
+            let it = mydb.find(11);
             check(it.is_ok(), "value not found!");
 
             let it = mydb.previous(&it);
             check(it.get_value().unwrap() == mydata1, "it.get_value().unwrap() == mydata1");
             check(mydb.get(&it).unwrap() == mydata1, "mydb.get(&it).unwrap() == mydata1");
 
-            let mut it = mydb.find(11);
+            let it = mydb.find(11);
             let it = mydb.next(&it);
             check(it.get_value().unwrap() == mydata3, "it.get_value().unwrap() == mydata3");
 
