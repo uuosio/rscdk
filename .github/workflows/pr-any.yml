@@ -54,7 +54,7 @@ jobs:
         with:
             toolchain: nightly
             override: true
-            components: rustfmt, clippy, rust-src
+            components: rustfmt, clippy, rust-src, llvm-tools-preview
       - uses: actions/checkout@v2
       - name: Install dependencies
         run: |
@@ -76,11 +76,19 @@ jobs:
         working-directory: tests
         run: |
           PYTHON_SHARED_LIB_PATH=${{ env.pythonLocation }}/lib/libpython3.9.so make -j3 -S
-      - name: code coverage report
-        working-directory: tests
+      - name: Cache grcov
+        id: cache-cargo
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/bin
+          key: ${{ runner.os }}-cargo
+      - name: Install grcov
+        if: steps.cache-cargo.outputs.cache-hit != 'true'
         run: |
           cargo install grcov
-          rustup component add llvm-tools-preview
+      - name: code coverage report
+        working-directory: tests
+        run: |          
           export CARGO_INCREMENTAL=0
           export RUSTFLAGS="-Cinstrument-coverage -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off"
           TEST_COVERAGE=TRUE cargo +nightly test -- --test-threads=1
