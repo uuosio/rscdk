@@ -454,7 +454,8 @@ mod tests {
 
         let args = r#"
             {
-                "a": 123
+                "a": 111,
+                "b": 123
             }
         "#;
 
@@ -464,6 +465,14 @@ mod tests {
         }
         "#;
         tester.push_action("hello", "test", args.into(), permissions).unwrap();
+        tester.produce_block();
+
+        let args = r#"
+            {
+                "a": 111
+            }
+        "#;
+        tester.push_action("hello", "test2", args.into(), permissions).unwrap();
         tester.produce_block();
     }
 
@@ -647,6 +656,9 @@ mod tests {
         "#;
         tester.push_action("hello", "test", args.into(), permissions).unwrap();
         tester.produce_block();
+
+        tester.push_action("hello", "test2", "".into(), permissions).unwrap();
+        tester.produce_block();
     }
 
     #[test]
@@ -668,6 +680,10 @@ mod tests {
         }
         "#;
         tester.push_action("hello", "test", args.into(), permissions).unwrap();
+        tester.produce_block();
+
+        let err = tester.push_action("hello", "test2", "".into(), permissions).unwrap_err();
+        err.check_err("invalid utf8 string");
         tester.produce_block();
     }
 
