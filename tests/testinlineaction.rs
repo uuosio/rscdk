@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[rust_chain::contract]
-pub mod test {
+pub mod testinlineaction {
     use rust_chain::action::{
         PermissionLevel,
         Action,
@@ -18,7 +18,8 @@ pub mod test {
         pub name: String
     }
 
-    #[chain(main)]
+    #[allow(dead_code)]
+    #[chain(sub)]
     pub struct TestInlineAction {
         receiver: Name,
         first_receiver: Name,
@@ -47,6 +48,11 @@ pub mod test {
         #[chain(action="sayhello")]
         pub fn sayhello(&self, name: String) {
             eosio_println!("hello", name);
+        }
+
+        #[chain(action="test2")]
+        pub fn test2(&self, _perm: PermissionLevel, _a: Action) {
+
         }
     }
 }

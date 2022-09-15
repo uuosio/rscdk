@@ -14,6 +14,7 @@ mod testasset;
 mod testhello;
 mod testcrypto;
 mod testabi;
+mod testinlineaction;
 
 #[rust_chain::contract]
 mod testall {
@@ -31,6 +32,7 @@ mod testall {
     use super::testtransaction;
     use super::testdestructor;
     use super::testbinaryextension;
+    use super::testinlineaction;
 
     use rust_chain::{
         Name,
@@ -126,6 +128,8 @@ mod testall {
             testtransaction::testtransaction::contract_apply(receiver, first_receiver, action);
         } else if test_name == "testabi" {
             testabi::testabi::contract_apply(receiver, first_receiver, action);
+        } else if test_name == "testinlineaction" {
+            testinlineaction::testinlineaction::contract_apply(receiver, first_receiver, action);
         } else {
             check(false, "Invalid test case");
         }
@@ -160,6 +164,7 @@ mod tests {
     // use super::testtransaction;
     // use super::testdestructor;
     // use super::testbinaryextension;
+    use super::testinlineaction;
 
     use rust_chain::ChainTester;
     use rust_chain::serializer::Packer as _;
@@ -221,7 +226,6 @@ mod tests {
         }
 
         INIT.call_once(|| {
-            update_auth(tester);
             chaintester::set_apply(super::testall::native_apply);
         });
 
@@ -639,6 +643,30 @@ mod tests {
 
         let args = r#"
         {
+        }
+        "#;
+
+        let permissions = r#"
+        {
+            "hello": "active"
+        }
+        "#;
+        tester.push_action("hello", "test", args.into(), permissions).unwrap();
+        tester.produce_block();
+    }
+
+    #[test]
+    fn test_inlineaction() {
+        let abi = &testinlineaction::generate_abi();
+        fs::write(Path::new("./target/testinlineaction.abi"), abi).unwrap();
+
+        let mut tester = ChainTester::new();
+        init_test(&mut tester, "testinlineaction");
+        update_auth(&mut tester);
+
+        let args = r#"
+        {
+            "name": "alice"
         }
         "#;
 
