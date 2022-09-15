@@ -172,12 +172,10 @@ where T: PrimaryValueInterface + SecondaryValueInterface + Packer + Default
     ///
     pub fn idx_update(&self, it: &SecondaryIterator, value: SecondaryValue, payer: Name) {
         let it_primary = self.find(it.primary).expect("idx_update: invalid primary");
-        if let Some(mut db_value) = it_primary.get_value() {
-            let idx_db = self.idxdbs[it.db_index].as_ref();
-            db_value.set_secondary_value(idx_db.get_db_index(), value);
-            self.update(&it_primary, &db_value, payer);
-            idx_db.update(it, value, payer);    
-        } else {
-        }
+        let mut db_value = it_primary.get_value().unwrap();
+        let idx_db = self.get_idx_db(it.db_index);
+        db_value.set_secondary_value(idx_db.get_db_index(), value);
+        self.update(&it_primary, &db_value, payer);
+        idx_db.update(it, value, payer);    
     }
 }

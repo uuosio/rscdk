@@ -8,11 +8,13 @@ pub mod testmi {
         check,
         eosio_println,
         db::{
+            Iterator,
             SecondaryValue,
             SecondaryIterator,
         }
     };
 
+    #[derive(PartialEq)]
     #[chain(table="mydata")]
     pub struct MyData {
         #[chain(primary)]
@@ -58,27 +60,6 @@ pub mod testmi {
         #[chain(action="test1")]
         pub fn test1(&self) {
             eosio_println!("+++++test1");
-
-            let receiver = self.receiver;
-
-            // let mydb2 = MyData2::new_table(receiver, receiver);
-
-            // let mydb = mi::MultiIndex::<MyData>::new(receiver, receiver, Name::new("hello"), &[SecondaryType::Idx64], unpacker);
-            let mydb = MyData::new_table(receiver);
-
-            let a6_6: Float128 = Float128::new([0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0x01,0x40]);
-
-            let it = mydb.find(1);
-            if !it.is_ok() {
-                let mydata = MyData{a1: 1, a2: 2, a3: 3, a4: Uint256::new(4, 0), a5: 5.0, a6: a6_6};
-                mydb.store(&mydata, receiver);    
-            }
-            eosio_println!("test1 done!");
-        }
-
-        #[chain(action="test2")]
-        pub fn test2(&self) {
-            eosio_println!("+++++test2");
             let receiver = self.receiver;
 
             let mydb = MyData::new_table(receiver);
@@ -398,6 +379,73 @@ pub mod testmi {
                     eosio_println!("+++value:", value.a1, value.a2);
                 }
             }
+        }
+
+        #[chain(action="test2")]
+        pub fn test2(&self) {
+            eosio_println!("+++++test2");
+
+            let receiver = self.receiver;
+            let payer = receiver;
+
+            //6.0
+            let a6_6: Float128 = Float128::new([0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0x01,0x40]);
+            //66.0
+            let a6_66: Float128 = Float128::new([0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x08,0x05,0x40]);
+            //666.0
+            let a6_666: Float128 = Float128::new([0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x4d,0x08,0x40]);
+            let mydata1 = MyData{a1: 1, a2: 2, a3: 3, a4: Uint256::new(4, 0), a5: 5.0, a6: a6_6};
+            let mydata2 = MyData{a1: 11, a2: 22, a3: 33, a4: Uint256::new(44, 0), a5: 55.0, a6: a6_66};
+            let mydata3 = MyData{a1: 111, a2: 222, a3: 333, a4: Uint256::new(444, 0), a5: 555.0, a6: a6_666};
+
+            let mydb = MyData::new_table(receiver);
+
+            let it = mydb.find(1111);
+            check(mydb.get(&it) == None, "bad value");
+
+            let mut it = mydb.find(11);
+            check(it.is_ok(), "value not found!");
+
+            let it = mydb.previous(&it);
+            check(it.get_value().unwrap() == mydata1, "it.get_value().unwrap() == mydata1");
+            check(mydb.get(&it).unwrap() == mydata1, "mydb.get(&it).unwrap() == mydata1");
+
+            let mut it = mydb.find(11);
+            let it = mydb.next(&it);
+            check(it.get_value().unwrap() == mydata3, "it.get_value().unwrap() == mydata3");
+
+            let it = mydb.lower_bound(11);
+            check(it.get_value().unwrap() == mydata2, "it.get_value() == Some(mydata2)");
+
+            let it = mydb.upper_bound(11);
+            check(it.get_value().unwrap() == mydata3, "it.get_value() == Some(mydata3)");
+
+            let mut it = mydb.end();
+            check(it.is_end(), "it.is_end()");
+            it = mydb.previous(&it);
+            check(it.get_value().unwrap() == mydata3, "it.get_value() == Some(mydata3)");
+
+
+            let it = mydb.find(11);
+            let mydata = MyData{a1: 11, a2: 220, a3: 33, a4: Uint256::new(44, 0), a5: 55.0, a6: a6_66};
+            mydb.update(&it, &mydata, receiver);
+            let it = mydb.find(11);
+            let value = it.get_value().unwrap();
+            check(value == mydata , "bad value");
+
+            let idx_a2 = mydb.get_idx_by_a2();
+            let it_a2 = idx_a2.find(220);
+            check(it_a2.primary == 11, "it_a2.primary == 11");
+            mydb.idx_update(&it_a2, 2200u64.into(), payer);
+
+            let mydata = MyData{a1: 11, a2: 2200, a3: 33, a4: Uint256::new(44, 0), a5: 55.0, a6: a6_66};
+            check(mydb.find(11).get_value().unwrap() == mydata, "mydb.find(11).get_value().unwrap() == mydata");
+
+            check(idx_a2.find(2200).is_ok(), "idx_a2.find(2200).is_ok()");
+
+            mydb.remove(&it);
+            check(!mydb.find(11).is_ok(), "value should be deleted!");
+
             eosio_println!("test2 done!");
         }
     }

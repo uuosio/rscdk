@@ -85,6 +85,7 @@ mod testall {
             Main::new(_receiver, _first_receiver, _action).set_test();
             return;
         } else if action == name!("testsendfree").n {
+            eosio_println!("+++++++testsendfree");
             return;
         }
 
@@ -576,7 +577,7 @@ mod tests {
     }
 
     #[test]
-    fn test_mi2() {
+    fn test_2mi() {
         let abi = &crate::testmi2::generate_abi();
         fs::write(Path::new("./target/testmi2.abi"), abi).unwrap();
 

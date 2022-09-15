@@ -923,7 +923,7 @@ impl Contract {
                             return quote_spanned!(span =>
                                 #[allow(dead_code)]
                                 fn #method_ident(&self) -> ::rust_chain::db::IdxTableProxy<#ty, #idx_type> {
-                                    return ::rust_chain::db::IdxTableProxy::<#ty, #idx_type>::new(self.mi.idxdbs[#i].as_ref());
+                                    return ::rust_chain::db::IdxTableProxy::<#ty, #idx_type>::new(self.mi.get_idx_db(#i));
                                 }
                             )
                         }
@@ -1013,31 +1013,31 @@ impl Contract {
                     }
 
                     pub fn next(&self, iterator: &::rust_chain::db::Iterator<#table_ident>) -> ::rust_chain::db::Iterator<#table_ident> {
-                        return self.mi.db.next(iterator);
+                        return self.mi.next(iterator);
                     }
 
                     pub fn previous(&self, iterator: &::rust_chain::db::Iterator<#table_ident>) -> ::rust_chain::db::Iterator<#table_ident> {
-                        return self.mi.db.previous(iterator);
+                        return self.mi.previous(iterator);
                     }
 
                     pub fn find(&self, id: u64) -> ::rust_chain::db::Iterator<#table_ident> {
-                        return self.mi.db.find(id);
+                        return self.mi.find(id);
                     }
                 
                     pub fn lower_bound(&self, id: u64) -> ::rust_chain::db::Iterator<#table_ident> {
-                        return self.mi.db.lower_bound(id);
+                        return self.mi.lower_bound(id);
                     }
                 
                     pub fn upper_bound(&self, id: u64) -> ::rust_chain::db::Iterator<#table_ident> {
-                        return self.mi.db.upper_bound(id);
+                        return self.mi.upper_bound(id);
                     }
                 
                     pub fn end(&self) -> ::rust_chain::db::Iterator<#table_ident> {
-                        return self.mi.db.end();
+                        return self.mi.end();
                     }
                 
                     pub fn get_idx_db(&self, i: usize) -> &dyn ::rust_chain::db::IdxTable {
-                        return self.mi.idxdbs[i].as_ref();
+                        return self.mi.get_idx_db(i);
                     }
                 
                     pub fn idx_update(&self, it: &::rust_chain::db::SecondaryIterator, value: ::rust_chain::db::SecondaryValue, payer: rust_chain::Name) {
