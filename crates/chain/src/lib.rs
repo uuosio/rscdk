@@ -114,7 +114,7 @@ pub mod mi;
 pub mod mi_not_generic;
 
 ///
-mod asset;
+pub mod asset;
 pub use asset::{
     Asset,
     Symbol,

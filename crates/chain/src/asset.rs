@@ -27,7 +27,7 @@ use crate::vmapi::eosio::{
 
 const MAX_AMOUNT: i64 = (1 << 62) - 1;
 
-fn is_valid_symbol_code(sym: u64) -> bool {
+pub fn is_valid_symbol_code(sym: u64) -> bool {
     let mut i: i32 = 0;
     let mut tmp = sym;
 

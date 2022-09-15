@@ -329,7 +329,23 @@ mod tests {
             let ret = tester.push_action("hello", "test3", args.into(), permissions).unwrap_err();
             ret.check_err("Asset.from_string: bad amount");
             tester.produce_block();    
-        }    
+        }
+
+        let args = r#"
+        {
+            "a": {
+                "contract": "hello",
+                "quantity": "1.1234 EOS"
+            }
+        }
+        "#;
+
+        let permissions = r#"
+        {
+            "hello": "active"
+        }
+        "#;
+        tester.push_action("hello", "test5", args.into(), permissions).unwrap();
     }
 
     #[test]
