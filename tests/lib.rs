@@ -138,6 +138,7 @@ mod testall {
 
     #[cfg(feature = "std")]
     pub fn native_apply(receiver: u64, first_receiver: u64, action: u64) {
+        eosio_println!("+++++++native_apply:", Name{n:receiver}, Name{n:action});
         contract_apply(receiver, first_receiver, action);
     }
 }
@@ -595,7 +596,6 @@ mod tests {
         }
         "#;
 
-        tester = ChainTester::new();
         tester.push_action("hello", "test", args.into(), permissions).unwrap();
         tester.produce_block();
     }
