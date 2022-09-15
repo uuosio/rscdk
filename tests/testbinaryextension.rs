@@ -26,10 +26,28 @@ pub mod testbinaryextension {
         }
 
         #[chain(action = "test")]
-        pub fn test(&self, a: BinaryExtension<u64>) {
-            check(a.value().is_some(), "bad value");
-            check(*a.value().unwrap() == 123, "bad value");
+        pub fn test(&self, a: u64, b: BinaryExtension<u64>) {
+            check(a == 111, "a == 111");
+            check(b.value().is_some(), "bad value");
+            check(*b.value().unwrap() == 123, "bad value");
             eosio_println!("test BinaryExtension done!");
+
+            let mut _b = BinaryExtension::<u64>::new(Some(1));
+            check(_b.size() == 8, "b.size() == 8");
+            _b.unpack(&b.pack());
+            check(*_b.value().unwrap() == 123, "*_b.value().unwrap() == 123");
+        }
+
+        #[chain(action = "test2")]
+        pub fn test2(&self, a: u64, b: BinaryExtension<u64>) {
+            check(a == 111, "a == 111");
+            check(b.value().is_none(), "b.value().is_none()");
+
+            let mut _b = BinaryExtension::<u64>::new(Some(1));
+            check(_b.size() == 8, "b.size() == 8");
+            _b.unpack(&b.pack());
+            check(_b.value().is_none(), "_b.value().is_none()");
+            eosio_println!("test2 BinaryExtension done!");
         }
     }
 }

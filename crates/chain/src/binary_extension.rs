@@ -50,9 +50,9 @@ where
     ///
     fn unpack(&mut self, data: &[u8]) -> usize {
         if data.len() > 0 {
-            let mut value = Some(T::default());
-            let size = value.as_mut().unwrap().unpack(data);
-            self.value = value;
+            let mut value = T::default();
+            let size = value.unpack(data);
+            self.value = Some(value);
             size
         } else {
             self.value = None;
