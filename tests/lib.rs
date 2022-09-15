@@ -659,6 +659,10 @@ mod tests {
 
         tester.push_action("hello", "test2", "".into(), permissions).unwrap();
         tester.produce_block();
+
+        let err = tester.push_action("hello", "test3", "".into(), permissions).unwrap_err();
+        err.check_err("bad hex charactors");
+        tester.produce_block();
     }
 
     #[test]
