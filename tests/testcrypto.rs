@@ -6,7 +6,11 @@ use rust_chain as chain;
 pub mod testcrypto {
     use rust_chain::{
         crypto,
+
+        Checksum160,
         Checksum256,
+        Checksum512,
+        ECCPublicKey,
         PublicKey,
         Signature,
         Name,
@@ -84,6 +88,16 @@ pub mod testcrypto {
             let ret = ripemd160(&data);
             assert_ripemd160(&data, &ret);
             eosio_println!("done!");
+        }
+
+        #[chain(action="test2")]
+        pub fn test2(&self) {
+            let _ = rust_chain::utils::decode_hex("0000000000000000000000000000000000000000000000000000000000000000");
+            let hash = Checksum256::from_hex("0000000000000000000000000000000000000000000000000000000000000000");
+            Checksum160::from_hex("0000000000000000000000000000000000000000");
+            Checksum512::from_hex("00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
+            ECCPublicKey::from_hex("000000000000000000000000000000000000000000000000000000000000000000");
+            Signature::from_hex("0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
         }
     }
 }
