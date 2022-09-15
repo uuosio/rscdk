@@ -1,6 +1,19 @@
-// use crate::string::String;
-// use crate::vmapi::eosio::{
-// 	check,
-// };
+use crate::{
+    check,
+    vec::Vec,
+};
 
-// pub fn get_active_producers(producers: *const u8, datalen: u32) -> u32;
+pub fn decode_hex(s: &str) -> Vec<u8> {
+    check(s.len() % 2 == 0, "decod_hex: bad hex string length");
+    (0..s.len())
+        .step_by(2)
+        .map(|i| {
+            if let Ok(c) = u8::from_str_radix(&s[i..i + 2], 16) {
+                c
+            } else {
+                check(false, "bad hex charactors");
+                0u8
+            }
+        })
+        .collect::<Vec<_>>()
+}

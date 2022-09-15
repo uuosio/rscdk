@@ -1,3 +1,7 @@
+use crate::utils::{
+    decode_hex,
+};
+
 use crate::vmapi::eosio::{
     eosio_memcpy,
     check,
@@ -74,25 +78,11 @@ pub struct Checksum160 {
     pub data: [u8; 20],
 }
 
-fn decode_hex(s: &str, size: usize) -> Vec<u8> {
-    check(s.len() >= size, "bad slice size");
-    (0..s.len())
-        .step_by(2)
-        .map(|i| {
-            if let Ok(c) = u8::from_str_radix(&s[i..i + 2], 16) {
-                c
-            } else {
-                check(false, "bad hex charactors");
-                0u8
-            }
-        })
-        .collect::<Vec<_>>()
-}
-
 impl Checksum160 {
     ///
     pub fn from_hex(s: &str) -> Self {
-        let data = decode_hex(s, 40);
+        check(s.len() == 40, "Checksum160: bad hex string length");
+        let data = decode_hex(s);
         let mut ret = Self::default();
         eosio_memcpy(ret.data.as_mut_ptr(), data.as_ptr(), 40);
         return ret;
@@ -127,9 +117,10 @@ pub struct Checksum256 {
 impl Checksum256 {
     ///
     pub fn from_hex(s: &str) -> Self {
-        let data = decode_hex(s, 64);
+        check(s.len() == 64, "Checksum256: bad hex string length");
+        let data = decode_hex(s);
         let mut ret = Self::default();
-        eosio_memcpy(ret.data.as_mut_ptr(), data.as_ptr(), 64);
+        eosio_memcpy(ret.data.as_mut_ptr(), data.as_ptr(), 32);
         return ret;
     }
 }
@@ -161,9 +152,10 @@ pub struct Checksum512 {
 impl Checksum512 {
     ///
     pub fn from_hex(s: &str) -> Self {
-        let data = decode_hex(s, 128);
+        check(s.len() == 128, "Checksum512: bad hex string length");
+        let data = decode_hex(s);
         let mut ret = Self::default();
-        eosio_memcpy(ret.data.as_mut_ptr(), data.as_ptr(), 128);
+        eosio_memcpy(ret.data.as_mut_ptr(), data.as_ptr(), 64);
         return ret;
     }
 }
@@ -205,8 +197,9 @@ impl ECCPublicKey {
     ///
     pub fn from_hex(s: &str) -> Self {
         let mut ret = Self::default();
-        let data = decode_hex(s, 33*2);
-        eosio_memcpy(ret.data.as_mut_ptr(), data.as_ptr(), 33*2);
+        check(s.len() == 33*2, "ECCPublicKey: bad hex string length");
+        let data = decode_hex(s);
+        eosio_memcpy(ret.data.as_mut_ptr(), data.as_ptr(), 33);
         return ret;
     }
 }
@@ -422,9 +415,10 @@ impl Signature {
     ///
     pub fn from_hex(s: &str) -> Self {
         let mut ret = Self::default();
-        let data = decode_hex(s, 65*2);
+        check(s.len() == 65*2, "Signature: bad hex string length");
+        let data = decode_hex(s);
         ret.ty = 0;
-        eosio_memcpy(ret.data.as_mut_ptr(), data.as_ptr(), 65*2);
+        eosio_memcpy(ret.data.as_mut_ptr(), data.as_ptr(), 65);
         return ret;
     }
 }
