@@ -72,5 +72,11 @@ pub mod testserializer {
             dec.unpack(&mut v2);
             check(v1 == v2, "v.len() == v2.len()");
         }
+
+        #[chain(action="test2")]
+        pub fn test2(&self) {
+            let mut s = String::default();
+            s.unpack(&vec![2, 0xff, 0xff]);    
+        }
     }
 }
