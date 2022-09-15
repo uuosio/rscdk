@@ -55,6 +55,16 @@ jobs:
             toolchain: nightly
             override: true
             components: rustfmt, clippy, rust-src, llvm-tools-preview
+      - name: Cache grcov
+        id: cache-cargo
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/bin
+          key: ${{ runner.os }}-cargo
+      - name: Install grcov
+        if: steps.cache-cargo.outputs.cache-hit != 'true'
+        run: |
+          cargo install grcov
       - uses: actions/checkout@v2
       - name: Install dependencies
         run: |
@@ -75,20 +85,19 @@ jobs:
       - name: run unit tests
         working-directory: tests
         run: |
-          PYTHON_SHARED_LIB_PATH=${{ env.pythonLocation }}/lib/libpython3.9.so make -j3 -S
-      - name: Cache grcov
-        id: cache-cargo
-        uses: actions/cache@v3
-        with:
-          path: ~/.cargo/bin
-          key: ${{ runner.os }}-cargo
-      - name: Install grcov
-        if: steps.cache-cargo.outputs.cache-hit != 'true'
-        run: |
-          cargo install grcov
+          export CARGO_INCREMENTAL=0
+          export RUSTFLAGS="-Cinstrument-coverage -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off"
+          pushd testnotify/receiver
+          rust-contract build 
+          popd
+          pushd testnotify/sender
+          rust-contract build
+          popd
+          rust-contract build
+          cargo +nightly test -- --test-threads=1
       - name: code coverage report
         working-directory: tests
-        run: |          
+        run: |
           export CARGO_INCREMENTAL=0
           export RUSTFLAGS="-Cinstrument-coverage -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off"
           TEST_COVERAGE=TRUE cargo +nightly test -- --test-threads=1
