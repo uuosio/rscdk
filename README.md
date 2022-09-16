@@ -78,8 +78,7 @@ Generate code coverage report in html
 # rm -rf ./target
 
 export CARGO_INCREMENTAL=0
-export RUSTDOCFLAGS="-Cpanic=abort"
-export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
+export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off"
 cargo +nightly test
 grcov . -s . -t html --llvm --branch --ignore-not-existing -o ./target/debug/coverage/
 ```
