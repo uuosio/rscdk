@@ -25,7 +25,7 @@ use crate::{
 
 use crate::boxed::Box;
 
-pub fn cast_value<'a, T: MultiIndexValue>(value: &'a Option<Box<dyn MultiIndexValue>>) -> Option<&'a T> {
+pub fn cast_value<T: MultiIndexValue>(value: &Option<Box<dyn MultiIndexValue>>) -> Option<&T> {
     if let Some(x) = value {
         x.as_any().downcast_ref::<T>()
     } else {
