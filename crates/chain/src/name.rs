@@ -97,18 +97,20 @@ pub fn s2n(s: &'static str) -> u64 {
 	return static_str_to_name_checked(s);
 }
 
+//".12345abcdefghijklmnopqrstuvwxyz"
+pub const CHAR_MAP: [u8; 32] = [46,49,50,51,52,53,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122];
+
 ///
 pub fn n2s(value: u64) -> String {
-	let charmap = ".12345abcdefghijklmnopqrstuvwxyz".as_bytes();
 	// 13 dots
-	let mut s: [u8; 13] = ['.' as u8, '.'  as u8, '.' as u8, '.' as u8, '.' as u8, '.' as u8, '.' as u8, '.' as u8, '.' as u8, '.' as u8, '.' as u8, '.' as u8, '.' as u8];
+	let mut s: [u8; 13] = [46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46]; //'.'
 	let mut tmp = value;
 	for i in 0..13 {
 		let c: u8;
 		if i == 0 {
-			c = charmap[(tmp&0x0f) as usize];
+			c = CHAR_MAP[(tmp&0x0f) as usize];
 		} else {
-			c = charmap[(tmp&0x1f) as usize];
+			c = CHAR_MAP[(tmp&0x1f) as usize];
 		}
 		s[12-i] = c;
 		if i == 0 {

@@ -30,6 +30,11 @@ pub mod testname {
         pub fn test(&self, a11: String, a12: Name, a21: String, a22: Name) {
             check(a12 == Name::from_str(&a11), "bad value 1");
             check(a22 == Name::from_str(&a21), "bad value 2");
+            let mut _a22 = Name::default();
+            _a22.unpack(&a22.pack());
+            check(a22 == _a22, "a22 == _a22");
+
+            check(Name::from_str("").n == 0, r#"Name::from_str("").n == 0"#);
 
             check(a12 == name!("hello1"), "bad value 1");
             check(a22 == name!("aaaaaaaaaaaaj"), "bad value 2");
@@ -43,8 +48,15 @@ pub mod testname {
             let n7 = Name::new("hello12");
             let n8 = Name::new("hello13");
             let n9 = name!("hello14");
+            check(n9.to_string() == "hello14", r#"n9.to_string() == "hello14""#);
+
+            check(name::n2s(name::s2n("hello")) == "hello", r#"name::n2s(name::s2n("hello")) == "hello""#);
 
             eosio_println!("hello", n1, n2, n3, n4, n5, n6, n7, n8, n9);
+        }
+        #[chain(action="test2")]
+        pub fn test2(&self, a: String) {
+            Name::from_str(&a);
         }
     }
 }

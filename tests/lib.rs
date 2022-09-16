@@ -420,6 +420,53 @@ mod tests {
         "#;
         tester.push_action("hello", "test", args.into(), permissions).unwrap();
         tester.produce_block();
+
+        let args = r#"
+        {
+            "a": "12345123451234"
+        }
+        "#;
+        let err = tester.push_action("hello", "test2", args.into(), permissions).unwrap_err();
+        err.check_err("bad name string");
+        tester.produce_block();
+
+        let args = r#"
+        {
+            "a": "123451234512z"
+        }
+        "#;
+        let err = tester.push_action("hello", "test2", args.into(), permissions).unwrap_err();
+        err.check_err("bad name string");
+        tester.produce_block();
+
+        //invalid thirteenth charactor 
+        let args = r#"
+        {
+            "a": "123451234512z"
+        }
+        "#;
+        let err = tester.push_action("hello", "test2", args.into(), permissions).unwrap_err();
+        err.check_err("bad name string");
+        tester.produce_block();
+
+        //invalid thirteenth charactor 
+        let args = r#"
+        {
+            "a": "123451234512A"
+        }
+        "#;
+        let err = tester.push_action("hello", "test2", args.into(), permissions).unwrap_err();
+        err.check_err("bad name string");
+        tester.produce_block();
+
+        let args = r#"
+        {
+            "a": "12345A1234512"
+        }
+        "#;
+        let err = tester.push_action("hello", "test2", args.into(), permissions).unwrap_err();
+        err.check_err("bad name string");
+        tester.produce_block();
     }
 
     #[test]
