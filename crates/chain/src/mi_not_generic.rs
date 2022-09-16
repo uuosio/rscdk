@@ -62,12 +62,12 @@ impl<'a> Iterator<'a> {
         return self.db.get(self);
     }
 
-    ///
-    pub fn set_primary(&mut self, primary: u64) {
-        if !self.is_ok() {
-            return;
+    pub fn get_value_ex<T: MultiIndexValue + core::clone::Clone>(&self) -> Option<T> {
+        if let Some(x) = self.get_value().unwrap().as_any_mut().downcast_mut::<T>() {
+            Some(x.clone())
+        } else {
+            None
         }
-        self.primary = Some(primary);
     }
 
     ///
@@ -261,6 +261,16 @@ impl MultiIndex {
             self.idxdbs[i].update(&it_secondary, v2, payer);
         }
         self.db.update(iterator, value, payer);
+    }
+
+    pub fn set(&self, value: &dyn MultiIndexValue, payer: Name) {
+        let primary = value.get_primary();
+        let it = self.find(primary);
+        if it.is_ok() {
+            self.update(&it, value, payer);
+        } else {
+            self.store(value, payer);
+        }
     }
 
     ///

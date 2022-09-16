@@ -17,7 +17,7 @@ pub mod testmi2 {
         },
 
         name,
-        // check,
+        check,
         eosio_println,
     };
 
@@ -29,10 +29,12 @@ pub mod testmi2 {
         action: Name,
     }
 
-    #[chain(packer)]
+    #[chain(table="mystruct")]
     #[derive(Clone)]
     pub struct MyStruct {
-        amount: i64,
+        #[chain(primary)]
+        amount: u64,
+        #[chain(secondary)]
         symbol: u64,
     }
 
@@ -46,29 +48,28 @@ pub mod testmi2 {
         }
     }
 
-    impl PrimaryValueInterface for MyStruct {
-        ///
-        fn get_primary(&self) -> u64 {
-            return self.amount as u64;
-        }
-    }
+    // impl PrimaryValueInterface for MyStruct {
+    //     ///
+    //     fn get_primary(&self) -> u64 {
+    //         return self.amount as u64;
+    //     }
+    // }
 
-    impl SecondaryValueInterface for MyStruct {
-        ///
-        fn get_secondary_value(&self, _i: usize) -> SecondaryValue {
-            return SecondaryValue::Idx64(1);
-        }
-        ///
-        fn set_secondary_value(&mut self, _i: usize, value: SecondaryValue) {
-            if let SecondaryValue::Idx64(x) = value {
-                self.amount = x as i64;
-            }
-        }
-    }
+    // impl SecondaryValueInterface for MyStruct {
+    //     ///
+    //     fn get_secondary_value(&self, _i: usize) -> SecondaryValue {
+    //         return SecondaryValue::Idx64(1);
+    //     }
+    //     ///
+    //     fn set_secondary_value(&mut self, _i: usize, value: SecondaryValue) {
+    //         if let SecondaryValue::Idx64(x) = value {
+    //             self.amount = x as i64;
+    //         }
+    //     }
+    // }
 
     impl MultiIndexValue for MyStruct {}
     
-
     impl TestMI2 {
 
         pub fn new(receiver: Name, first_receiver: Name, action: Name) -> Self {
@@ -79,8 +80,7 @@ pub mod testmi2 {
             }
         }
 
-        #[chain(action="test")]
-        pub fn test(&self) {
+        pub fn init_test(&self) -> MultiIndex {
             // 
             fn unpacker(raw: &[u8]) -> Box<dyn MultiIndexValue>  {
                 let mut value = MyStruct::default();
@@ -90,20 +90,65 @@ pub mod testmi2 {
             let code = self.receiver;
             let scope = self.receiver;
             let table = name!("hello");
-            let indices: Vec<SecondaryType> = Vec::new();
-            let mi = MultiIndex::new(code, scope, table, &indices, unpacker);
-            let it = mi.find(1);
-            if let Some(mut value) = it.get_value() {
-                if let Some(x) = value.as_any_mut().downcast_mut::<MyStruct>() {
-                    x.amount += 1;
-                    mi.update(&it, x, self.receiver);
-                    eosio_println!("++++amount:", x.amount);
-                }
-            } else {
-                let mystruct = MyStruct{amount: 1, symbol: 1};
-                mi.store(&mystruct, self.receiver);
-                eosio_println!("++++amount:", mystruct.amount);
-            }
+            let indices: Vec<SecondaryType> = vec![SecondaryType::Idx64];
+            return MultiIndex::new(code, scope, table, &indices, unpacker);
+        }
+
+        #[chain(action="test")]
+        pub fn test(&self) {
+            let payer = self.receiver;
+            let mi = self.init_test();
+            mi.set(&MyStruct{amount: 1, symbol: 2}, payer);
+            mi.set(&MyStruct{amount: 11, symbol: 22}, payer);
+            mi.set(&MyStruct{amount: 111, symbol: 222}, payer);
+            eosio_println!("test done!");
+        }
+
+        #[chain(action="test2")]
+        pub fn test2(&self) {
+            let payer = self.receiver;
+            let mi = self.init_test();
+            let it = mi.find(11);
+            check(it.get_primary().unwrap() == 11, "it.get_primary() == 11");
+            check(it.get_value_ex::<MyStruct>().unwrap().amount == 11, "bad value");
+
+            let it = mi.next(&it);
+            check(it.get_value_ex::<MyStruct>().unwrap().amount == 111, "bad value");
+
+            let it = mi.previous(&it);
+            check(it.get_value_ex::<MyStruct>().unwrap().amount == 11, "bad value");
+
+            let it = mi.lower_bound(11);
+            check(it.get_value_ex::<MyStruct>().unwrap().amount == 11, "bad value");
+
+            let it = mi.upper_bound(11);
+            check(it.get_value_ex::<MyStruct>().unwrap().amount == 111, "bad value");
+
+            let mut data = it.get_value_ex::<MyStruct>().unwrap();
+            mi.set(&data, payer);
+
+            let mut data = it.get_value_ex::<MyStruct>().unwrap();
+            data.symbol += 1;
+            mi.set(&data, payer);
+
+            let data2 = mi.get(&it).unwrap();
+            check(data2.get_primary() == 111, "data2.get_primary() == 111");
+
+            mi.remove(&it);
+            check(!mi.find(111).is_ok(), "!mi.find(111).is_ok()");
+
+            // check(value.get_value().unwrap().amount == 1, "");
+            // if let Some(mut value) = it.get_value() {
+            //     if let Some(x) = value.as_any_mut().downcast_mut::<MyStruct>() {
+            //         x.amount += 1;
+            //         mi.update(&it, x, self.receiver);
+            //         eosio_println!("++++amount:", x.amount);
+            //     }
+            // } else {
+            //     let mystruct = MyStruct{amount: 1, symbol: 1};
+            //     mi.store(&mystruct, self.receiver);
+            //     eosio_println!("++++amount:", mystruct.amount);
+            // }
             eosio_println!("test done!");
         }
     }

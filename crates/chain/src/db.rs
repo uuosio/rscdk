@@ -49,7 +49,7 @@ pub trait PrimaryValueInterface {
     fn get_primary(&self) -> u64;
 }
 
-pub trait SecondaryValueInterface {
+pub trait SecondaryValueInterface: core::any::Any {
     ///
     fn get_secondary_value(&self, i: usize) -> SecondaryValue;
     ///
@@ -535,7 +535,7 @@ impl<'a, T: From<SecondaryValue> + Into<SecondaryValue> + Printable + Default, c
     }
     ///
     pub fn get_db_index(&self) -> usize {
-        return 0;
+        return self.db.get_db_index();
     }
 
     ///
