@@ -219,7 +219,8 @@ mod tests {
         tester.produce_block();
     }
 
-    pub fn init_test(tester: &mut ChainTester, test_case: &str) {
+    pub fn init_test(test_case: &str) -> ChainTester {
+        let mut tester = ChainTester::new();
         if std::env::var("TEST_COVERAGE").is_ok() {
             get_globals().set_debug_mode(true);
             tester.enable_debug_contract("hello", true).unwrap();
@@ -244,6 +245,7 @@ mod tests {
         "#;
         let args = super::testall::TestCase{name: test_case.into()}.pack();
         tester.push_action("hello", "settest", args.into(), permissions).unwrap();
+        return tester;
     }
 
     #[test]
@@ -251,9 +253,8 @@ mod tests {
         let abi = &crate::testhello::generate_abi();
         fs::write(Path::new("./target/testhello.abi"), abi).unwrap();
 
-        let mut tester = ChainTester::new();
-        init_test(&mut tester, "testhello");
-
+        let mut tester = init_test("testhello");
+        
         let args = r#"
         {
             "name": "rust"
@@ -274,8 +275,7 @@ mod tests {
         let abi = testasset::generate_abi();
         fs::write(Path::new("./target/testasset.abi"), abi).unwrap();
 
-        let mut tester = ChainTester::new();
-        init_test(&mut tester, "testasset");
+        let mut tester = init_test("testasset");
     
         let args = r#"
         {
@@ -356,8 +356,7 @@ mod tests {
         let abi = &testoptional::generate_abi();
         fs::write(Path::new("./target/testoptional.abi"), abi).unwrap();
 
-        let mut tester = ChainTester::new();
-        init_test(&mut tester, "testoptional");
+        let mut tester = init_test("testoptional");
     
         let args = r#"
             {
@@ -383,9 +382,8 @@ mod tests {
         let abi = &testvariant::generate_abi();
         fs::write(Path::new("./target/testvariant.abi"), abi).unwrap();
 
-        let mut tester = ChainTester::new();
-        init_test(&mut tester, "testvariant");
-    
+        let mut tester = init_test("testvariant");
+
         let args = r#"
             {"v": ["uint64", 10]}
         "#;
@@ -404,8 +402,7 @@ mod tests {
         let abi = &crate::testname::generate_abi();
         fs::write(Path::new("./target/testname.abi"), abi).unwrap();
 
-        let mut tester = ChainTester::new();
-        init_test(&mut tester, "testname");
+        let mut tester = init_test("testname");
 
         let args = r#"
         {
@@ -467,8 +464,7 @@ mod tests {
         let abi = &crate::testtransaction::generate_abi();
         fs::write(Path::new("./target/testtransaction.abi"), abi).unwrap();
 
-        let mut tester = ChainTester::new();
-        init_test(&mut tester, "testtransaction");
+        let mut tester = init_test("testtransaction");
 
         let args = r#"
         {
@@ -489,8 +485,7 @@ mod tests {
         let abi = &crate::testbinaryextension::generate_abi();
         fs::write(Path::new("./target/testbinaryextension.abi"), abi).unwrap();
 
-        let mut tester = ChainTester::new();
-        init_test(&mut tester, "testbinaryextension");
+        let mut tester = init_test("testbinaryextension");
 
         let args = r#"
             {
@@ -548,8 +543,7 @@ mod tests {
         let abi = &crate::testdestructor::generate_abi();
         fs::write(Path::new("./target/testdestructor.abi"), abi).unwrap();
 
-        let mut tester = ChainTester::new();
-        init_test(&mut tester, "testdestructor");
+        let mut tester = init_test("testdestructor");
 
         let args = r#"
             {
@@ -570,8 +564,7 @@ mod tests {
         let abi = &testabi::generate_abi();
         fs::write(Path::new("./target/testabi.abi"), abi).unwrap();
 
-        let mut tester = ChainTester::new();
-        init_test(&mut tester, "testabi");
+        let mut tester = init_test("testabi");
 
         let args = r#"
             {
@@ -627,8 +620,7 @@ mod tests {
         let abi = &crate::testmi::generate_abi();
         fs::write(Path::new("./target/testmi.abi"), abi).unwrap();
 
-        let mut tester = ChainTester::new();
-        init_test(&mut tester, "testmi");
+        let mut tester = init_test("testmi");
 
         let args = r#"
             {
@@ -652,8 +644,7 @@ mod tests {
         let abi = &crate::testmi2::generate_abi();
         fs::write(Path::new("./target/testmi2.abi"), abi).unwrap();
 
-        let mut tester = ChainTester::new();
-        init_test(&mut tester, "testmi2");
+        let mut tester = init_test("testmi2");
 
         let args = r#"
             {
@@ -675,8 +666,7 @@ mod tests {
         let abi = &testcrypto::generate_abi();
         fs::write(Path::new("./target/testcrypto.abi"), abi).unwrap();
 
-        let mut tester = ChainTester::new();
-        init_test(&mut tester, "testcrypto");
+        let mut tester = init_test("testcrypto");
 
         let args = r#"
         {
@@ -710,8 +700,7 @@ mod tests {
         let abi = &testserializer::generate_abi();
         fs::write(Path::new("./target/testserializer.abi"), abi).unwrap();
 
-        let mut tester = ChainTester::new();
-        init_test(&mut tester, "testserializer");
+        let mut tester = init_test("testserializer");
 
         let args = r#"
         {
@@ -736,8 +725,7 @@ mod tests {
         let abi = &testinlineaction::generate_abi();
         fs::write(Path::new("./target/testinlineaction.abi"), abi).unwrap();
 
-        let mut tester = ChainTester::new();
-        init_test(&mut tester, "testinlineaction");
+        let mut tester = init_test("testinlineaction");
         update_auth(&mut tester);
 
         let args = r#"
@@ -760,8 +748,7 @@ mod tests {
         let abi = &testintrinsics::generate_abi();
         fs::write(Path::new("./target/testintrinsics.abi"), abi).unwrap();
 
-        let mut tester = ChainTester::new();
-        init_test(&mut tester, "testintrinsics");
+        let mut tester = init_test("testintrinsics");
 
         let args = r#"
         {
@@ -819,8 +806,7 @@ mod tests {
         let abi = &testprint::generate_abi();
         fs::write(Path::new("./target/testprint.abi"), abi).unwrap();
 
-        let mut tester = ChainTester::new();
-        init_test(&mut tester, "testprint");
+        let mut tester = init_test("testprint");
 
         let permissions = r#"
         {
