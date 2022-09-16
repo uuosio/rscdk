@@ -15,6 +15,7 @@ mod testhello;
 mod testcrypto;
 mod testabi;
 mod testinlineaction;
+mod testprint;
 
 #[rust_chain::contract]
 mod testall {
@@ -33,6 +34,7 @@ mod testall {
     use super::testdestructor;
     use super::testbinaryextension;
     use super::testinlineaction;
+    use super::testprint;
 
     use rust_chain::{
         Name,
@@ -98,7 +100,6 @@ mod testall {
             TestCase{name: "".into()}
         });
 
-        eosio_println!("++++++++++++testcase:", testcase.name);
         let test_case_name = &testcase.name;
         if test_case_name == "testhello" {
             testhello::testhello::contract_apply(receiver, first_receiver, action);
@@ -130,6 +131,8 @@ mod testall {
             testabi::testabi::contract_apply(receiver, first_receiver, action);
         } else if test_case_name == "testinlineaction" {
             testinlineaction::testinlineaction::contract_apply(receiver, first_receiver, action);
+        } else if test_case_name == "testprint" {
+            testprint::testprint::contract_apply(receiver, first_receiver, action);
         } else {
             check(false, "Invalid test case");
         }
@@ -143,7 +146,6 @@ mod testall {
 
     #[cfg(feature = "std")]
     pub fn native_apply(receiver: u64, first_receiver: u64, action: u64) {
-        eosio_println!("+++++++native_apply:", Name{n:receiver}, Name{n:action});
         contract_apply(receiver, first_receiver, action);
     }
 }
@@ -165,6 +167,7 @@ mod tests {
     // use super::testdestructor;
     // use super::testbinaryextension;
     use super::testinlineaction;
+    use super::testprint;
 
     use rust_chain::ChainTester;
     use rust_chain::serializer::Packer as _;
@@ -809,6 +812,30 @@ mod tests {
         tester.produce_block_ex(10);
 
         tester.push_action("hello", "testtime", "{}".into(), permissions).unwrap();
+    }
+
+    #[test]
+    fn test_print() {
+        let abi = &testprint::generate_abi();
+        fs::write(Path::new("./target/testprint.abi"), abi).unwrap();
+
+        let mut tester = ChainTester::new();
+        init_test(&mut tester, "testprint");
+
+        let permissions = r#"
+        {
+            "hello": "active"
+        }
+        "#;
+        let ret = tester.push_action("hello", "test", "".into(), permissions).unwrap();
+        if ret["action_traces"][0]["console"] != "1111111111\n1.000000e+00\n1.000000000000000e+00\n6.000000000000000000e+00" {
+            panic!("console output mismatch!");
+        }
+        // 1111111111
+        // 1.000000e+00
+        // 1.000000000000000e+00
+        // 6.000000000000000000e+00
+        tester.produce_block();
     }
 
     #[test]
