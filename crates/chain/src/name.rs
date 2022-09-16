@@ -128,12 +128,7 @@ pub fn n2s(value: u64) -> String {
 		}
         i -= 1;
 	}
-
-    let r = match String::from_utf8(s[0..i+1].to_vec()) {
-        Ok(v) => v,
-        Err(_) => String::from(""),
-    };
-    return r;
+	return String::from_utf8(s[0..i+1].to_vec()).unwrap();
 }
 
 
