@@ -799,8 +799,8 @@ mod tests {
             "hello": "active"
         }
         "#;
-        // tester.push_action("hello", "test", args.into(), permissions).unwrap();
-        // tester.produce_block();
+        tester.push_action("hello", "test", args.into(), permissions).unwrap();
+        tester.produce_block();
 
         let ret = tester.push_action("hello", "test2", "".into(), permissions).unwrap();
         if ret["action_traces"][0]["return_value"] != "68656c6c6f776f726c64" {//helloworld
