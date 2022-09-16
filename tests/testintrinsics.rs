@@ -57,6 +57,9 @@ pub mod testintrinsics {
         get_blockchain_parameters,
         preactivate_feature,
 
+        set_action_return_value,
+        get_block_num,
+
         current_time,
 
         check,
@@ -217,6 +220,16 @@ pub mod testintrinsics {
             check(prods.len() == 1, "prods.len() == 1");
             check(prods[0] == name!("eosio"), "bad value");
             eosio_println!("intrinsics tests done!");
+        }
+
+        #[chain(action="test2")]
+        pub fn test_set_action_return_value(&self) {
+            set_action_return_value(String::from("helloworld").into_bytes());
+        }
+
+        #[chain(action="test3")]
+        pub fn test_block_num(&self, num: u32) {
+            check(get_block_num() == num, "get_block_num() == num");
         }
 
         #[chain(action="testctxfree")]

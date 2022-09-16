@@ -453,7 +453,7 @@ impl ChainTester {
         parse_ret(&ret)
     }
 
-    pub fn push_action(&mut self, account: &str, action: &str, arguments: ActionArguments, permissions: &str) -> Result<TransactionReturn> {
+    pub fn push_action(&mut self, account: &str, action: &str, arguments: ActionArguments, permissions: &str) -> Result<Value> {
         let _account = String::from(account);
         let _action = String::from(action);
 
@@ -476,7 +476,7 @@ impl ChainTester {
                 if tx.get("except").is_some() {
                     Err(ChainTesterError{json: Some(tx), error_string: None})
                 } else {
-                    Ok(TransactionReturn{value: tx})
+                    Ok(tx)
                 }
             }
             Err(err) => {

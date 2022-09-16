@@ -186,6 +186,11 @@ pub use self::vmapi::eosio::{
     get_context_free_data,
 };
 
+pub use self::vmapi::eosio_ex::{
+    set_action_return_value,
+    get_block_num,
+};
+
 ///
 #[macro_use]
 pub mod name;

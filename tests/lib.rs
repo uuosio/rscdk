@@ -799,8 +799,18 @@ mod tests {
             "hello": "active"
         }
         "#;
-        tester.push_action("hello", "test", args.into(), permissions).unwrap();
+        // tester.push_action("hello", "test", args.into(), permissions).unwrap();
+        // tester.produce_block();
+
+        let ret = tester.push_action("hello", "test2", "".into(), permissions).unwrap();
+        if ret["action_traces"][0]["return_value"] != "68656c6c6f776f726c64" {//helloworld
+            panic!("invalid return value");
+        }
         tester.produce_block();
+
+        let info = tester.get_info().unwrap();
+        let args = testintrinsics::testintrinsics::test3{num: info["head_block_num"].as_u64().unwrap() as u32 + 1}.pack();
+        tester.push_action("hello", "test3", args.into(), permissions).unwrap();
 
         tester.push_action("hello", "testctxfree", "".into(), permissions).unwrap();
         tester.produce_block();
