@@ -15,6 +15,7 @@ use crate::vmapi::eosio::{
     eosio_memcpy,
 };
 
+const INVALID_NAME_CHAR: u8 = 0xffu8;
 ///
 pub const fn char_to_symbol(c: u8) -> u8 {
 	match c as char {
@@ -28,7 +29,7 @@ pub const fn char_to_symbol(c: u8) -> u8 {
 			return 0;
 		}
 		_ => {
-			return 0xff;
+			return INVALID_NAME_CHAR;
 		}
 	}
 }
@@ -60,7 +61,7 @@ pub const fn static_str_to_name(s: &'static str) -> u64 {
 			break;
 		}
 		let tmp = char_to_symbol(_s[i]) as u64;
-		if tmp == 0xff {
+		if tmp == INVALID_NAME_CHAR as u64 {
 			return INVALID_NAME;
 		}
 		value <<= 5;
@@ -72,7 +73,7 @@ pub const fn static_str_to_name(s: &'static str) -> u64 {
 
     if _s.len() == 13 {
 		let tmp = char_to_symbol(_s[12]) as u64;
-		if tmp == 0xff {
+		if tmp == INVALID_NAME_CHAR as u64 {
 			return INVALID_NAME;
 		}
 		if tmp > 0x0f {

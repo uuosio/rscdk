@@ -99,36 +99,36 @@ mod testall {
         });
 
         eosio_println!("++++++++++++testcase:", testcase.name);
-        let test_name = &testcase.name;
-        if test_name == "testhello" {
+        let test_case_name = &testcase.name;
+        if test_case_name == "testhello" {
             testhello::testhello::contract_apply(receiver, first_receiver, action);
-        } else if test_name == "testasset" {
+        } else if test_case_name == "testasset" {
             testasset::testasset::contract_apply(receiver, first_receiver, action);
-        } else if test_name == "testoptional" {
+        } else if test_case_name == "testoptional" {
             testoptional::testoptional::contract_apply(receiver, first_receiver, action);
-        } else if test_name == "testvariant" {
+        } else if test_case_name == "testvariant" {
             testvariant::testvariant::contract_apply(receiver, first_receiver, action);
-        } else if test_name == "testserializer" {
+        } else if test_case_name == "testserializer" {
             testserializer::testserializer::contract_apply(receiver, first_receiver, action);
-        } else if test_name == "testintrinsics" {
+        } else if test_case_name == "testintrinsics" {
             testintrinsics::testintrinsics::contract_apply(receiver, first_receiver, action);
-        } else if test_name == "testmi" {
+        } else if test_case_name == "testmi" {
             testmi::testmi::contract_apply(receiver, first_receiver, action);
-        } else if test_name == "testmi2" {
+        } else if test_case_name == "testmi2" {
             testmi2::testmi2::contract_apply(receiver, first_receiver, action);
-        } else if test_name == "testcrypto" {
+        } else if test_case_name == "testcrypto" {
             testcrypto::testcrypto::contract_apply(receiver, first_receiver, action);
-        } else if test_name ==  "testname" {
+        } else if test_case_name ==  "testname" {
             testname::testname::contract_apply(receiver, first_receiver, action);
-        } else if test_name == "testdestructor" {
+        } else if test_case_name == "testdestructor" {
             testdestructor::testdestructor::contract_apply(receiver, first_receiver, action);
-        } else if test_name == "testbinaryextension" {
+        } else if test_case_name == "testbinaryextension" {
             testbinaryextension::testbinaryextension::contract_apply(receiver, first_receiver, action);
-        } else if test_name == "testtransaction" {
+        } else if test_case_name == "testtransaction" {
             testtransaction::testtransaction::contract_apply(receiver, first_receiver, action);
-        } else if test_name == "testabi" {
+        } else if test_case_name == "testabi" {
             testabi::testabi::contract_apply(receiver, first_receiver, action);
-        } else if test_name == "testinlineaction" {
+        } else if test_case_name == "testinlineaction" {
             testinlineaction::testinlineaction::contract_apply(receiver, first_receiver, action);
         } else {
             check(false, "Invalid test case");
@@ -439,33 +439,23 @@ mod tests {
         err.check_err("bad name string");
         tester.produce_block();
 
-        //invalid thirteenth charactor 
-        let args = r#"
-        {
-            "a": "123451234512z"
-        }
-        "#;
-        let err = tester.push_action("hello", "test2", args.into(), permissions).unwrap_err();
-        err.check_err("bad name string");
-        tester.produce_block();
+        let names: [&str;3] = [
+            "123451234512z",
+            "123451234512A",
+            "12345A1234512",
+        ];
 
-        //invalid thirteenth charactor 
-        let args = r#"
-        {
-            "a": "123451234512A"
+        for name in names {
+            let args = format!(r#"
+            {{
+                "a": "{name}"
+            }}"#);
+            let err = tester.push_action("hello", "test2", args.into(), permissions).unwrap_err();
+            err.check_err("bad name string");
+            tester.produce_block();    
         }
-        "#;
-        let err = tester.push_action("hello", "test2", args.into(), permissions).unwrap_err();
-        err.check_err("bad name string");
-        tester.produce_block();
 
-        let args = r#"
-        {
-            "a": "12345A1234512"
-        }
-        "#;
-        let err = tester.push_action("hello", "test2", args.into(), permissions).unwrap_err();
-        err.check_err("bad name string");
+        tester.push_action("hello", "test3", "".into(), permissions).unwrap();
         tester.produce_block();
     }
 

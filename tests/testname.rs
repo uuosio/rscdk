@@ -54,9 +54,20 @@ pub mod testname {
 
             eosio_println!("hello", n1, n2, n3, n4, n5, n6, n7, n8, n9);
         }
+
         #[chain(action="test2")]
         pub fn test2(&self, a: String) {
             Name::from_str(&a);
+        }
+
+        #[chain(action="test3")]
+        pub fn test3(&self) {
+            check(name::static_str_to_name("123451234512z") == 0xFFFF_FFFF_FFFF_FFFFu64, "bad name string");
+            check(name::static_str_to_name("123451234512A") == 0xFFFF_FFFF_FFFF_FFFFu64, "bad name string");
+            check(name::static_str_to_name("12345A1234512") == 0xFFFF_FFFF_FFFF_FFFFu64, "bad name string");
+            check(name::static_str_to_name("12345123451234") == 0xFFFF_FFFF_FFFF_FFFFu64, "bad name string");
+            check(name::static_str_to_name("") == 0u64, "bad name string");
+            check(name::static_str_to_name("1234512345123") != 0xFFFF_FFFF_FFFF_FFFFu64, "bad name string");
         }
     }
 }
