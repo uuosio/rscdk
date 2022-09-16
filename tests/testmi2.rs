@@ -14,6 +14,7 @@ pub mod testmi2 {
 
         mi_not_generic::{
             MultiIndex,
+            cast_value,
         },
 
         name,
@@ -127,6 +128,11 @@ pub mod testmi2 {
             let mut data = it.get_value_ex::<MyStruct>().unwrap();
             mi.set(&data, payer);
 
+            {
+                let _data = it.get_value();
+                let data = cast_value::<MyStruct>(&_data);
+                check(data.unwrap().amount == 111, "data.unwrap().amount == 111");
+            }
             let mut data = it.get_value_ex::<MyStruct>().unwrap();
             data.symbol += 1;
             mi.set(&data, payer);

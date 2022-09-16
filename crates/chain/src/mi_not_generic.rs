@@ -25,6 +25,13 @@ use crate::{
 
 use crate::boxed::Box;
 
+pub fn cast_value<'a, T: MultiIndexValue>(value: &'a Option<Box<dyn MultiIndexValue>>) -> Option<&'a T> {
+    if let Some(x) = value {
+        x.as_any().downcast_ref::<T>()
+    } else {
+        None
+    }
+}
 
 ///
 pub struct Iterator<'a> {
@@ -58,12 +65,9 @@ impl<'a> Iterator<'a> {
         return self.db.get(self);
     }
 
-    pub fn get_value_mut(&mut self) -> Option<Box<dyn MultiIndexValue>> {
-        return self.db.get(self);
-    }
-
     pub fn get_value_ex<T: MultiIndexValue + core::clone::Clone>(&self) -> Option<T> {
-        if let Some(x) = self.get_value().unwrap().as_any_mut().downcast_mut::<T>() {
+        let value = self.get_value();
+        if let Some(x) = cast_value::<T>(&value) {
             Some(x.clone())
         } else {
             None
