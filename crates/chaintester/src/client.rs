@@ -147,6 +147,7 @@ impl<'a> Default for GetTableRowsPrams<'a> {
 pub struct VMAPIClient {
     vm_api_client: Option<ApplySyncClient<ClientInputProtocol, ClientOutputProtocol>>,
     apply: Option<fn(u64, u64, u64)>,
+    in_apply: bool,
 }
 
 pub struct ChainTesterClient {
@@ -218,7 +219,7 @@ pub fn close_vm_api_client() {
 
 impl VMAPIClient {
     fn new() -> Self {
-        VMAPIClient{vm_api_client: None, apply: None}
+        VMAPIClient{vm_api_client: None, apply: None, in_apply: false}
     }
 
     pub fn init(&mut self) {
@@ -236,6 +237,14 @@ impl VMAPIClient {
 
     pub fn get_apply(&self) -> Option<fn(u64, u64, u64)> {
         return self.apply;
+    }
+
+    pub fn set_in_apply(&mut self, in_apply: bool) {
+        self.in_apply = in_apply;
+    }
+
+    pub fn is_in_apply(&mut self) -> bool {
+        return self.in_apply;
     }
 
     pub fn close(&mut self) {
@@ -260,7 +269,11 @@ impl Deref for VMAPIClient {
 
 impl DerefMut for VMAPIClient {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        self.vm_api_client.as_mut().unwrap()
+        if !self.is_in_apply() {
+            panic!("error: vm api function has been called out of apply context!");
+        }
+        let client = self.vm_api_client.as_mut().unwrap();
+        return client;
     }
 }
 // 

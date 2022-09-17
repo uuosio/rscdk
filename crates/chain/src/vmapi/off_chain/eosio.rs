@@ -188,6 +188,10 @@ pub fn eosio_assert_message(test: u32, msg: *const u8, msg_len: u32) {
         slice::from_raw_parts(msg, msg_len as usize)
     };
 
+	if !get_vm_api_client().is_in_apply() {
+		panic!("{}", String::from_utf8(dst.to_vec()).unwrap());
+	}
+
 	let ret = get_vm_api_client().eosio_assert_message(false, dst.into());
     ret.unwrap();
 }

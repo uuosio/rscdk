@@ -303,12 +303,15 @@ impl ApplyRequestSyncHandler for ApplyRequestHandler {
         let _first_receiver = first_receiver.into();
         let _action = action.into();
 
+        crate::get_vm_api_client().set_in_apply(true);
+
         let result = panic::catch_unwind(|| {
             let apply: Option<fn(u64, u64, u64)> = crate::get_vm_api_client().get_apply();
             if let Some(_apply) =  apply {
                 _apply(_receiver, _first_receiver, _action);
             }
         });
+
         match result {
             Ok(()) => {
 
@@ -318,6 +321,7 @@ impl ApplyRequestSyncHandler for ApplyRequestHandler {
             }
         }
         crate::get_vm_api_client().end_apply().unwrap();
+        crate::get_vm_api_client().set_in_apply(false);
         Ok(1)
     }
 

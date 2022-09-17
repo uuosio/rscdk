@@ -174,6 +174,7 @@ mod tests {
     use rust_chain::chaintester;
     use rust_chain::chaintester::{
         get_globals,
+        get_vm_api_client,
     };
     use std::{
         fs,
@@ -840,5 +841,11 @@ mod tests {
         tester.import_key("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV", "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3");
         let amount = tester.get_balance("hello");
         println!("+++++++++amount: {}", amount);
+
+        let result = std::panic::catch_unwind(|| {
+            rust_chain::check(false, "oops!");
+        });
+        let err = result.unwrap_err();
+        println!("+++++++err:{:?}", err);        
     }
 }
