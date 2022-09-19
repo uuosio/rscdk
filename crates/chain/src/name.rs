@@ -188,7 +188,7 @@ fn str_to_name_checked(s: &str) -> u64 {
 }
 
 ///
-#[repr(C)]
+#[repr(C, align(8))]
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "std", derive(TypeInfo))]
 pub struct Name {

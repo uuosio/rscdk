@@ -32,7 +32,7 @@ use crate::{
 };
 
 ///
-#[repr(C)]
+#[repr(C, align(8))]
 #[cfg_attr(feature = "std", derive(eosio_scale_info::TypeInfo))]
 #[derive(Clone, Copy, Eq, PartialEq, Default)]
 pub struct Float128 {
@@ -71,7 +71,7 @@ impl Packer for Float128 {
 }
 
 ///
-#[repr(C)]
+#[repr(C, align(8))]
 #[cfg_attr(feature = "std", derive(eosio_scale_info::TypeInfo))]
 #[derive(Clone, Copy, Eq, PartialEq, Default)]
 pub struct Checksum160 {
@@ -106,7 +106,7 @@ impl Packer for Checksum160 {
 }
 
 ///
-#[repr(C)]
+#[repr(C, align(8))]
 #[cfg_attr(feature = "std", derive(eosio_scale_info::TypeInfo))]
 #[derive(Clone, Copy, Eq, PartialEq, Default)]
 pub struct Checksum256 {
@@ -142,7 +142,7 @@ impl Packer for Checksum256 {
 }
 
 ///
-#[repr(C)]
+#[repr(C, align(8))]
 #[cfg_attr(feature = "std", derive(eosio_scale_info::TypeInfo))]
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub struct Checksum512 {
@@ -454,7 +454,7 @@ impl Packer for Signature {
 }
 
 ///
-#[repr(C)]
+#[repr(C, align(8))]
 #[cfg_attr(feature = "std", derive(eosio_scale_info::TypeInfo))]
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct Uint128 {
@@ -476,7 +476,7 @@ impl Default for Uint128 {
 }
 
 ///
-#[repr(C)]
+#[repr(C, align(8))]
 #[cfg_attr(feature = "std", derive(eosio_scale_info::TypeInfo))]
 #[derive(Copy, Clone, Default)]
 pub struct Int128 {
@@ -487,7 +487,7 @@ pub struct Int128 {
 }
 
 ///
-#[repr(C)]
+#[repr(C, align(8))]
 #[cfg_attr(feature = "std", derive(eosio_scale_info::TypeInfo))]
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct Uint256 {
