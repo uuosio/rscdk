@@ -584,7 +584,7 @@ impl ChainTester {
             key_type: "",
             index_position: "",
             reverse: false,
-            show_payer: false,
+            show_payer: true,
         };
         return self.get_table_rows_ex(&param);
 
@@ -608,29 +608,17 @@ impl ChainTester {
     }
 
     pub fn get_balance(&mut self, account: &str) -> u64 {
-        let ret = self.get_table_rows(false, "eosio.token", account, "accounts", "EOS", "", 1).unwrap();
-        let rows = ret["rows"].as_array().unwrap();
-        if rows.len() == 0 {
-            return 0;
-        }
-        let balance = rows[0].as_str().unwrap();
-        let _balance = hex::decode(balance).unwrap();
-        let amount: [u8;8] = match _balance[0..8].try_into() {
-            Ok(v) => v,
-            Err(_) => {
-                panic!("invalid value");
-            }
-        };
-        return u64::from_le_bytes(amount);
+        return self.get_balance_ex(account, "eosio.token", "EOS");
     }
 
     pub fn get_balance_ex(&mut self, account: &str, token_account: &str, symbol: &str) -> u64 {
         let ret = self.get_table_rows(false, token_account, account, "accounts", symbol, "", 1).unwrap();
         let rows = ret["rows"].as_array().unwrap();
+        println!("++++++++++++rows:{:?}", rows);
         if rows.len() == 0 {
             return 0;
         }
-        let balance = rows[0].as_str().unwrap();
+        let balance = rows[0]["data"].as_str().unwrap();
         let _balance = hex::decode(balance).unwrap();
         let amount: [u8;8] = match _balance[0..8].try_into() {
             Ok(v) => v,
