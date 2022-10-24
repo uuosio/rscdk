@@ -164,7 +164,7 @@ mod tests {
 
     #[test]
     fn test_helloworld() {
-        let abi = &counter::generate_abi();
+        let abi = &helloworld::generate_abi();
         fs::write(Path::new("./helloworld/target/helloworld.abi"), abi).unwrap();
 
         let mut tester = ChainTester::new();
