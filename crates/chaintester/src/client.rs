@@ -12,7 +12,13 @@ use thrift::transport::{
     ReadHalf, TBufferedReadTransport, TBufferedWriteTransport, TIoChannel, TTcpChannel, WriteHalf,
 };
 
-use crate::interfaces::{IPCChainTesterSyncClient, TIPCChainTesterSyncClient, ApplySyncClient, Action};
+use crate::interfaces::{
+    IPCChainTesterSyncClient,
+    TIPCChainTesterSyncClient,
+    ApplySyncClient,
+    Action,
+    ActionArguments,
+};
 
 type ClientInputProtocol = TBinaryInputProtocol<TBufferedReadTransport<ReadHalf<TTcpChannel>>>;
 type ClientOutputProtocol = TBinaryOutputProtocol<TBufferedWriteTransport<WriteHalf<TTcpChannel>>>;
@@ -470,17 +476,8 @@ impl ChainTester {
         let _account = String::from(account);
         let _action = String::from(action);
 
-        let _arguments;
-        match &arguments {
-            ActionArguments::String(s) => {
-                _arguments = s.clone();
-            }
-            ActionArguments::Binary(b) => {
-                _arguments = hex::encode(b);
-            }
-        }
         let _permissions = String::from(permissions);
-        match self.client().push_action(self.id, _account, _action, _arguments, _permissions) {
+        match self.client().push_action(self.id, _account, _action, arguments, _permissions) {
             Ok(ret) => {
                 let tx: Value = serde_json::from_slice(&ret).map_err(|err| {
                     ChainTesterError{json: None, error_string: Some(err.to_string())}
@@ -533,7 +530,7 @@ impl ChainTester {
             account: Some("eosio".into()),
             action: Some("setcode".into()),
             permissions: Some(permissions.clone()),
-            arguments: Some(hex::encode(raw_set_code_args)),
+            arguments: Some(ActionArguments::RawArgs(raw_set_code_args)),
         };
         actions.push(Box::new(setcode));
 
@@ -558,7 +555,7 @@ impl ChainTester {
                 account: Some("eosio".into()),
                 action: Some("setabi".into()),
                 permissions: Some(permissions.clone()),
-                arguments: Some(hex::encode(raw_setabi)),
+                arguments: Some(ActionArguments::RawArgs(raw_setabi)),
             };
 
             actions.push(Box::new(setabi));    
@@ -630,26 +627,26 @@ impl ChainTester {
     }
 }
 
-pub enum ActionArguments {
-    String(String),
-    Binary(Vec<u8>),
-}
+// pub enum ActionArguments {
+//     String(String),
+//     Binary(Vec<u8>),
+// }
 
 impl From<String> for ActionArguments {
     fn from(value: String) -> Self {
-        ActionArguments::String(value)
+        ActionArguments::JsonArgs(value)
     }
 }
 
 impl From<&str> for ActionArguments {
     fn from(value: &str) -> Self {
-        ActionArguments::String(String::from(value))
+        ActionArguments::JsonArgs(String::from(value))
     }
 }
 
 impl From<Vec<u8>> for ActionArguments {
     fn from(value: Vec<u8>) -> Self {
-        ActionArguments::Binary(value)
+        ActionArguments::RawArgs(value)
     }
 }
 

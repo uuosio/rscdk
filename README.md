@@ -83,6 +83,6 @@ cargo +nightly test
 grcov . -s . -t html --llvm --branch --ignore-not-existing -o ./target/debug/coverage/
 ```
 
-You will need to start `eos-debugger` first if you don't do that. `cargo +nightly test` command depends on that to run.
+You will need to start `eos-debugger` first if you didn't do that. `cargo +nightly test` command depends on that to run.
 
 ![Code Coverage](https://github.com/uuosio/rscdk/blob/main/images/code-coverage.png)

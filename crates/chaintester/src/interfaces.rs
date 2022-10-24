@@ -211,6 +211,92 @@ impl Display for AssertException {
 }
 
 //
+// ActionArguments
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum ActionArguments {
+  RawArgs(Vec<u8>),
+  JsonArgs(String),
+}
+
+impl ActionArguments {
+  pub fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ActionArguments> {
+    let mut ret: Option<ActionArguments> = None;
+    let mut received_field_count = 0;
+    i_prot.read_struct_begin()?;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_bytes()?;
+          if ret.is_none() {
+            ret = Some(ActionArguments::RawArgs(val));
+          }
+          received_field_count += 1;
+        },
+        2 => {
+          let val = i_prot.read_string()?;
+          if ret.is_none() {
+            ret = Some(ActionArguments::JsonArgs(val));
+          }
+          received_field_count += 1;
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+          received_field_count += 1;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    if received_field_count == 0 {
+      Err(
+        thrift::Error::Protocol(
+          ProtocolError::new(
+            ProtocolErrorKind::InvalidData,
+            "received empty union from remote ActionArguments"
+          )
+        )
+      )
+    } else if received_field_count > 1 {
+      Err(
+        thrift::Error::Protocol(
+          ProtocolError::new(
+            ProtocolErrorKind::InvalidData,
+            "received multiple fields for union from remote ActionArguments"
+          )
+        )
+      )
+    } else {
+      Ok(ret.expect("return value should have been constructed"))
+    }
+  }
+  pub fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("ActionArguments");
+    o_prot.write_struct_begin(&struct_ident)?;
+    match *self {
+      ActionArguments::RawArgs(ref f) => {
+        o_prot.write_field_begin(&TFieldIdentifier::new("raw_args", TType::String, 1))?;
+        o_prot.write_bytes(f)?;
+        o_prot.write_field_end()?;
+      },
+      ActionArguments::JsonArgs(ref f) => {
+        o_prot.write_field_begin(&TFieldIdentifier::new("json_args", TType::String, 2))?;
+        o_prot.write_string(f)?;
+        o_prot.write_field_end()?;
+      },
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
 // Action
 //
 
@@ -219,11 +305,11 @@ pub struct Action {
   pub account: Option<String>,
   pub action: Option<String>,
   pub permissions: Option<String>,
-  pub arguments: Option<String>,
+  pub arguments: Option<ActionArguments>,
 }
 
 impl Action {
-  pub fn new<F1, F2, F3, F4>(account: F1, action: F2, permissions: F3, arguments: F4) -> Action where F1: Into<Option<String>>, F2: Into<Option<String>>, F3: Into<Option<String>>, F4: Into<Option<String>> {
+  pub fn new<F1, F2, F3, F4>(account: F1, action: F2, permissions: F3, arguments: F4) -> Action where F1: Into<Option<String>>, F2: Into<Option<String>>, F3: Into<Option<String>>, F4: Into<Option<ActionArguments>> {
     Action {
       account: account.into(),
       action: action.into(),
@@ -236,7 +322,7 @@ impl Action {
     let mut f_1: Option<String> = Some("".to_owned());
     let mut f_2: Option<String> = Some("".to_owned());
     let mut f_3: Option<String> = Some("".to_owned());
-    let mut f_4: Option<String> = Some("".to_owned());
+    let mut f_4: Option<ActionArguments> = None;
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -257,7 +343,7 @@ impl Action {
           f_3 = Some(val);
         },
         4 => {
-          let val = i_prot.read_string()?;
+          let val = ActionArguments::read_from_in_protocol(i_prot)?;
           f_4 = Some(val);
         },
         _ => {
@@ -294,8 +380,8 @@ impl Action {
       o_prot.write_field_end()?
     }
     if let Some(ref fld_var) = self.arguments {
-      o_prot.write_field_begin(&TFieldIdentifier::new("arguments", TType::String, 4))?;
-      o_prot.write_string(fld_var)?;
+      o_prot.write_field_begin(&TFieldIdentifier::new("arguments", TType::Struct, 4))?;
+      fld_var.write_to_out_protocol(o_prot)?;
       o_prot.write_field_end()?
     }
     o_prot.write_field_stop()?;
@@ -309,7 +395,7 @@ impl Default for Action {
       account: Some("".to_owned()),
       action: Some("".to_owned()),
       permissions: Some("".to_owned()),
-      arguments: Some("".to_owned()),
+      arguments: None,
     }
   }
 }
@@ -957,7 +1043,7 @@ pub trait TIPCChainTesterSyncClient {
   fn import_key(&mut self, id: i32, pub_key: String, priv_key: String) -> thrift::Result<bool>;
   fn get_required_keys(&mut self, id: i32, transaction: String, available_keys: Vec<String>) -> thrift::Result<String>;
   fn produce_block(&mut self, id: i32, next_block_skip_seconds: i64) -> thrift::Result<()>;
-  fn push_action(&mut self, id: i32, account: String, action: String, arguments: String, permissions: String) -> thrift::Result<Vec<u8>>;
+  fn push_action(&mut self, id: i32, account: String, action: String, arguments: ActionArguments, permissions: String) -> thrift::Result<Vec<u8>>;
   fn push_actions(&mut self, id: i32, actions: Vec<Box<Action>>) -> thrift::Result<Vec<u8>>;
   fn deploy_contract(&mut self, id: i32, account: String, wasm: String, abi: String) -> thrift::Result<Vec<u8>>;
   fn get_table_rows(&mut self, id: i32, json: bool, code: String, scope: String, table: String, lower_bound: String, upper_bound: String, limit: i64, key_type: String, index_position: String, reverse: bool, show_payer: bool) -> thrift::Result<String>;
@@ -1394,7 +1480,7 @@ impl <C: TThriftClient + TIPCChainTesterSyncClientMarker> TIPCChainTesterSyncCli
       result.ok_or()
     }
   }
-  fn push_action(&mut self, id: i32, account: String, action: String, arguments: String, permissions: String) -> thrift::Result<Vec<u8>> {
+  fn push_action(&mut self, id: i32, account: String, action: String, arguments: ActionArguments, permissions: String) -> thrift::Result<Vec<u8>> {
     (
       {
         self.increment_sequence_number();
@@ -1527,7 +1613,7 @@ pub trait IPCChainTesterSyncHandler {
   fn handle_import_key(&self, id: i32, pub_key: String, priv_key: String) -> thrift::Result<bool>;
   fn handle_get_required_keys(&self, id: i32, transaction: String, available_keys: Vec<String>) -> thrift::Result<String>;
   fn handle_produce_block(&self, id: i32, next_block_skip_seconds: i64) -> thrift::Result<()>;
-  fn handle_push_action(&self, id: i32, account: String, action: String, arguments: String, permissions: String) -> thrift::Result<Vec<u8>>;
+  fn handle_push_action(&self, id: i32, account: String, action: String, arguments: ActionArguments, permissions: String) -> thrift::Result<Vec<u8>>;
   fn handle_push_actions(&self, id: i32, actions: Vec<Box<Action>>) -> thrift::Result<Vec<u8>>;
   fn handle_deploy_contract(&self, id: i32, account: String, wasm: String, abi: String) -> thrift::Result<Vec<u8>>;
   fn handle_get_table_rows(&self, id: i32, json: bool, code: String, scope: String, table: String, lower_bound: String, upper_bound: String, limit: i64, key_type: String, index_position: String, reverse: bool, show_payer: bool) -> thrift::Result<String>;
@@ -4242,7 +4328,7 @@ struct IPCChainTesterPushActionArgs {
   id: i32,
   account: String,
   action: String,
-  arguments: String,
+  arguments: ActionArguments,
   permissions: String,
 }
 
@@ -4252,7 +4338,7 @@ impl IPCChainTesterPushActionArgs {
     let mut f_1: Option<i32> = None;
     let mut f_2: Option<String> = None;
     let mut f_3: Option<String> = None;
-    let mut f_4: Option<String> = None;
+    let mut f_4: Option<ActionArguments> = None;
     let mut f_5: Option<String> = None;
     loop {
       let field_ident = i_prot.read_field_begin()?;
@@ -4274,7 +4360,7 @@ impl IPCChainTesterPushActionArgs {
           f_3 = Some(val);
         },
         4 => {
-          let val = i_prot.read_string()?;
+          let val = ActionArguments::read_from_in_protocol(i_prot)?;
           f_4 = Some(val);
         },
         5 => {
@@ -4314,8 +4400,8 @@ impl IPCChainTesterPushActionArgs {
     o_prot.write_field_begin(&TFieldIdentifier::new("action", TType::String, 3))?;
     o_prot.write_string(&self.action)?;
     o_prot.write_field_end()?;
-    o_prot.write_field_begin(&TFieldIdentifier::new("arguments", TType::String, 4))?;
-    o_prot.write_string(&self.arguments)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("arguments", TType::Struct, 4))?;
+    self.arguments.write_to_out_protocol(o_prot)?;
     o_prot.write_field_end()?;
     o_prot.write_field_begin(&TFieldIdentifier::new("permissions", TType::String, 5))?;
     o_prot.write_string(&self.permissions)?;
