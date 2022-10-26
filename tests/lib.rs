@@ -252,7 +252,7 @@ mod tests {
 
     #[test]
     fn test_sayhello() {
-        let _ = get_test_mutex();
+        let _test_lock = get_test_mutex();
         let abi = &crate::testhello::generate_abi();
         fs::write(Path::new("./target/testhello.abi"), abi).unwrap();
 
@@ -275,7 +275,7 @@ mod tests {
 
     #[test]
     fn test_asset() {
-        let _ = get_test_mutex();
+        let _test_lock = get_test_mutex();
         let abi = testasset::generate_abi();
         fs::write(Path::new("./target/testasset.abi"), abi).unwrap();
 
@@ -357,7 +357,7 @@ mod tests {
 
     #[test]
     fn test_optional() {
-        let _ = get_test_mutex();
+        let _test_lock = get_test_mutex();
         let abi = &testoptional::generate_abi();
         fs::write(Path::new("./target/testoptional.abi"), abi).unwrap();
 
@@ -384,7 +384,7 @@ mod tests {
 
     #[test]
     fn test_variant() {
-        let _ = get_test_mutex();
+        let _test_lock = get_test_mutex();
         let abi = &testvariant::generate_abi();
         fs::write(Path::new("./target/testvariant.abi"), abi).unwrap();
 
@@ -405,7 +405,7 @@ mod tests {
 
     #[test]
     fn test_name() {
-        let _ = get_test_mutex();
+        let _test_lock = get_test_mutex();
         let abi = &crate::testname::generate_abi();
         fs::write(Path::new("./target/testname.abi"), abi).unwrap();
 
@@ -468,7 +468,7 @@ mod tests {
 
     #[test]
     fn test_trx() {
-        let _ = get_test_mutex();
+        let _test_lock = get_test_mutex();
         let abi = &crate::testtransaction::generate_abi();
         fs::write(Path::new("./target/testtransaction.abi"), abi).unwrap();
 
@@ -490,7 +490,7 @@ mod tests {
 
     #[test]
     fn test_binext() {
-        let _ = get_test_mutex();
+        let _test_lock = get_test_mutex();
         let abi = &crate::testbinaryextension::generate_abi();
         fs::write(Path::new("./target/testbinaryextension.abi"), abi).unwrap();
 
@@ -522,7 +522,7 @@ mod tests {
 
     #[test]
     fn test_notify() {
-        let _ = get_test_mutex();
+        let _test_lock = get_test_mutex();
         get_globals().set_debug_mode(false);
         let mut tester = ChainTester::new();
         let ref wasm_file = "./testnotify/sender/target/sender.wasm";
@@ -550,7 +550,7 @@ mod tests {
 
     #[test]
     fn test_destructor() {
-        let _ = get_test_mutex();
+        let _test_lock = get_test_mutex();
         let abi = &crate::testdestructor::generate_abi();
         fs::write(Path::new("./target/testdestructor.abi"), abi).unwrap();
 
@@ -572,7 +572,7 @@ mod tests {
 
     #[test]
     fn test_abi() {
-        let _ = get_test_mutex();
+        let _test_lock = get_test_mutex();
         let abi = &testabi::generate_abi();
         fs::write(Path::new("./target/testabi.abi"), abi).unwrap();
 
@@ -629,7 +629,7 @@ mod tests {
 
     #[test]
     fn test_mi() {
-        let _ = get_test_mutex();
+        let _test_lock = get_test_mutex();
         let abi = &crate::testmi::generate_abi();
         fs::write(Path::new("./target/testmi.abi"), abi).unwrap();
 
@@ -654,7 +654,7 @@ mod tests {
 
     #[test]
     fn test_2mi() {
-        let _ = get_test_mutex();
+        let _test_lock = get_test_mutex();
         let abi = &crate::testmi2::generate_abi();
         fs::write(Path::new("./target/testmi2.abi"), abi).unwrap();
 
@@ -680,7 +680,7 @@ mod tests {
 
     #[test]
     fn test_crypto() {
-        let _ = get_test_mutex();
+        let _test_lock = get_test_mutex();
         let abi = &testcrypto::generate_abi();
         fs::write(Path::new("./target/testcrypto.abi"), abi).unwrap();
 
@@ -715,7 +715,7 @@ mod tests {
 
     #[test]
     fn test_serializer() {
-        let _ = get_test_mutex();
+        let _test_lock = get_test_mutex();
         let abi = &testserializer::generate_abi();
         fs::write(Path::new("./target/testserializer.abi"), abi).unwrap();
 
@@ -741,7 +741,7 @@ mod tests {
 
     #[test]
     fn test_inlineaction() {
-        let _ = get_test_mutex();
+        let _test_lock = get_test_mutex();
         let abi = &testinlineaction::generate_abi();
         fs::write(Path::new("./target/testinlineaction.abi"), abi).unwrap();
 
@@ -765,7 +765,7 @@ mod tests {
     
     #[test]
     fn test_intrinsics() {
-        let _ = get_test_mutex();
+        let _test_lock = get_test_mutex();
         let abi = &testintrinsics::generate_abi();
         fs::write(Path::new("./target/testintrinsics.abi"), abi).unwrap();
 
@@ -824,7 +824,7 @@ mod tests {
 
     #[test]
     fn test_print() {
-        let _ = get_test_mutex();
+        let _test_lock = get_test_mutex();
         let abi = &testprint::generate_abi();
         fs::write(Path::new("./target/testprint.abi"), abi).unwrap();
 
@@ -848,7 +848,7 @@ mod tests {
 
     #[test]
     fn test_chain() {
-        let _ = get_test_mutex();
+        let _test_lock = get_test_mutex();
         let mut tester = ChainTester::new();
         let ret = tester.get_info().unwrap();
         println!("+++:{}", ret);
