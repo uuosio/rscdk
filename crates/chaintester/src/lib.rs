@@ -30,6 +30,7 @@ pub use client::{
     close_vm_api_client,
     set_apply,
     get_globals,
+    get_test_mutex,
     GetTableRowsPrams,
 };
 

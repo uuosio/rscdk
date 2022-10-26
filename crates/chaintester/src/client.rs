@@ -168,6 +168,15 @@ lazy_static! {
     static ref CHAIN_TESTER_CLIENT: Mutex<ChainTesterClient> = Mutex::new(ChainTesterClient::new());
 }
 
+lazy_static! {
+    static ref TEST_MUTEX: Mutex<i32> = Mutex::new(0);
+}
+
+pub fn get_test_mutex() -> MutexGuard<'static, i32> {
+    let ret = TEST_MUTEX.lock().unwrap();
+    return ret;
+}
+
 pub struct GlobalVariables {
     pub current_test_case: String,
     pub debug_mode: bool,

@@ -6,9 +6,9 @@ Rust Smart Contracts Development Kit
 
 ## Getting Started
 
-- [try rust contracts in three minute](https://colab.research.google.com/github/uuosio/rscdk/blob/master/quickstart/quick-start.ipynb)
+- [try rust smart contracts](https://colab.research.google.com/github/uuosio/rscdk/blob/master/quickstart/quick-start.ipynb)
 - [try examples](https://github.com/uuosio/rscdk/tree/main/examples)
-- [read the RSCDK book](https://uuosio.github.io/rscdk-book)
+- [read the rscdk book](https://uuosio.github.io/rscdk-book)
 
 ## Getting involved
 

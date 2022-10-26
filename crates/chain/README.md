@@ -1,3 +1,3 @@
 # rust-chain
 
-chain package for rust Smart Contracts
+A rust library for writing EOS rust smart contracts
