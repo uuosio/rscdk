@@ -1029,6 +1029,8 @@ impl Default for GetResourceLimitsReturn {
 pub trait TIPCChainTesterSyncClient {
   fn init_vm_api(&mut self) -> thrift::Result<()>;
   fn init_apply_request(&mut self) -> thrift::Result<()>;
+  fn set_native_contract(&mut self, id: i32, contract: String, dylib: String) -> thrift::Result<bool>;
+  fn enable_debugging(&mut self, enable: bool) -> thrift::Result<()>;
   fn enable_debug_contract(&mut self, id: i32, contract: String, enable: bool) -> thrift::Result<()>;
   fn is_debug_contract_enabled(&mut self, id: i32, contract: String) -> thrift::Result<bool>;
   fn pack_abi(&mut self, abi: String) -> thrift::Result<Vec<u8>>;
@@ -1100,6 +1102,60 @@ impl <C: TThriftClient + TIPCChainTesterSyncClientMarker> TIPCChainTesterSyncCli
       }
     )?;
     Ok(())
+  }
+  fn set_native_contract(&mut self, id: i32, contract: String, dylib: String) -> thrift::Result<bool> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("set_native_contract", TMessageType::Call, self.sequence_number());
+        let call_args = IPCChainTesterSetNativeContractArgs { id, contract, dylib };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("set_native_contract", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = IPCChainTesterSetNativeContractResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
+  }
+  fn enable_debugging(&mut self, enable: bool) -> thrift::Result<()> {
+    (
+      {
+        self.increment_sequence_number();
+        let message_ident = TMessageIdentifier::new("enable_debugging", TMessageType::Call, self.sequence_number());
+        let call_args = IPCChainTesterEnableDebuggingArgs { enable };
+        self.o_prot_mut().write_message_begin(&message_ident)?;
+        call_args.write_to_out_protocol(self.o_prot_mut())?;
+        self.o_prot_mut().write_message_end()?;
+        self.o_prot_mut().flush()
+      }
+    )?;
+    {
+      let message_ident = self.i_prot_mut().read_message_begin()?;
+      verify_expected_sequence_number(self.sequence_number(), message_ident.sequence_number)?;
+      verify_expected_service_call("enable_debugging", &message_ident.name)?;
+      if message_ident.message_type == TMessageType::Exception {
+        let remote_error = thrift::Error::read_application_error_from_in_protocol(self.i_prot_mut())?;
+        self.i_prot_mut().read_message_end()?;
+        return Err(thrift::Error::Application(remote_error))
+      }
+      verify_expected_message_type(TMessageType::Reply, message_ident.message_type)?;
+      let result = IPCChainTesterEnableDebuggingResult::read_from_in_protocol(self.i_prot_mut())?;
+      self.i_prot_mut().read_message_end()?;
+      result.ok_or()
+    }
   }
   fn enable_debug_contract(&mut self, id: i32, contract: String, enable: bool) -> thrift::Result<()> {
     (
@@ -1599,6 +1655,8 @@ impl <C: TThriftClient + TIPCChainTesterSyncClientMarker> TIPCChainTesterSyncCli
 pub trait IPCChainTesterSyncHandler {
   fn handle_init_vm_api(&self) -> thrift::Result<()>;
   fn handle_init_apply_request(&self) -> thrift::Result<()>;
+  fn handle_set_native_contract(&self, id: i32, contract: String, dylib: String) -> thrift::Result<bool>;
+  fn handle_enable_debugging(&self, enable: bool) -> thrift::Result<()>;
   fn handle_enable_debug_contract(&self, id: i32, contract: String, enable: bool) -> thrift::Result<()>;
   fn handle_is_debug_contract_enabled(&self, id: i32, contract: String) -> thrift::Result<bool>;
   fn handle_pack_abi(&self, abi: String) -> thrift::Result<Vec<u8>>;
@@ -1634,6 +1692,12 @@ impl <H: IPCChainTesterSyncHandler> IPCChainTesterSyncProcessor<H> {
   }
   fn process_init_apply_request(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TIPCChainTesterProcessFunctions::process_init_apply_request(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_set_native_contract(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TIPCChainTesterProcessFunctions::process_set_native_contract(&self.handler, incoming_sequence_number, i_prot, o_prot)
+  }
+  fn process_enable_debugging(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    TIPCChainTesterProcessFunctions::process_enable_debugging(&self.handler, incoming_sequence_number, i_prot, o_prot)
   }
   fn process_enable_debug_contract(&self, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     TIPCChainTesterProcessFunctions::process_enable_debug_contract(&self.handler, incoming_sequence_number, i_prot, o_prot)
@@ -1737,6 +1801,80 @@ impl TIPCChainTesterProcessFunctions {
               )
             };
             Err(thrift::Error::Application(ret_err))
+          },
+        }
+      },
+    }
+  }
+  pub fn process_set_native_contract<H: IPCChainTesterSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = IPCChainTesterSetNativeContractArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_set_native_contract(args.id, args.contract, args.dylib) {
+      Ok(handler_return) => {
+        let message_ident = TMessageIdentifier::new("set_native_contract", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = IPCChainTesterSetNativeContractResult { result_value: Some(handler_return) };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("set_native_contract", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("set_native_contract", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+        }
+      },
+    }
+  }
+  pub fn process_enable_debugging<H: IPCChainTesterSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let args = IPCChainTesterEnableDebuggingArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_enable_debugging(args.enable) {
+      Ok(_) => {
+        let message_ident = TMessageIdentifier::new("enable_debugging", TMessageType::Reply, incoming_sequence_number);
+        o_prot.write_message_begin(&message_ident)?;
+        let ret = IPCChainTesterEnableDebuggingResult {  };
+        ret.write_to_out_protocol(o_prot)?;
+        o_prot.write_message_end()?;
+        o_prot.flush()
+      },
+      Err(e) => {
+        match e {
+          thrift::Error::Application(app_err) => {
+            let message_ident = TMessageIdentifier::new("enable_debugging", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&app_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
+          },
+          _ => {
+            let ret_err = {
+              ApplicationError::new(
+                ApplicationErrorKind::Unknown,
+                e.to_string()
+              )
+            };
+            let message_ident = TMessageIdentifier::new("enable_debugging", TMessageType::Exception, incoming_sequence_number);
+            o_prot.write_message_begin(&message_ident)?;
+            thrift::Error::write_application_error_to_out_protocol(&ret_err, o_prot)?;
+            o_prot.write_message_end()?;
+            o_prot.flush()
           },
         }
       },
@@ -2420,6 +2558,12 @@ impl <H: IPCChainTesterSyncHandler> TProcessor for IPCChainTesterSyncProcessor<H
       "init_apply_request" => {
         self.process_init_apply_request(message_ident.sequence_number, i_prot, o_prot)
       },
+      "set_native_contract" => {
+        self.process_set_native_contract(message_ident.sequence_number, i_prot, o_prot)
+      },
+      "enable_debugging" => {
+        self.process_enable_debugging(message_ident.sequence_number, i_prot, o_prot)
+      },
       "enable_debug_contract" => {
         self.process_enable_debug_contract(message_ident.sequence_number, i_prot, o_prot)
       },
@@ -2558,6 +2702,226 @@ impl IPCChainTesterInitApplyRequestArgs {
     o_prot.write_struct_begin(&struct_ident)?;
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
+  }
+}
+
+//
+// IPCChainTesterSetNativeContractArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct IPCChainTesterSetNativeContractArgs {
+  id: i32,
+  contract: String,
+  dylib: String,
+}
+
+impl IPCChainTesterSetNativeContractArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<IPCChainTesterSetNativeContractArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<i32> = None;
+    let mut f_2: Option<String> = None;
+    let mut f_3: Option<String> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_i32()?;
+          f_1 = Some(val);
+        },
+        2 => {
+          let val = i_prot.read_string()?;
+          f_2 = Some(val);
+        },
+        3 => {
+          let val = i_prot.read_string()?;
+          f_3 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("IPCChainTesterSetNativeContractArgs.id", &f_1)?;
+    verify_required_field_exists("IPCChainTesterSetNativeContractArgs.contract", &f_2)?;
+    verify_required_field_exists("IPCChainTesterSetNativeContractArgs.dylib", &f_3)?;
+    let ret = IPCChainTesterSetNativeContractArgs {
+      id: f_1.expect("auto-generated code should have checked for presence of required fields"),
+      contract: f_2.expect("auto-generated code should have checked for presence of required fields"),
+      dylib: f_3.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("set_native_contract_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("id", TType::I32, 1))?;
+    o_prot.write_i32(self.id)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("contract", TType::String, 2))?;
+    o_prot.write_string(&self.contract)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("dylib", TType::String, 3))?;
+    o_prot.write_string(&self.dylib)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// IPCChainTesterSetNativeContractResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct IPCChainTesterSetNativeContractResult {
+  result_value: Option<bool>,
+}
+
+impl IPCChainTesterSetNativeContractResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<IPCChainTesterSetNativeContractResult> {
+    i_prot.read_struct_begin()?;
+    let mut f_0: Option<bool> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        0 => {
+          let val = i_prot.read_bool()?;
+          f_0 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = IPCChainTesterSetNativeContractResult {
+      result_value: f_0,
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("IPCChainTesterSetNativeContractResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    if let Some(fld_var) = self.result_value {
+      o_prot.write_field_begin(&TFieldIdentifier::new("result_value", TType::Bool, 0))?;
+      o_prot.write_bool(fld_var)?;
+      o_prot.write_field_end()?
+    }
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<bool> {
+    if self.result_value.is_some() {
+      Ok(self.result_value.unwrap())
+    } else {
+      Err(
+        thrift::Error::Application(
+          ApplicationError::new(
+            ApplicationErrorKind::MissingResult,
+            "no result received for IPCChainTesterSetNativeContract"
+          )
+        )
+      )
+    }
+  }
+}
+
+//
+// IPCChainTesterEnableDebuggingArgs
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct IPCChainTesterEnableDebuggingArgs {
+  enable: bool,
+}
+
+impl IPCChainTesterEnableDebuggingArgs {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<IPCChainTesterEnableDebuggingArgs> {
+    i_prot.read_struct_begin()?;
+    let mut f_1: Option<bool> = None;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        1 => {
+          let val = i_prot.read_bool()?;
+          f_1 = Some(val);
+        },
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    verify_required_field_exists("IPCChainTesterEnableDebuggingArgs.enable", &f_1)?;
+    let ret = IPCChainTesterEnableDebuggingArgs {
+      enable: f_1.expect("auto-generated code should have checked for presence of required fields"),
+    };
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("enable_debugging_args");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("enable", TType::Bool, 1))?;
+    o_prot.write_bool(self.enable)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+}
+
+//
+// IPCChainTesterEnableDebuggingResult
+//
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct IPCChainTesterEnableDebuggingResult {
+}
+
+impl IPCChainTesterEnableDebuggingResult {
+  fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<IPCChainTesterEnableDebuggingResult> {
+    i_prot.read_struct_begin()?;
+    loop {
+      let field_ident = i_prot.read_field_begin()?;
+      if field_ident.field_type == TType::Stop {
+        break;
+      }
+      let field_id = field_id(&field_ident)?;
+      match field_id {
+        _ => {
+          i_prot.skip(field_ident.field_type)?;
+        },
+      };
+      i_prot.read_field_end()?;
+    }
+    i_prot.read_struct_end()?;
+    let ret = IPCChainTesterEnableDebuggingResult {};
+    Ok(ret)
+  }
+  fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
+    let struct_ident = TStructIdentifier::new("IPCChainTesterEnableDebuggingResult");
+    o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_stop()?;
+    o_prot.write_struct_end()
+  }
+  fn ok_or(self) -> thrift::Result<()> {
+    Ok(())
   }
 }
 
@@ -5256,8 +5620,8 @@ impl PushActionsPushActionsResult {
 //
 
 pub trait TApplyRequestSyncClient {
-  fn apply_request(&mut self, receiver: Uint64, first_receiver: Uint64, action: Uint64) -> thrift::Result<i32>;
-  fn apply_end(&mut self) -> thrift::Result<i32>;
+  fn apply_request(&mut self, receiver: Uint64, first_receiver: Uint64, action: Uint64, chain_tester_id: i32) -> thrift::Result<i32>;
+  fn apply_end(&mut self, chain_tester_id: i32) -> thrift::Result<i32>;
 }
 
 pub trait TApplyRequestSyncClientMarker {}
@@ -5284,12 +5648,12 @@ impl <IP, OP> TThriftClient for ApplyRequestSyncClient<IP, OP> where IP: TInputP
 impl <IP, OP> TApplyRequestSyncClientMarker for ApplyRequestSyncClient<IP, OP> where IP: TInputProtocol, OP: TOutputProtocol {}
 
 impl <C: TThriftClient + TApplyRequestSyncClientMarker> TApplyRequestSyncClient for C {
-  fn apply_request(&mut self, receiver: Uint64, first_receiver: Uint64, action: Uint64) -> thrift::Result<i32> {
+  fn apply_request(&mut self, receiver: Uint64, first_receiver: Uint64, action: Uint64, chain_tester_id: i32) -> thrift::Result<i32> {
     (
       {
         self.increment_sequence_number();
         let message_ident = TMessageIdentifier::new("apply_request", TMessageType::Call, self.sequence_number());
-        let call_args = ApplyRequestApplyRequestArgs { receiver, first_receiver, action };
+        let call_args = ApplyRequestApplyRequestArgs { receiver, first_receiver, action, chain_tester_id };
         self.o_prot_mut().write_message_begin(&message_ident)?;
         call_args.write_to_out_protocol(self.o_prot_mut())?;
         self.o_prot_mut().write_message_end()?;
@@ -5311,12 +5675,12 @@ impl <C: TThriftClient + TApplyRequestSyncClientMarker> TApplyRequestSyncClient 
       result.ok_or()
     }
   }
-  fn apply_end(&mut self) -> thrift::Result<i32> {
+  fn apply_end(&mut self, chain_tester_id: i32) -> thrift::Result<i32> {
     (
       {
         self.increment_sequence_number();
         let message_ident = TMessageIdentifier::new("apply_end", TMessageType::Call, self.sequence_number());
-        let call_args = ApplyRequestApplyEndArgs {  };
+        let call_args = ApplyRequestApplyEndArgs { chain_tester_id };
         self.o_prot_mut().write_message_begin(&message_ident)?;
         call_args.write_to_out_protocol(self.o_prot_mut())?;
         self.o_prot_mut().write_message_end()?;
@@ -5345,8 +5709,8 @@ impl <C: TThriftClient + TApplyRequestSyncClientMarker> TApplyRequestSyncClient 
 //
 
 pub trait ApplyRequestSyncHandler {
-  fn handle_apply_request(&self, receiver: Uint64, first_receiver: Uint64, action: Uint64) -> thrift::Result<i32>;
-  fn handle_apply_end(&self) -> thrift::Result<i32>;
+  fn handle_apply_request(&self, receiver: Uint64, first_receiver: Uint64, action: Uint64, chain_tester_id: i32) -> thrift::Result<i32>;
+  fn handle_apply_end(&self, chain_tester_id: i32) -> thrift::Result<i32>;
 }
 
 pub struct ApplyRequestSyncProcessor<H: ApplyRequestSyncHandler> {
@@ -5372,7 +5736,7 @@ pub struct TApplyRequestProcessFunctions;
 impl TApplyRequestProcessFunctions {
   pub fn process_apply_request<H: ApplyRequestSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     let args = ApplyRequestApplyRequestArgs::read_from_in_protocol(i_prot)?;
-    match handler.handle_apply_request(args.receiver, args.first_receiver, args.action) {
+    match handler.handle_apply_request(args.receiver, args.first_receiver, args.action, args.chain_tester_id) {
       Ok(handler_return) => {
         let message_ident = TMessageIdentifier::new("apply_request", TMessageType::Reply, incoming_sequence_number);
         o_prot.write_message_begin(&message_ident)?;
@@ -5408,8 +5772,8 @@ impl TApplyRequestProcessFunctions {
     }
   }
   pub fn process_apply_end<H: ApplyRequestSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
-    let _ = ApplyRequestApplyEndArgs::read_from_in_protocol(i_prot)?;
-    match handler.handle_apply_end() {
+    let args = ApplyRequestApplyEndArgs::read_from_in_protocol(i_prot)?;
+    match handler.handle_apply_end(args.chain_tester_id) {
       Ok(handler_return) => {
         let message_ident = TMessageIdentifier::new("apply_end", TMessageType::Reply, incoming_sequence_number);
         o_prot.write_message_begin(&message_ident)?;
@@ -5480,6 +5844,7 @@ struct ApplyRequestApplyRequestArgs {
   receiver: Uint64,
   first_receiver: Uint64,
   action: Uint64,
+  chain_tester_id: i32,
 }
 
 impl ApplyRequestApplyRequestArgs {
@@ -5488,6 +5853,7 @@ impl ApplyRequestApplyRequestArgs {
     let mut f_1: Option<Uint64> = None;
     let mut f_2: Option<Uint64> = None;
     let mut f_3: Option<Uint64> = None;
+    let mut f_4: Option<i32> = None;
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -5507,6 +5873,10 @@ impl ApplyRequestApplyRequestArgs {
           let val = Uint64::read_from_in_protocol(i_prot)?;
           f_3 = Some(val);
         },
+        4 => {
+          let val = i_prot.read_i32()?;
+          f_4 = Some(val);
+        },
         _ => {
           i_prot.skip(field_ident.field_type)?;
         },
@@ -5517,10 +5887,12 @@ impl ApplyRequestApplyRequestArgs {
     verify_required_field_exists("ApplyRequestApplyRequestArgs.receiver", &f_1)?;
     verify_required_field_exists("ApplyRequestApplyRequestArgs.first_receiver", &f_2)?;
     verify_required_field_exists("ApplyRequestApplyRequestArgs.action", &f_3)?;
+    verify_required_field_exists("ApplyRequestApplyRequestArgs.chain_tester_id", &f_4)?;
     let ret = ApplyRequestApplyRequestArgs {
       receiver: f_1.expect("auto-generated code should have checked for presence of required fields"),
       first_receiver: f_2.expect("auto-generated code should have checked for presence of required fields"),
       action: f_3.expect("auto-generated code should have checked for presence of required fields"),
+      chain_tester_id: f_4.expect("auto-generated code should have checked for presence of required fields"),
     };
     Ok(ret)
   }
@@ -5535,6 +5907,9 @@ impl ApplyRequestApplyRequestArgs {
     o_prot.write_field_end()?;
     o_prot.write_field_begin(&TFieldIdentifier::new("action", TType::Struct, 3))?;
     self.action.write_to_out_protocol(o_prot)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("chainTesterId", TType::I32, 4))?;
+    o_prot.write_i32(self.chain_tester_id)?;
     o_prot.write_field_end()?;
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
@@ -5610,11 +5985,13 @@ impl ApplyRequestApplyRequestResult {
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 struct ApplyRequestApplyEndArgs {
+  chain_tester_id: i32,
 }
 
 impl ApplyRequestApplyEndArgs {
   fn read_from_in_protocol(i_prot: &mut dyn TInputProtocol) -> thrift::Result<ApplyRequestApplyEndArgs> {
     i_prot.read_struct_begin()?;
+    let mut f_1: Option<i32> = None;
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -5622,6 +5999,10 @@ impl ApplyRequestApplyEndArgs {
       }
       let field_id = field_id(&field_ident)?;
       match field_id {
+        1 => {
+          let val = i_prot.read_i32()?;
+          f_1 = Some(val);
+        },
         _ => {
           i_prot.skip(field_ident.field_type)?;
         },
@@ -5629,12 +6010,18 @@ impl ApplyRequestApplyEndArgs {
       i_prot.read_field_end()?;
     }
     i_prot.read_struct_end()?;
-    let ret = ApplyRequestApplyEndArgs {};
+    verify_required_field_exists("ApplyRequestApplyEndArgs.chain_tester_id", &f_1)?;
+    let ret = ApplyRequestApplyEndArgs {
+      chain_tester_id: f_1.expect("auto-generated code should have checked for presence of required fields"),
+    };
     Ok(ret)
   }
   fn write_to_out_protocol(&self, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     let struct_ident = TStructIdentifier::new("apply_end_args");
     o_prot.write_struct_begin(&struct_ident)?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("chainTesterId", TType::I32, 1))?;
+    o_prot.write_i32(self.chain_tester_id)?;
+    o_prot.write_field_end()?;
     o_prot.write_field_stop()?;
     o_prot.write_struct_end()
   }

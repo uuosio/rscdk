@@ -14,6 +14,7 @@ use thrift::server::{
 };
 use thrift::TransportErrorKind;
 
+use crate::client::get_apply_map_mutex;
 use crate::interfaces::{Uint64};
 use crate::interfaces::TApplySyncClient;
 
@@ -298,7 +299,7 @@ impl Default for ApplyRequestHandler {
 }
 
 impl ApplyRequestSyncHandler for ApplyRequestHandler {
-    fn handle_apply_request(&self, receiver: Uint64, first_receiver: Uint64, action: Uint64) -> thrift::Result<i32> {
+    fn handle_apply_request(&self, receiver: Uint64, first_receiver: Uint64, action: Uint64, chain_tester_id: i32) -> thrift::Result<i32> {
         let _receiver = receiver.into();
         let _first_receiver = first_receiver.into();
         let _action = action.into();
@@ -306,9 +307,10 @@ impl ApplyRequestSyncHandler for ApplyRequestHandler {
         crate::get_vm_api_client().set_in_apply(true);
 
         let result = panic::catch_unwind(|| {
-            let apply: Option<fn(u64, u64, u64)> = crate::get_vm_api_client().get_apply();
-            if let Some(_apply) =  apply {
-                _apply(_receiver, _first_receiver, _action);
+            let apply_map = &get_apply_map_mutex()[&chain_tester_id];
+            let contract = crate::n2s(_receiver);
+            if let Some(apply) = apply_map.get(&contract) {
+                apply(_receiver, _first_receiver, _action);
             }
         });
 
@@ -325,7 +327,7 @@ impl ApplyRequestSyncHandler for ApplyRequestHandler {
         Ok(1)
     }
 
-    fn handle_apply_end(&self) -> thrift::Result<i32> {
+    fn handle_apply_end(&self, _chain_tester_id: i32) -> thrift::Result<i32> {
         END_APPLY.lock().unwrap().set_value(true);
         Ok(1)
     }

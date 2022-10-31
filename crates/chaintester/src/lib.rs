@@ -28,9 +28,9 @@ pub use client::{
     ChainTester,
     get_vm_api_client,
     close_vm_api_client,
-    set_apply,
     get_globals,
     get_test_mutex,
+    n2s,
     GetTableRowsPrams,
 };
 

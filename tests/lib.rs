@@ -232,9 +232,8 @@ mod tests {
         }
 
         INIT.call_once(|| {
-            chaintester::set_apply(super::testall::native_apply);
+            tester.set_native_apply("hello", Some(super::testall::native_apply));
         });
-
 
         let ref abi_file = format!("./target/{test_case}.abi");
         let ref wasm_file = format!("./target/testall.wasm");

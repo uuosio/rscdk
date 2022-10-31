@@ -4,7 +4,7 @@ use std::panic;
 use std::{fs};
 use std::{thread, time::Duration};
 use std::ops::{Deref, DerefMut};
-
+use std::collections::{HashMap};
 use serde_json::{Value};
 
 use thrift::protocol::{TBinaryInputProtocol, TBinaryOutputProtocol};
@@ -152,7 +152,6 @@ impl<'a> Default for GetTableRowsPrams<'a> {
 
 pub struct VMAPIClient {
     vm_api_client: Option<ApplySyncClient<ClientInputProtocol, ClientOutputProtocol>>,
-    apply: Option<fn(u64, u64, u64)>,
     in_apply: bool,
 }
 
@@ -172,8 +171,19 @@ lazy_static! {
     static ref TEST_MUTEX: Mutex<i32> = Mutex::new(0);
 }
 
+type FnApply = fn(u64, u64, u64);
+
+lazy_static! {
+    static ref CHAIN_TESTER_APPLYS: Mutex<HashMap<i32, HashMap<String, FnApply>>> = Mutex::new(HashMap::new());
+}
+
 pub fn get_test_mutex() -> MutexGuard<'static, i32> {
     let ret = TEST_MUTEX.lock().unwrap();
+    return ret;
+}
+
+pub fn get_apply_map_mutex() -> MutexGuard<'static, HashMap<i32, HashMap<String, FnApply>>> {
+    let ret = CHAIN_TESTER_APPLYS.lock().unwrap();
     return ret;
 }
 
@@ -234,7 +244,7 @@ pub fn close_vm_api_client() {
 
 impl VMAPIClient {
     fn new() -> Self {
-        VMAPIClient{vm_api_client: None, apply: None, in_apply: false}
+        VMAPIClient{vm_api_client: None, in_apply: false}
     }
 
     pub fn init(&mut self) {
@@ -244,14 +254,6 @@ impl VMAPIClient {
             let client = new_vm_api_client(&host, port).unwrap();
             self.vm_api_client = Some(client);
         }
-    }
-
-    pub fn set_apply(&mut self, apply: fn(u64, u64, u64)) {
-        self.apply = Some(apply);
-    }
-
-    pub fn get_apply(&self) -> Option<fn(u64, u64, u64)> {
-        return self.apply;
     }
 
     pub fn set_in_apply(&mut self, in_apply: bool) {
@@ -421,7 +423,9 @@ fn parse_ret2(ret: &thrift::Result<Vec<u8>>) -> Result<Value> {
 
 impl ChainTester {
     pub fn new() -> Self {
-        Self { id: get_chain_tester_client().new_chain(true).unwrap() }
+        let id = get_chain_tester_client().new_chain(true).unwrap();
+        get_apply_map_mutex().insert(id, HashMap::new());
+        Self { id }
     }
 
     pub fn new_ex(initialize: bool) -> Self {
@@ -433,6 +437,7 @@ impl ChainTester {
     }
 
     pub fn free(&mut self) {
+        get_apply_map_mutex().remove(&self.id);
         self.client().free_chain(self.id).unwrap();
     }
 
@@ -442,6 +447,28 @@ impl ChainTester {
 
     pub fn produce_block_ex(&mut self, next_block_skip_seconds: i64) {
         self.client().produce_block(self.id, next_block_skip_seconds).unwrap()
+    }
+
+    pub fn enable_debugging(&mut self, enable: bool) -> thrift::Result<()> {
+        self.client().enable_debugging(enable)
+    }
+
+    pub fn set_native_contract(&mut self, contract: &str, dylib: &str) -> thrift::Result<bool> {
+        self.client().set_native_contract(self.id, contract.into(), dylib.into())
+    }
+
+    pub fn set_native_apply(&mut self, contract: &str, apply: Option<FnApply>) -> thrift::Result<()> {
+        let tester_apply_map = &mut get_apply_map_mutex();
+        let mut apply_map = tester_apply_map.get_mut(&self.id).unwrap();
+        if let Some(_apply) = apply {
+            apply_map.insert(contract.into(), _apply);
+            self.enable_debug_contract(contract, false)?;
+        } else {
+            let _contract: String = contract.into();
+            apply_map.remove(&_contract);
+            self.enable_debug_contract(contract, false)?;
+        }
+        Ok(())
     }
 
     pub fn enable_debug_contract(&mut self, contract: &str, enable: bool) -> thrift::Result<()> {
@@ -743,8 +770,4 @@ pub fn n2s(value: u64) -> String {
         Err(_) => String::from(""),
     };
     return r;
-}
-
-pub fn set_apply(apply: fn(u64, u64, u64)) {
-    get_vm_api_client().set_apply(apply);
 }
