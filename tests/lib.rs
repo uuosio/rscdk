@@ -225,15 +225,11 @@ mod tests {
         let mut tester = ChainTester::new();
         if std::env::var("TEST_COVERAGE").is_ok() {
             get_globals().set_debug_mode(true);
-            tester.enable_debug_contract("hello", true).unwrap();
         } else {
             get_globals().set_debug_mode(false);
-            tester.enable_debug_contract("hello", false).unwrap();
         }
 
-        INIT.call_once(|| {
-            tester.set_native_apply("hello", Some(super::testall::native_apply));
-        });
+        tester.set_native_apply("hello", Some(super::testall::native_apply));
 
         let ref abi_file = format!("./target/{test_case}.abi");
         let ref wasm_file = format!("./target/testall.wasm");
