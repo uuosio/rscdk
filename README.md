@@ -33,7 +33,7 @@ python3 -m pip install -U ipyeos
 Then run the debugging server:
 
 ```bash
-eos-debugger
+eosdebugger
 ```
 
 On Windows, you need to use a docker image to run a debugging server.
@@ -83,6 +83,6 @@ cargo +nightly test
 grcov . -s . -t html --llvm --branch --ignore-not-existing -o ./target/debug/coverage/
 ```
 
-You will need to start `eos-debugger` first if you didn't do that. `cargo +nightly test` command depends on that to run.
+You will need to start `eosdebugger` first if you didn't do that. `cargo +nightly test` command depends on that to run.
 
 ![Code Coverage](https://github.com/uuosio/rscdk/blob/main/images/code-coverage.png)
