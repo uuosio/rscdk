@@ -459,10 +459,10 @@ impl ChainTester {
 
     pub fn set_native_apply(&mut self, contract: &str, apply: Option<FnApply>) -> thrift::Result<()> {
         let tester_apply_map = &mut get_apply_map_mutex();
-        let mut apply_map = tester_apply_map.get_mut(&self.id).unwrap();
+        let apply_map = tester_apply_map.get_mut(&self.id).unwrap();
         if let Some(_apply) = apply {
             apply_map.insert(contract.into(), _apply);
-            self.enable_debug_contract(contract, false)?;
+            self.enable_debug_contract(contract, true)?;
         } else {
             let _contract: String = contract.into();
             apply_map.remove(&_contract);
