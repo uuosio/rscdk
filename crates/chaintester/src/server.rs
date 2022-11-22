@@ -305,9 +305,9 @@ impl ApplyRequestSyncHandler for ApplyRequestHandler {
         let _action = action.into();
 
         crate::get_vm_api_client().set_in_apply(true);
+        let apply_map = &get_apply_map_mutex()[&chain_tester_id];
 
         let result = panic::catch_unwind(|| {
-            let apply_map = &get_apply_map_mutex()[&chain_tester_id];
             let contract = crate::n2s(_receiver);
             if let Some(apply) = apply_map.get(&contract) {
                 apply(_receiver, _first_receiver, _action);
