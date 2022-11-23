@@ -5,6 +5,10 @@ members = [
     "crates/macro",
     "crates/codegen",
     "crates/chaintester",
-    "tests",
+    # "tests",
     "examples"
+]
+
+exclude = [
+    "tests"
 ]
