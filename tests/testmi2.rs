@@ -4,11 +4,11 @@ pub mod testmi2 {
         Name,
         db::{
             SecondaryType,
-            SecondaryValue,
+            //SecondaryValue,
             // SecondaryIterator,
             MultiIndexValue,
-            PrimaryValueInterface,
-            SecondaryValueInterface,
+            // PrimaryValueInterface,
+            //SecondaryValueInterface,
             AsAny,
         },
 
@@ -125,7 +125,7 @@ pub mod testmi2 {
             let it = mi.upper_bound(11);
             check(it.get_value_ex::<MyStruct>().unwrap().amount == 111, "bad value");
 
-            let mut data = it.get_value_ex::<MyStruct>().unwrap();
+            let data = it.get_value_ex::<MyStruct>().unwrap();
             mi.set(&data, payer);
 
             {

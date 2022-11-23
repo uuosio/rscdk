@@ -6,10 +6,10 @@ pub mod testprint {
         Float128,
         Name,
         print::{
-            Printable as _,
+            // Printable as _,
             prints,
         },
-        eosio_println,
+        // eosio_println,
     };
 
     #[chain(sub)]

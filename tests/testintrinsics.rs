@@ -49,13 +49,13 @@ pub mod testintrinsics {
         //privileged.h
         get_resource_limits,
         set_resource_limits,
-        set_proposed_producers,
-        set_proposed_producers_ex,
+        //set_proposed_producers,
+        //set_proposed_producers_ex,
         is_privileged,
         set_privileged,
         set_blockchain_parameters,
         get_blockchain_parameters,
-        preactivate_feature,
+        //preactivate_feature,
 
         set_action_return_value,
         get_block_num,

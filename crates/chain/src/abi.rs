@@ -318,7 +318,7 @@ pub fn parse_abi_info(info: &mut ABIInfo) -> String {
                 };
                 x.variants().iter().for_each(|v|{
                     let rust_type = v.fields()[0].type_name().unwrap();
-                    abi_variant.types.push(String::from(String::from(native_type_to_abi_type(rust_type))));
+                    abi_variant.types.push(native_type_to_abi_type(rust_type).into());
                 });
                 abi.variants.push(abi_variant);    
             }

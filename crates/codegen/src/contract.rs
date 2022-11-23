@@ -140,7 +140,6 @@ impl Contract {
         for item in &self.items {
             match item {
                 syn::Item::Fn(x) => {
-                    println!("++++x.sig.ident.to_string():{}", x.sig.ident.to_string());
                     if x.sig.ident.to_string() == "apply" {
                         return true;
                     }

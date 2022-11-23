@@ -171,10 +171,8 @@ mod tests {
 
     use rust_chain::ChainTester;
     use rust_chain::serializer::Packer as _;
-    use rust_chain::chaintester;
     use rust_chain::chaintester::{
         get_globals,
-        get_vm_api_client,
         get_test_mutex
     };
     use std::{
@@ -182,8 +180,8 @@ mod tests {
         path::Path,
     };
 
-    use std::sync::Once;    
-    static INIT: Once = Once::new();
+    // use std::sync::Once;
+    // static INIT: Once = Once::new();
 
     // use rust_chain::serializer::Packer as _;
 
@@ -229,7 +227,7 @@ mod tests {
             get_globals().set_debug_mode(false);
         }
 
-        tester.set_native_apply("hello", Some(super::testall::native_apply));
+        let _ = tester.set_native_apply("hello", Some(super::testall::native_apply));
 
         let ref abi_file = format!("./target/{test_case}.abi");
         let ref wasm_file = format!("./target/testall.wasm");
