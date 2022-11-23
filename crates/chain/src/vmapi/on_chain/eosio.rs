@@ -440,13 +440,13 @@ pub fn transaction_size() -> usize {
 }
 
 ///
-pub fn tapos_block_num() -> i32 {
-	return unsafe { intrinsics::tapos_block_num() };
+pub fn tapos_block_num() -> u32 {
+	return unsafe { intrinsics::tapos_block_num() as u32 };
 }
 
 ///
-pub fn tapos_block_prefix() -> i32 {
-	return unsafe { intrinsics::tapos_block_prefix() };
+pub fn tapos_block_prefix() -> u32 {
+	return unsafe { intrinsics::tapos_block_prefix() as u32 };
 }
 
 ///

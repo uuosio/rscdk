@@ -18,3 +18,5 @@ std = [
     "rust-chain/std",
 ]
 
+[workspace]
+

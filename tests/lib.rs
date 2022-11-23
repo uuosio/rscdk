@@ -544,7 +544,7 @@ mod tests {
             "hello": "active"
         }
         "#;
-        tester.push_action("hello", "test", args.into(), permissions).unwrap();
+        tester.push_action("alice", "test", args.into(), permissions).unwrap();
         tester.produce_block();
     }
 
