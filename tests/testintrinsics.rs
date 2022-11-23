@@ -173,7 +173,7 @@ pub mod testintrinsics {
             
             // void send_inline(char *serialized_action, uint32_t size);
             test.msg = "goodbye".into();
-            let a = Action::new(name!("hello"), name!("test"), &vec![PermissionLevel::new(name!("hello"), name!("active"))], &test);
+            let a = Action::new(name!("hello"), name!("test"), vec![PermissionLevel::new(name!("hello"), name!("active"))], &test);
             send_inline(&a.pack());
 
             // void send_context_free_inline(char *serialized_action, uint32_t size);
@@ -234,7 +234,7 @@ pub mod testintrinsics {
 
         #[chain(action="testctxfree")]
         pub fn test_context_free_action(&self) {
-            let mut a = Action::new(name!("hello"), name!("testsendfree"), &vec![], &MyData{a1:1, a2: 2});
+            let mut a = Action::new(name!("hello"), name!("testsendfree"), vec![], &MyData{a1:1, a2: 2});
             a.authorization = vec![];
             eosio_println!("+++a.pack():", a.pack());
             send_context_free_inline(&a.pack());

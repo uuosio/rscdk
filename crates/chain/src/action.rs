@@ -78,11 +78,11 @@ pub struct Action {
 
 impl Action {
     /// Creates an action by specifying contract account, action name, authorization and data.
-    pub fn new(account: Name, name: Name, authorization: &Vec<PermissionLevel>, data: &dyn Packer) -> Self {
+    pub fn new(account: Name, name: Name, authorization: Vec<PermissionLevel>, data: &dyn Packer) -> Self {
         Self {
             account,
             name,
-            authorization: authorization.clone(),
+            authorization: authorization,
             data: data.pack(),
         }
     }

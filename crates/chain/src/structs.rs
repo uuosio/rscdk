@@ -573,12 +573,16 @@ impl Packer for TimePoint {
 #[derive(Copy, Clone, Eq, PartialEq, Default)]
 pub struct TimePointSec {
     ///
-    pub utc_seconds: u32,
+    pub seconds: u32,
 }
 
 impl TimePointSec {
-    pub fn utc_seconds(&self) -> u32 {
-        return self.utc_seconds;
+    pub fn new(seconds: u32) -> Self{
+        Self{ seconds }
+    }
+
+    pub fn seconds(&self) -> u32 {
+        return self.seconds;
     }
 }
 
@@ -588,12 +592,12 @@ impl Packer for TimePointSec {
     }
 
     fn pack(&self) -> Vec<u8> {
-        return self.utc_seconds.pack();
+        return self.seconds.pack();
     }
 
     fn unpack(&mut self, raw: &[u8]) -> usize {
         check(raw.len() >= self.size(), "TimePointSec.unpack: buffer overflow!");
-        return self.utc_seconds.unpack(raw);
+        return self.seconds.unpack(raw);
     }
 }
 

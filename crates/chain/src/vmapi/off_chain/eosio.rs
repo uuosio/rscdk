@@ -341,15 +341,15 @@ pub fn transaction_size() -> usize {
 }
 
 ///
-pub fn tapos_block_num() -> i32 {
+pub fn tapos_block_num() -> u32 {
 	let ret = get_vm_api_client().tapos_block_num();
-    ret.unwrap()
+    ret.unwrap() as u32
 }
 
 ///
-pub fn tapos_block_prefix() -> i32 {
+pub fn tapos_block_prefix() -> u32 {
 	let ret = get_vm_api_client().tapos_block_prefix();
-    ret.unwrap()
+    ret.unwrap() as u32
 }
 
 ///

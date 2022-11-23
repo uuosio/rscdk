@@ -466,6 +466,7 @@ mod tests {
         fs::write(Path::new("./target/testtransaction.abi"), abi).unwrap();
 
         let mut tester = init_test("testtransaction");
+        update_auth(&mut tester);
 
         let args = r#"
         {
@@ -479,6 +480,12 @@ mod tests {
         "#;
         tester.push_action("hello", "test", args.into(), permissions).unwrap();
         tester.produce_block();
+
+        let old_balance = tester.get_balance("hello");
+        tester.push_action("hello", "test2", args.into(), permissions).unwrap();
+        tester.produce_block();
+        assert_eq!(old_balance, tester.get_balance("hello") + 10000);
+
     }
 
     #[test]

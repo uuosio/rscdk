@@ -6,6 +6,7 @@ use crate::serializer::{
 
 use crate::structs::{
     TimePointSec,
+    Uint128,
 };
 
 use crate::varint::{
@@ -18,6 +19,10 @@ use crate::action::{
 
 use crate::{
     vec::Vec,
+    Name,
+    send_deferred,
+    tapos_block_num,
+    tapos_block_prefix
 };
 
 #[cfg_attr(feature = "std", derive(crate::eosio_scale_info::TypeInfo))]
@@ -65,6 +70,20 @@ pub struct Transaction {
 }
 
 impl Transaction {
+    pub fn new(expiration: u32, delay_sec: u32) -> Self {
+        Self {
+            expiration: TimePointSec { seconds: expiration },
+            ref_block_num: tapos_block_num() as u16,
+            ref_block_prefix: tapos_block_prefix(),
+            max_net_usage_words: VarUint32::new(0),
+            max_cpu_usage_ms: 0,
+            delay_sec: VarUint32::new(delay_sec),
+            context_free_actions: Vec::new(),
+            actions: Vec::new(),
+            extention: Vec::new()
+        }
+    }
+
     pub fn expiration(&self) -> TimePointSec {
         return self.expiration;
     }
@@ -93,12 +112,21 @@ impl Transaction {
         return self.actions.clone();
     }
 
+    pub fn add_action(&mut self, action: Action) {
+        self.actions.push(action);
+    }
+
     pub fn context_free_actions(&self) -> Vec<Action> {
         return self.context_free_actions.clone();
     }
 
     pub fn extention(&self) -> Vec<TransactionExtension> {
         return self.extention.clone();
+    }
+
+    pub fn send(&self, payer: Name, id: u128, replace_existing: bool) {
+        let id = Uint128{lo: (id & u64::MAX as u128) as u64, hi: (id >> 64) as u64};
+        send_deferred(&id, payer, &self.pack(), replace_existing.into());
     }
 
 }

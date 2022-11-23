@@ -41,7 +41,7 @@ pub mod testinlineaction {
             eosio_println!("send sayhello action", &name);
             let say_hello = SayHello{name: name};
             let perms: Vec<PermissionLevel> = vec![PermissionLevel::new(name!("hello"), name!("active"))];
-            let action = Action::new(name!("hello"), name!("sayhello"), &perms, &say_hello);
+            let action = Action::new(name!("hello"), name!("sayhello"), perms, &say_hello);
             action.send();
         }
 
