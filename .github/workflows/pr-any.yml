@@ -86,7 +86,6 @@ jobs:
         working-directory: tests
         run: |
           export CARGO_INCREMENTAL=0
-          export RUSTFLAGS="-Cinstrument-coverage -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off"
           pushd testnotify/receiver
           rust-contract build 
           popd
@@ -94,7 +93,7 @@ jobs:
           rust-contract build
           popd
           rust-contract build
-          cargo +nightly test -- --test-threads=1
+          cargo +nightly test --release -- --test-threads=1
       - name: code coverage report
         working-directory: tests
         run: |
