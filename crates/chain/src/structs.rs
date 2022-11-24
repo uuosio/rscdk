@@ -437,7 +437,7 @@ impl Packer for Signature {
 
     ///
     fn pack(&self) -> Vec<u8> {
-        let mut v = Vec::with_capacity(66);
+        let mut v = Vec::with_capacity(self.size());
         v.push(self.ty);
         v.append(&mut self.data.to_vec());
         return v;
@@ -445,11 +445,12 @@ impl Packer for Signature {
 
     ///
     fn unpack(&mut self, data: &[u8]) -> usize {
-        check(data.len() >= 66, "Signature::unpack: buffer overflow");
+        let size = self.size();
+        check(data.len() >= size, "Signature::unpack: buffer overflow");
         self.ty = data[0];
         check(self.ty == 0, "bad signature type");
-        eosio_memcpy(self.data.as_mut_ptr(), data[1..66].as_ptr(), 66);
-        return 66;
+        self.data.copy_from_slice(&data[1..size]);
+        return self.size();
     }
 }
 
