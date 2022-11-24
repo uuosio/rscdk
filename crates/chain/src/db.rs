@@ -37,9 +37,15 @@ pub struct TableError {
     pub message: String,
 }
 
-impl From<Asset> for u64 {
-    fn from(value: Asset) -> u64 {
-        return value.symbol().code().value();
+impl PrimaryValueInterface for u64 {
+    fn get_primary(&self) -> u64 {
+        return *self;
+    }
+}
+
+impl PrimaryValueInterface for Asset {
+    fn get_primary(&self) -> u64 {
+        return self.symbol().code().value();
     }
 }
 

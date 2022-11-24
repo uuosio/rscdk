@@ -715,7 +715,7 @@ impl Contract {
                         primary_impl = Some(quote_spanned!(span =>
                             impl ::rust_chain::db::PrimaryValueInterface for #table_ident {
                                 fn get_primary(&self) -> u64 {
-                                    return self.#field_ident.into();
+                                    return self.#field_ident.get_primary();
                                 }
                             }
                         ))
