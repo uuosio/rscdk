@@ -3,12 +3,17 @@ use crate::{
     vec::Vec,
 };
 
+use core::{
+    slice
+};
+
 use core::mem::{
     size_of
 };
 
 use crate::vmapi::eosio::{
     eosio_memcpy,
+    slice_copy,
     check,
 };
 
@@ -44,17 +49,21 @@ macro_rules! impl_packed {
             }
         
             fn pack(&self) -> Vec<u8> {
-                let ptr: *const $ty = self;
                 let mut data: Vec<u8> = Vec::with_capacity(size_of::<$ty>());
                 data.resize_with(size_of::<$ty>(), Default::default);
-                eosio_memcpy(data.as_mut_ptr(), ptr as *mut u8, size_of::<$ty>());
+                let src = unsafe {
+                    slice::from_raw_parts_mut(self as *const $ty as *mut u8, size_of::<$ty>())
+                };
+                slice_copy(&mut data, src);
                 return data;
             }
         
             fn unpack(&mut self, data: &[u8]) -> usize {
                 check(data.len() >= self.size(), "number: buffer overflow");
-                let ptr: *const $ty = self;
-                eosio_memcpy(ptr as *mut u8, data.as_ptr(), size_of::<$ty>());
+                let dst = unsafe {
+                    slice::from_raw_parts_mut(self as *const $ty as *mut u8, size_of::<$ty>())
+                };
+                slice_copy(dst, &data[..self.size()]);
                 return size_of::<$ty>();
             }
         }
@@ -140,19 +149,19 @@ impl<'a> Decoder<'a> {
         return size;
     }
 
-    ///
-    pub fn unpack_number<T>(&mut self) -> T 
-    where T: Default
-    {
-        let size: usize = size_of::<T>();
-        let n = T::default();
-        check(self.pos + size <= self.buf.len(), "Decoder::unpack_number: buffer overflow!");
-        eosio_memcpy(&n as *const T as *mut T as *mut u8, self.buf[self.pos..].as_ptr(), size);
-        self.pos += size;
-        return n;
-    }
+        ///
+        pub fn unpack_number<T>(&mut self) -> T 
+        where T: Default
+        {
+            let size: usize = size_of::<T>();
+            let n = T::default();
+            check(self.pos + size <= self.buf.len(), "Decoder::unpack_number: buffer overflow!");
+            eosio_memcpy(&n as *const T as *mut T as *mut u8, self.buf[self.pos..].as_ptr(), size);
+            self.pos += size;
+            return n;
+        }
 
-    ///
+        ///
     pub fn get_pos(&self) -> usize {
         return self.pos;
     }

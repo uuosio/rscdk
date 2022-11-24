@@ -3,7 +3,7 @@ use crate::utils::{
 };
 
 use crate::vmapi::eosio::{
-    eosio_memcpy,
+    slice_copy,
     check,
 };
 
@@ -64,9 +64,10 @@ impl Packer for Float128 {
     }
 
     fn unpack(&mut self, raw: &[u8]) -> usize {
-        check(raw.len() >= 16, "Float128.unpack: buffer overflow!");
-        eosio_memcpy(self.data.as_mut_ptr(), raw.as_ptr(), 16);
-        return 16;
+        let size = self.size();
+        check(raw.len() >= size, "Float128.unpack: buffer overflow!");
+        slice_copy(&mut self.data, &raw[..size]);
+        return self.size();
     }
 }
 
@@ -84,7 +85,7 @@ impl Checksum160 {
         check(s.len() == 40, "Checksum160: bad hex string length");
         let data = decode_hex(s);
         let mut ret = Self::default();
-        eosio_memcpy(ret.data.as_mut_ptr(), data.as_ptr(), 40);
+        slice_copy(&mut ret.data, &data);
         return ret;
     }
 }
@@ -99,9 +100,10 @@ impl Packer for Checksum160 {
     }
 
     fn unpack(&mut self, raw: &[u8]) -> usize {
-        check(raw.len() >= 20, "Checksum160.unpack: buffer overflow!");
-        eosio_memcpy(self.data.as_mut_ptr(), raw.as_ptr(), 20);
-        return 20;
+        let size = self.size();
+        check(raw.len() >= size, "Checksum160.unpack: buffer overflow!");
+        slice_copy(&mut self.data, &raw[..size]);
+        return size;
     }
 }
 
@@ -120,7 +122,7 @@ impl Checksum256 {
         check(s.len() == 64, "Checksum256: bad hex string length");
         let data = decode_hex(s);
         let mut ret = Self::default();
-        eosio_memcpy(ret.data.as_mut_ptr(), data.as_ptr(), 32);
+        slice_copy(&mut ret.data, &data);
         return ret;
     }
 }
@@ -135,9 +137,10 @@ impl Packer for Checksum256 {
     }
 
     fn unpack(&mut self, raw: &[u8]) -> usize {
-        check(raw.len() >= 32, "Checksum256.unpack: buffer overflow!");
-        eosio_memcpy(self.data.as_mut_ptr(), raw.as_ptr(), 32);
-        return 32;
+        let size = self.size();
+        check(raw.len() >= size, "Checksum256.unpack: buffer overflow!");
+        slice_copy(&mut self.data, &raw[..size]);
+        return self.size();
     }
 }
 
@@ -155,7 +158,7 @@ impl Checksum512 {
         check(s.len() == 128, "Checksum512: bad hex string length");
         let data = decode_hex(s);
         let mut ret = Self::default();
-        eosio_memcpy(ret.data.as_mut_ptr(), data.as_ptr(), 64);
+        slice_copy(&mut ret.data, &data);
         return ret;
     }
 }
@@ -178,9 +181,10 @@ impl Packer for Checksum512 {
     }
 
     fn unpack(&mut self, raw: &[u8]) -> usize {
-        check(raw.len() >= 64, "Checksum512.unpack: buffer overflow!");
-        eosio_memcpy(self.data.as_mut_ptr(), raw.as_ptr(), 64);
-        return 64;
+        let size = self.size();
+        check(raw.len() >= size, "Checksum512.unpack: buffer overflow!");
+        slice_copy(&mut self.data, &raw[..size]);
+        return size;
     }
 }
 
@@ -199,7 +203,7 @@ impl ECCPublicKey {
         let mut ret = Self::default();
         check(s.len() == 33*2, "ECCPublicKey: bad hex string length");
         let data = decode_hex(s);
-        eosio_memcpy(ret.data.as_mut_ptr(), data.as_ptr(), 33);
+        slice_copy(&mut ret.data, &data);
         return ret;
     }
 }
@@ -222,9 +226,10 @@ impl Packer for ECCPublicKey {
     }
 
     fn unpack(&mut self, raw: &[u8]) -> usize {
-        check(raw.len() >= 33, "EccPublicKey.unpack: buffer overflow!");
-        eosio_memcpy(self.data.as_mut_ptr(), raw.as_ptr(), 33);
-        return 33;
+        let size = self.size();
+        check(raw.len() >= size, "EccPublicKey.unpack: buffer overflow!");
+        slice_copy(&mut self.data, &raw[..size]);
+        return size;
     }
 }
 
@@ -418,7 +423,7 @@ impl Signature {
         check(s.len() == 65*2, "Signature: bad hex string length");
         let data = decode_hex(s);
         ret.ty = 0;
-        eosio_memcpy(ret.data.as_mut_ptr(), data.as_ptr(), 65);
+        slice_copy(&mut ret.data, &data);
         return ret;
     }
 }
@@ -449,7 +454,7 @@ impl Packer for Signature {
         check(data.len() >= size, "Signature::unpack: buffer overflow");
         self.ty = data[0];
         check(self.ty == 0, "bad signature type");
-        self.data.copy_from_slice(&data[1..size]);
+        slice_copy(&mut self.data, &data[1..size]);
         return self.size();
     }
 }

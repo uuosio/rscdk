@@ -48,8 +48,14 @@ pub fn memcpy( dst: *mut u8, src: *const u8, length: usize) -> *mut u8 {
 }
 
 ///
-pub fn eosio_memcpy( dst: *mut u8, src: *const u8, length: usize) -> *mut u8 {
-	return memcpy(dst, src, length);
+pub fn eosio_memcpy( dst: *mut u8, src: *const u8, length: usize) {
+	memcpy(dst, src, length);
+}
+
+///
+pub fn slice_copy( dst: &mut [u8], src: &[u8]) {
+	check(dst.len() == src.len(), "copy_slice: length not the same!");
+	eosio_memcpy(dst.as_mut_ptr(), src.as_ptr(), dst.len());
 }
 
 ///
