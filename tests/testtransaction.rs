@@ -12,6 +12,7 @@ pub mod testtransaction {
         Action,
         PermissionLevel,
         Transaction,
+        TransactionExtension,
     };
 
     #[chain(sub)]
@@ -43,11 +44,25 @@ pub mod testtransaction {
         #[chain(action="test")]
         pub fn test(&self) {
             let tx = read_transaction();
+            let mut tx2 = Transaction::default();
+            tx2.unpack(&tx.pack());
+            check(tx == tx2, "tx == tx2");
+
             eosio_println!("++++test:", tx.expiration().seconds());
+
+            eosio_println!(tx.ref_block_num(), tx.ref_block_prefix(), tx.max_net_usage_words(), tx.max_cpu_usage_ms(), tx.delay_sec());
+
             let actions = tx.actions();
             check(actions.len() == 1, "bad actions");
             check(actions[0].account == name!("hello"), "bad action account");
             check(actions[0].name == name!("test"), "bad action name");
+
+            let mut ext = TransactionExtension::default();
+            let mut ext2 = TransactionExtension::default();
+            ext.ty = 1;
+            ext.data = vec![1, 2, 3, 4, 5];
+            ext2.unpack(&ext.pack());
+            check(ext == ext2, "ext == ext2");
         }
 
         #[chain(action="test2")]

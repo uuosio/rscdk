@@ -28,8 +28,8 @@ use crate::{
 #[cfg_attr(feature = "std", derive(crate::eosio_scale_info::TypeInfo))]
 #[derive(Clone, Eq, PartialEq, Default)]
 pub struct TransactionExtension {
-    ty:     u16,
-    data:   Vec<u8>,
+    pub ty:     u16,
+    pub data:   Vec<u8>,
 }
 
 impl Packer for TransactionExtension {
