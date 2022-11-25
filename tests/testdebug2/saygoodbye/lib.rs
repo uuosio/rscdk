@@ -103,7 +103,7 @@ mod tests {
         "#;
 
         let args = saygoodbye::saygoodbye{name: "rust".into()};
-        tester.push_action("hello", "saygoodbye", args.pack().into(), permissions).unwrap();
+        tester.push_action("hello", "saygoodbye", Encoder::pack(&args).into(), permissions).unwrap();
         tester.produce_block();
     }
 

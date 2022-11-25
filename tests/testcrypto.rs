@@ -72,8 +72,8 @@ pub mod testcrypto {
             
             let mut web_auth = PublicKey::default();
             web_auth.unpack(&raw_webauthn);
-            check(r1.pack() == raw_r1, "r1.pack() == raw_r1");
-            check(web_auth_n.pack() == raw_webauthn, "web_auth_n.pack() == raw_webauthn");
+            check(Encoder::pack(&r1) == raw_r1, "r1.pack() == raw_r1");
+            check(Encoder::pack(&web_auth_n) == raw_webauthn, "web_auth_n.pack() == raw_webauthn");
     
             let data: Vec<u8> =  vec![1, 2, 3, 4, 5, 6, 7];
             let ret = sha256(&data);

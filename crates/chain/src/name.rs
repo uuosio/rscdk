@@ -7,7 +7,8 @@ use crate::{
 };
 
 use crate::serializer::{ 
-    Packer
+    Packer,
+	Encoder,
 };
 
 use crate::vmapi::eosio::{
@@ -228,11 +229,8 @@ impl Packer for Name {
         return 8;
     }
 
-    fn pack(&self) -> Vec<u8> {
-        let mut v: Vec<u8> = Vec::new();
-        v.resize(8usize, 0);
-        eosio_memcpy(v.as_mut_ptr(), &self.n as *const u64 as *mut u8, 8);
-        return v;
+    fn pack(&self, enc: &mut Encoder) -> usize {
+		self.n.pack(enc)
     }
 
     fn unpack(&mut self, raw: &[u8]) -> usize {

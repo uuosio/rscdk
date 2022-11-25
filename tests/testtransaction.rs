@@ -45,7 +45,7 @@ pub mod testtransaction {
         pub fn test(&self) {
             let tx = read_transaction();
             let mut tx2 = Transaction::default();
-            tx2.unpack(&tx.pack());
+            tx2.unpack(&Encoder::pack(&tx));
             check(tx == tx2, "tx == tx2");
 
             eosio_println!("++++test:", tx.expiration().seconds());
@@ -61,7 +61,7 @@ pub mod testtransaction {
             let mut ext2 = TransactionExtension::default();
             ext.ty = 1;
             ext.data = vec![1, 2, 3, 4, 5];
-            ext2.unpack(&ext.pack());
+            ext2.unpack(&Encoder::pack(&ext));
             check(ext == ext2, "ext == ext2");
         }
 

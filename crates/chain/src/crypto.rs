@@ -2,7 +2,10 @@ use crate::vmapi::crypto;
 
 use crate::structs::*;
 
-use crate::serializer::Packer as _;
+use crate::serializer::{
+    Packer as _,
+    Encoder
+};
 
 use crate::vec;
 
@@ -56,7 +59,7 @@ pub fn ripemd160(data: &[u8]) -> Checksum160 {
 ///
 pub fn recover_key( digest: &Checksum256 , sig: &Signature) -> PublicKey {
     let mut pubkey = vec![0u8; 34];
-    let _sig = sig.pack();
+    let _sig = Encoder::pack(sig);
 
     crypto::recover_key(digest, _sig.as_ptr(), _sig.len(), pubkey.as_mut_ptr(), pubkey.len());
     let mut ret = PublicKey::default();
@@ -66,7 +69,7 @@ pub fn recover_key( digest: &Checksum256 , sig: &Signature) -> PublicKey {
 
 ///
 pub fn assert_recover_key(digest: &Checksum256, sig: &Signature, pubkey: &PublicKey) {
-    let _sig = sig.pack();
-    let _pubkey = pubkey.pack();
+    let _sig = Encoder::pack(sig);
+    let _pubkey = Encoder::pack(pubkey);
     crypto::assert_recover_key(digest, _sig.as_ptr(), _sig.len(), _pubkey.as_ptr(), _pubkey.len());
 }

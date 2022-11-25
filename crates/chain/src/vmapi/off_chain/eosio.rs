@@ -18,6 +18,7 @@ use crate::name::{
 
 use crate::serializer::{
 	Packer,
+	Encoder
 };
 
 use crate::{
@@ -78,7 +79,7 @@ pub fn check_transaction_authorization(
 	perms: &Vec<PermissionLevel>,
 	pubkeys: &Vec<PublicKey>
 ) -> i32 {
-	let ret = get_vm_api_client().check_transaction_authorization(trx.pack(), pubkeys.pack(), perms.pack());
+	let ret = get_vm_api_client().check_transaction_authorization(Encoder::pack(trx), Encoder::pack(pubkeys), Encoder::pack(perms));
     ret.unwrap()
 }
 
@@ -90,8 +91,8 @@ pub fn check_permission_authorization(
 	pubkeys: &Vec<PublicKey>,
 	delay_us: u64
 ) -> i32 {
-	let perms_data = perms.pack();
-	let pubkeys_data = pubkeys.pack();
+	let perms_data = Encoder::pack(perms);
+	let pubkeys_data = Encoder::pack(pubkeys);
 	let ret = get_vm_api_client().check_permission_authorization(account.n.into(), permission.n.into(), pubkeys_data, perms_data, delay_us.into());
     ret.unwrap()
 }
@@ -267,7 +268,7 @@ pub fn set_resource_limits(account: Name, ram_bytes: i64, net_weight: i64, cpu_w
 //TODO:
 ///
 pub fn set_proposed_producers(producer_keys: &Vec<ProducerKey>) -> i64 {
-	let packed = producer_keys.pack();
+	let packed = Encoder::pack(producer_keys);
 	let ret = get_vm_api_client().set_proposed_producers(packed);
     ret.unwrap()
 }
@@ -275,7 +276,7 @@ pub fn set_proposed_producers(producer_keys: &Vec<ProducerKey>) -> i64 {
 //TODO:
 ///
 pub fn set_proposed_producers_ex(producer_keys: &Vec<ProducerAuthority>) -> i64 {
-	let packed = producer_keys.pack();
+	let packed = Encoder::pack(producer_keys);
 	let ret = get_vm_api_client().set_proposed_producers_ex(1u64.into(), packed);
     ret.unwrap()
 }
@@ -294,7 +295,7 @@ pub fn set_privileged(account: Name, is_priv: bool) {
 
 ///
 pub fn set_blockchain_parameters(params: &BlockchainParameters) {
-	let data = params.pack();
+	let data = Encoder::pack(params);
 	let ret = get_vm_api_client().set_blockchain_parameters_packed(data);
     ret.unwrap();
 }

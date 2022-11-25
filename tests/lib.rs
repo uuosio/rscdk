@@ -170,7 +170,11 @@ mod tests {
     use super::testprint;
 
     use rust_chain::ChainTester;
-    use rust_chain::serializer::Packer as _;
+    use rust_chain::serializer::{
+        Packer as _,
+        Encoder
+    };
+
     use rust_chain::chaintester::{
         get_globals,
         get_test_mutex
@@ -237,7 +241,7 @@ mod tests {
             "hello": "active"
         }
         "#;
-        let args = super::testall::TestCase{name: test_case.into()}.pack();
+        let args = Encoder::pack(&super::testall::TestCase{name: test_case.into()});
         tester.push_action("hello", "settest", args.into(), permissions).unwrap();
         return tester;
     }
@@ -809,7 +813,7 @@ mod tests {
         tester.produce_block();
 
         let info = tester.get_info().unwrap();
-        let args = testintrinsics::testintrinsics::test3{num: info["head_block_num"].as_u64().unwrap() as u32 + 1}.pack();
+        let args = Encoder::pack(&testintrinsics::testintrinsics::test3{num: info["head_block_num"].as_u64().unwrap() as u32 + 1});
         tester.push_action("hello", "test3", args.into(), permissions).unwrap();
 
         tester.push_action("hello", "testctxfree", "".into(), permissions).unwrap();

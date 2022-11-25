@@ -34,7 +34,7 @@ pub mod testbinaryextension {
 
             let mut _b = BinaryExtension::<u64>::new(Some(1));
             check(_b.size() == 8, "b.size() == 8");
-            _b.unpack(&b.pack());
+            _b.unpack(&Encoder::pack(&b));
             check(*_b.value().unwrap() == 123, "*_b.value().unwrap() == 123");
         }
 
@@ -45,7 +45,7 @@ pub mod testbinaryextension {
 
             let mut _b = BinaryExtension::<u64>::new(Some(1));
             check(_b.size() == 8, "b.size() == 8");
-            _b.unpack(&b.pack());
+            _b.unpack(&Encoder::pack(&b));
             check(_b.value().is_none(), "_b.value().is_none()");
             eosio_println!("test2 BinaryExtension done!");
         }

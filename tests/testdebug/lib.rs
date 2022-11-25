@@ -436,7 +436,10 @@ mod hello {
 mod tests {
 
     use rust_chain::ChainTester;
-    use rust_chain::serializer::Packer;
+    use rust_chain::serializer::{
+        Packer,
+        Encoder
+    };
     use crate::hello::sayhello;
     use rust_chain::chaintester;
 
@@ -499,7 +502,7 @@ mod tests {
         tester.produce_block();
     
         let args = sayhello{name: "rust".into()};
-        tester.push_action("hello", "sayhello", args.pack().into(), permissions).unwrap();
+        tester.push_action("hello", "sayhello", Encoder::pack(&args).into(), permissions).unwrap();
         tester.produce_block();
     }
 

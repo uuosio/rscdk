@@ -44,7 +44,7 @@ pub mod testasset {
             check(a == Asset::from_string("1.1234 EOS"), "1: bad asset!");
             check(a.to_string() == "1.1234 EOS", r#"a.to_string() == "1.1234 EOS"#);
             check(a.symbol() == Symbol::new("EOS", 4u8), "2: bad symbol!");
-            check(a.pack() == rust_chain::read_action_data(), "a.pack() == read_action_data()");
+            check(Encoder::pack(&a) == rust_chain::read_action_data(), "a.pack() == read_action_data()");
 
             check(a.symbol().to_string() == "4,EOS", r#"a.symbol().to_string() == "4,EOS"#);
 
@@ -68,7 +68,7 @@ pub mod testasset {
             check(sym.to_string() == "AAAAA", r#"sym.to_string() == "AAAAA"#);
             check(sym.size() == 8, "sym.size() == 8");
             let mut sym2 = SymbolCode::new(65);
-            sym2.unpack(&sym.pack());
+            sym2.unpack(&Encoder::pack(&sym));
             check(sym == sym2, "sym == sym2");
 
             eosio_println!("Done!");
@@ -92,7 +92,7 @@ pub mod testasset {
         pub fn test5(&self, a: ExtendedAsset) {
             let b = ExtendedAsset::new(Asset::new(11234, Symbol::new("EOS", 4u8)), name!("hello"));
             check(a == b, "a == b");
-            check(a.pack() == b.pack(), "a.pack() == b.pack()");
+            check(Encoder::pack(&a) == Encoder::pack(&b), "a.pack() == b.pack()");
             check(b.quantity() == Asset::new(11234, Symbol::new("EOS", 4u8)), r#"b.quantity() == Asset::new(11234, Symbol::new("EOS", 4u8))"#);
             check(b.contract() == name!("hello"), r#"b.contract() == name!("hello")"#);
         }

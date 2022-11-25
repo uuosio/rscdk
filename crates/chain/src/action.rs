@@ -45,11 +45,11 @@ impl Packer for PermissionLevel {
     }
 
     ///
-    fn pack(&self) -> Vec<u8> {
-        let mut enc = Encoder::new(16);
-        enc.pack(&self.actor);
-        enc.pack(&self.permission);
-        return enc.get_bytes();
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        let pos = enc.get_size();
+        self.actor.pack(enc);
+        self.permission.pack(enc);
+        enc.get_size() - pos
     }
 
     ///
@@ -79,17 +79,19 @@ pub struct Action {
 impl Action {
     /// Creates an action by specifying contract account, action name, authorization and data.
     pub fn new(account: Name, name: Name, authorization: Vec<PermissionLevel>, data: &dyn Packer) -> Self {
+        let mut enc = Encoder::new(data.size());
+        data.pack(&mut enc);
         Self {
             account,
             name,
             authorization: authorization,
-            data: data.pack(),
+            data: enc.get_bytes()
         }
     }
 
     /// Send inline action to contract.
     pub fn send(&self) {
-        let raw = self.pack();
+        let raw = Encoder::pack(self);
         send_inline(&raw);
     }
 }
@@ -111,13 +113,15 @@ impl Packer for Action {
     }
 
     ///
-    fn pack(&self) -> Vec<u8> {
-        let mut enc = Encoder::new(self.size());
-        enc.pack(&self.account);
-        enc.pack(&self.name);
-        enc.pack(&self.authorization);
-        enc.pack(&self.data);
-        return enc.get_bytes();
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        let pos = enc.get_size();
+
+        self.account.pack(enc);
+        self.name.pack(enc);
+        self.authorization.pack(enc);
+        self.data.pack(enc);
+
+        enc.get_size() - pos
     }
 
     ///

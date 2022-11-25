@@ -59,8 +59,10 @@ impl Packer for Float128 {
         return 16;
     }
 
-    fn pack(&self) -> Vec<u8> {
-        return self.data.to_vec();
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        let data = enc.alloc(self.size());
+        slice_copy(data, &self.data);
+        self.size()
     }
 
     fn unpack(&mut self, raw: &[u8]) -> usize {
@@ -95,8 +97,10 @@ impl Packer for Checksum160 {
         return 20;
     }
 
-    fn pack(&self) -> Vec<u8> {
-        return self.data.to_vec();
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        let data = enc.alloc(self.size());
+        slice_copy(data, &self.data);
+        self.size()
     }
 
     fn unpack(&mut self, raw: &[u8]) -> usize {
@@ -132,8 +136,10 @@ impl Packer for Checksum256 {
         return 32;
     }
 
-    fn pack(&self) -> Vec<u8> {
-        return self.data.to_vec();
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        let data = enc.alloc(self.size());
+        slice_copy(data, &self.data);
+        self.size()
     }
 
     fn unpack(&mut self, raw: &[u8]) -> usize {
@@ -176,8 +182,10 @@ impl Packer for Checksum512 {
         return 64;
     }
 
-    fn pack(&self) -> Vec<u8> {
-        return self.data.to_vec();
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        let data = enc.alloc(self.size());
+        slice_copy(data, &self.data);
+        self.size()
     }
 
     fn unpack(&mut self, raw: &[u8]) -> usize {
@@ -221,8 +229,10 @@ impl Packer for ECCPublicKey {
         return 33;
     }
 
-    fn pack(&self) -> Vec<u8> {
-        return self.data.to_vec();
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        let data = enc.alloc(self.size());
+        slice_copy(data, &self.data);
+        self.size()
     }
 
     fn unpack(&mut self, raw: &[u8]) -> usize {
@@ -258,8 +268,8 @@ impl Packer for UserPresence {
     }
 
     ///
-    fn pack(&self) -> Vec<u8> {
-        vec![*self as u8]
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        (*self as u8).pack(enc)
     }
 
     ///
@@ -309,12 +319,14 @@ impl Packer for WebAuthNPublicKey {
     }
 
     ///
-    fn pack(&self) -> Vec<u8> {
-        let mut enc = Encoder::new(self.size());
-        enc.pack(&self.key);
-        enc.pack(&self.user_presence);
-        enc.pack(&self.rpid);
-        return enc.get_bytes();
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        let pos = enc.get_size();
+        
+        self.key.pack(enc);
+        self.user_presence.pack(enc);
+        self.rpid.pack(enc);
+        
+        enc.get_size() - pos
     }
 
     ///
@@ -357,23 +369,23 @@ impl Packer for PublicKey {
         }
     }
 
-    fn pack(&self) -> Vec<u8> {
-        let mut enc = Encoder::new(self.size());
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        let pos = enc.get_size();
         match self {
             PublicKey::K1(x) => {
-                enc.pack_number(0u8);
-                enc.pack(x);
+                0u8.pack(enc);
+                x.pack(enc);
             }
             PublicKey::R1(x) => {
-                enc.pack_number(1u8);
-                enc.pack(x);
+                1u8.pack(enc);
+                x.pack(enc);
             }
             PublicKey::WebAuth(x) => {
-                enc.pack_number(2u8);
-                enc.pack(x);
+                2u8.pack(enc);
+                x.pack(enc);
             }
         }
-        return enc.get_bytes();
+        enc.get_size() - pos
     }
 
     fn unpack(&mut self, raw: &[u8]) -> usize {
@@ -441,11 +453,10 @@ impl Packer for Signature {
     }
 
     ///
-    fn pack(&self) -> Vec<u8> {
-        let mut v = Vec::with_capacity(self.size());
-        v.push(self.ty);
-        v.append(&mut self.data.to_vec());
-        return v;
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        let data = enc.alloc(self.size());
+        slice_copy(data, &self.data);
+        self.size()
     }
 
     ///
@@ -515,11 +526,10 @@ impl Packer for Uint256 {
     }
 
     ///
-    fn pack(&self) -> Vec<u8> {
-        let mut enc = Encoder::new(32);
-        enc.pack(&self.data[0]);
-        enc.pack(&self.data[1]);
-        return enc.get_bytes();
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        self.data[0].pack(enc);
+        self.data[1].pack(enc);
+        self.size()
     }
 
     ///
@@ -564,8 +574,8 @@ impl Packer for TimePoint {
         return 8;
     }
 
-    fn pack(&self) -> Vec<u8> {
-        return self.elapsed.pack();
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        self.elapsed.pack(enc)
     }
 
     fn unpack(&mut self, raw: &[u8]) -> usize {
@@ -597,8 +607,8 @@ impl Packer for TimePointSec {
         return 4;
     }
 
-    fn pack(&self) -> Vec<u8> {
-        return self.seconds.pack();
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        self.seconds.pack(enc)
     }
 
     fn unpack(&mut self, raw: &[u8]) -> usize {
@@ -620,8 +630,8 @@ impl Packer for BlockTimeStampType {
         return 4;
     }
 
-    fn pack(&self) -> Vec<u8> {
-        return self.slot.pack();
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        self.slot.pack(enc)
     }
 
     fn unpack(&mut self, raw: &[u8]) -> usize {
@@ -654,11 +664,13 @@ impl Packer for ProducerKey {
         return 8 + self.block_signing_key.size();
     }
 
-    fn pack(&self) -> Vec<u8> {
-        let mut enc = Encoder::new(self.size());
-        enc.pack(&self.producer_name);
-        enc.pack(&self.block_signing_key);
-        return enc.get_bytes();
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        let pos = enc.get_size();
+
+        self.producer_name.pack(enc);
+        self.block_signing_key.pack(enc);
+
+        enc.get_size() - pos
     }
 
     fn unpack(&mut self, raw: &[u8]) -> usize {
@@ -688,11 +700,13 @@ impl Packer for KeyWeight {
         return 2 + self.key.size();
     }
 
-    fn pack(&self) -> Vec<u8> {
-        let mut enc = Encoder::new(self.size());
-        enc.pack(&self.key);
-        enc.pack(&self.weight);
-        return enc.get_bytes();
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        let pos = enc.get_size();
+
+        self.key.pack(enc);
+        self.weight.pack(enc);
+
+        enc.get_size() - pos
     }
 
     fn unpack(&mut self, raw: &[u8]) -> usize {
@@ -729,11 +743,13 @@ impl Packer for BlockSigningAuthorityV0 {
         return size;
     }
 
-    fn pack(&self) -> Vec<u8> {
-        let mut enc = Encoder::new(self.size());
-        enc.pack(&self.threshold);
-        enc.pack(&self.keys);
-        return enc.get_bytes();
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        let pos = enc.get_size();
+
+        self.threshold.pack(enc);
+        self.keys.pack(enc);
+
+        enc.get_size() - pos
     }
 
     fn unpack(&mut self, raw: &[u8]) -> usize {
@@ -761,15 +777,15 @@ impl Packer for BlockSigningAuthority {
         };
     }
 
-    fn pack(&self) -> Vec<u8> {
-        let mut enc = Encoder::new(self.size());
-        enc.pack(&0u8);
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        let pos = enc.get_size();
+        0u8.pack(enc);
         match self {
             BlockSigningAuthority::V0(x) => {
-                enc.pack(x);
+                x.pack(enc);
             }
         }
-        return enc.get_bytes();
+        enc.get_size() - pos
     }
 
     fn unpack(&mut self, raw: &[u8]) -> usize {
@@ -809,11 +825,13 @@ impl Packer for ProducerAuthority {
         return self.producer_name.size() + self.authority.size();
     }
 
-    fn pack(&self) -> Vec<u8> {
-        let mut enc = Encoder::new(self.size());
-        enc.pack(&self.producer_name);
-        enc.pack(&self.authority);
-        return enc.get_bytes();
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        let pos = enc.get_size();
+
+        self.producer_name.pack(enc);
+        self.authority.pack(enc);
+
+        enc.get_size() - pos
     }
 
     fn unpack(&mut self, raw: &[u8]) -> usize {

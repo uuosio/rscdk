@@ -39,11 +39,14 @@ impl Packer for TransactionExtension {
         _size += self.data.size();
         return _size;
     }
-    fn pack(&self) -> Vec<u8> {
-        let mut enc = Encoder::new(self.size());
-        enc.pack::<u16>(&self.ty);
-        enc.pack::<Vec<u8>>(&self.data);
-        return enc.get_bytes();
+
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        let pos = enc.get_size();
+
+        self.ty.pack(enc);
+        self.data.pack(enc);
+
+        enc.get_size() - pos
     }
     fn unpack(&mut self, data: &[u8]) -> usize {
         let mut dec = Decoder::new(data);
@@ -126,7 +129,7 @@ impl Transaction {
 
     pub fn send(&self, payer: Name, id: u128, replace_existing: bool) {
         let id = Uint128{lo: (id & u64::MAX as u128) as u64, hi: (id >> 64) as u64};
-        send_deferred(&id, payer, &self.pack(), replace_existing.into());
+        send_deferred(&id, payer, &Encoder::pack(self), replace_existing.into());
     }
 
 }
@@ -146,18 +149,20 @@ impl Packer for Transaction {
         return _size;
     }
 
-    fn pack(&self) -> Vec<u8> {
-        let mut enc = Encoder::new(self.size());
-        enc.pack::<TimePointSec>(&self.expiration);
-        enc.pack::<u16>(&self.ref_block_num);
-        enc.pack::<u32>(&self.ref_block_prefix);
-        enc.pack::<VarUint32>(&self.max_net_usage_words);
-        enc.pack::<u8>(&self.max_cpu_usage_ms);
-        enc.pack::<VarUint32>(&self.delay_sec);
-        enc.pack::<Vec<Action>>(&self.context_free_actions);
-        enc.pack::<Vec<Action>>(&self.actions);
-        enc.pack::<Vec<TransactionExtension>>(&self.extention);
-        return enc.get_bytes();
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        let pos = enc.get_size();
+
+        self.expiration.pack(enc);
+        self.ref_block_num.pack(enc);
+        self.ref_block_prefix.pack(enc);
+        self.max_net_usage_words.pack(enc);
+        self.max_cpu_usage_ms.pack(enc);
+        self.delay_sec.pack(enc);
+        self.context_free_actions.pack(enc);
+        self.actions.pack(enc);
+        self.extention.pack(enc);
+
+        enc.get_size() - pos
     }
 
     fn unpack(&mut self, data: &[u8]) -> usize {

@@ -113,7 +113,7 @@ mod tests {
         tester.produce_block();
     
         let args = sayhello::sayhello::sayhello{name: "rust".into()};
-        tester.push_action("hello", "sayhello", args.pack().into(), permissions).unwrap();
+        tester.push_action("hello", "sayhello", Encoder::pack(&args).into(), permissions).unwrap();
         tester.produce_block();
     }
 

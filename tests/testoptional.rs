@@ -46,15 +46,15 @@ pub mod testoptional {
             check(a1 == None, "bad value a1");
             {
                 let mut _a1 = Option::<u64>::default();
-                _a1.unpack(&a1.pack());
+                _a1.unpack(&Encoder::pack(&a1));
                 check(a1 == _a1, "");
             }
-            check(a1.pack() == vec![0], "a1.pack().len() == vec![0]");
+            check(Encoder::pack(&a1) == vec![0], "a1.pack().len() == vec![0]");
             check(a1.size() == 1, "a1.size() == 1");
-            check(a2.pack().len() == 1+1+8, "a2.pack().len() == 1+1+8");
+            check(Encoder::pack(&a2).len() == 1+1+8, "a2.pack().len() == 1+1+8");
             {
                 let mut _a2 = A2::default();
-                _a2.unpack(&a2.pack());
+                _a2.unpack(&Encoder::pack(&a2));
                 check(a2.a2 == _a2.a2, "a2 == _a2");
             }
             check(a2.size() == 1+1+8, "a2.size() == 1+1+8");

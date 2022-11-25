@@ -1,4 +1,8 @@
-use crate::serializer::Packer;
+use crate::serializer::{
+    Packer,
+    Encoder
+};
+
 use crate::vec::Vec;
 
 #[cfg_attr(feature = "std", derive(eosio_scale_info::TypeInfo))]
@@ -39,12 +43,12 @@ where
     }
 
     ///
-    fn pack(&self) -> Vec<u8> {
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        let pos = enc.get_size();
         if let Some(x) = &self.value {
-            x.pack()
-        } else {
-            Vec::new()
+            x.pack(enc);
         }
+        enc.get_size() - pos
     }
 
     ///

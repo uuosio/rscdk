@@ -24,6 +24,10 @@ use crate::{
 };
 
 use crate::boxed::Box;
+use crate::serializer::{
+    Packer,
+    Encoder,
+};
 
 pub fn cast_value<T: MultiIndexValue>(value: &Option<Box<dyn MultiIndexValue>>) -> Option<&T> {
     if let Some(x) = value {
@@ -128,7 +132,9 @@ impl TableI64 {
 
     ///
     pub fn update(&self, iterator: &Iterator, value: &dyn MultiIndexValue, payer: Name) {
-        let data = value.pack();
+        let mut enc = Encoder::new(value.size());
+        value.pack(&mut enc);
+        let data = enc.get_bytes();
         db_update_i64(iterator.i, payer.value(), data.as_ptr(), data.len() as u32);
     }
 
@@ -248,7 +254,9 @@ impl MultiIndex {
             let v2 = value.get_secondary_value(i);
             self.idxdbs[i].store(primary, v2, payer);
         }
-        let it = self.db.store(primary, &value.pack(), payer);
+        let mut enc = Encoder::new(value.size());
+        value.pack(&mut enc);
+        let it = self.db.store(primary, &enc.get_bytes(), payer);
         return it;
     }
 

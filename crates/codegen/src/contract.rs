@@ -512,7 +512,7 @@ impl Contract {
                 let ident = &packer_field.ident;
                 let ty = &packer_field.ty;
                 quote_spanned!(span=>
-                    enc.pack::<#ty>(&self.#ident);
+                    self.#ident.pack(enc);
                 )
             });
 
@@ -541,10 +541,10 @@ impl Contract {
                         return _size;
                     }
                 
-                    fn pack(&self) -> Vec<u8> {
-                        let mut enc = ::rust_chain::serializer::Encoder::new(self.size());
+                    fn pack(&self, enc: &mut Encoder) -> usize {
+                        let pos = enc.get_size();
                         #( #serialize )*
-                        return enc.get_bytes();
+                        enc.get_size() - pos
                     }
                 
                     fn unpack(&mut self, data: &[u8]) -> usize {
@@ -593,7 +593,7 @@ impl Contract {
                     let ty = &*pat_type.ty;
                     if let syn::Pat::Ident(x) = &*pat_type.pat {
                         quote_spanned!(span=>
-                            enc.pack::<#ty>(&self.#x);
+                            self.#x.pack(enc);
                         )
                     } else {
                         quote!{}
@@ -647,11 +647,10 @@ impl Contract {
                         return _size;
                     }
 
-                    fn pack(&self) -> Vec<u8> {
-                        #[allow(unused_mut)]
-                        let mut enc = ::rust_chain::serializer::Encoder::new(self.size());
+                    fn pack(&self, enc: &mut Encoder) -> usize {
+                        let pos = enc.get_size();
                         #( #serialize )*
-                        return enc.get_bytes();
+                        enc.get_size() - pos
                     }
 
                     fn unpack<'a>(&mut self, data: &'a [u8]) -> usize {
@@ -1487,8 +1486,8 @@ impl Contract {
                         return quote!{
                             #variant_ident::#field_ident(x) => {
                                 let mut i: u8 = #index as u8;
-                                enc.pack(&i);
-                                enc.pack(x);
+                                i.pack(enc);
+                                x.pack(enc);
                             }
                         }
                     } else {
@@ -1546,12 +1545,14 @@ impl Contract {
                         return _size;
                     }
                 
-                    fn pack(&self) -> Vec<u8> {
-                        let mut enc = ::rust_chain::serializer::Encoder::new(self.size());
+                    fn pack(&self, enc: &mut Encoder) -> usize {
+                        let pos = enc.get_size();
+
                         match self {
                             #( #pack_code )*
                         }
-                        return enc.get_bytes();
+
+                        enc.get_size() - pos
                     }
                 
                     fn unpack<'a>(&mut self, data: &'a [u8]) -> usize {
@@ -1650,7 +1651,10 @@ impl Contract {
                 };
 
                 use rust_chain::{
-                    serializer::Packer as _,
+                    serializer::{
+                        Packer as _,
+                        Encoder,
+                    },
                     db::SecondaryType as _,
                     print::Printable as _,
                 };

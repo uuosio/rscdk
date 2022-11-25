@@ -6,10 +6,19 @@ use core::convert::{
 use crate::structs::{ Uint128, Uint256, Float128 };
 use crate::serializer::Packer;
 
+use crate::string::{
+    String,
+};
+
 use crate::vmapi::db::*;
 
 use crate::name::{
     Name,
+};
+
+use crate::serializer::{
+    Packer as _,
+    Encoder,
 };
 
 use crate::asset::Asset;
@@ -26,9 +35,6 @@ use crate::{
     vec::Vec,
 };
 
-use crate::string::{
-    String,
-};
 
 ///
 #[derive(Clone, Debug, Default)]
@@ -333,7 +339,7 @@ where
     ///
     pub fn store(&self, value: &T, payer: Name) -> Iterator<T> {
         let key = value.get_primary();
-        let data = value.pack();
+        let data = Encoder::pack(value);
         let it = db_store_i64(self.scope, self.table, payer.value(), key, data.as_ptr(), data.len() as u32);
         Iterator::<T> { i: it, primary: Some(key), db: self }
     }
@@ -352,7 +358,7 @@ where
     pub fn update(&self, iterator: &Iterator<T>, value: &T, payer: Name) {
         check(iterator.is_ok(), "TableI64::update:invalid iterator");
         check(iterator.get_primary().unwrap() == value.get_primary(), "TableI64::update: can not change primary value during update!");
-        let data = value.pack();
+        let data = Encoder::pack(value);
         db_update_i64(iterator.i, payer.value(), data.as_ptr(), data.len() as u32);
     }
 

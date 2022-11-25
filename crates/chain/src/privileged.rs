@@ -123,26 +123,27 @@ impl Packer for BlockchainParameters {
         return size_of::<BlockchainParameters>();
     }
 
-    fn pack(&self) -> Vec<u8> {
-        let mut enc = Encoder::new(self.size());
-        enc.pack(&self.max_block_net_usage);
-        enc.pack(&self.target_block_net_usage_pct);
-        enc.pack(&self.max_transaction_net_usage);
-        enc.pack(&self.base_per_transaction_net_usage);
-        enc.pack(&self.net_usage_leeway);
-        enc.pack(&self.context_free_discount_net_usage_num);
-        enc.pack(&self.context_free_discount_net_usage_den);
-        enc.pack(&self.max_block_cpu_usage);
-        enc.pack(&self.target_block_cpu_usage_pct);
-        enc.pack(&self.max_transaction_cpu_usage);
-        enc.pack(&self.min_transaction_cpu_usage);
-        enc.pack(&self.max_transaction_lifetime);
-        enc.pack(&self.deferred_trx_expiration_window);
-        enc.pack(&self.max_transaction_delay);
-        enc.pack(&self.max_inline_action_size);
-        enc.pack(&self.max_inline_action_depth);
-        enc.pack(&self.ax_authority_depth);
-        return enc.get_bytes();
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        let pos = enc.get_size();
+
+        self.max_block_net_usage.pack(enc);
+        self.target_block_net_usage_pct.pack(enc);
+        self.max_transaction_net_usage.pack(enc);
+        self.base_per_transaction_net_usage.pack(enc);
+        self.net_usage_leeway.pack(enc);
+        self.context_free_discount_net_usage_num.pack(enc);
+        self.context_free_discount_net_usage_den.pack(enc);
+        self.max_block_cpu_usage.pack(enc);
+        self.target_block_cpu_usage_pct.pack(enc);
+        self.max_transaction_cpu_usage.pack(enc);
+        self.min_transaction_cpu_usage.pack(enc);
+        self.max_transaction_lifetime.pack(enc);
+        self.deferred_trx_expiration_window.pack(enc);
+        self.max_transaction_delay.pack(enc);
+        self.max_inline_action_size.pack(enc);
+        self.max_inline_action_depth.pack(enc);
+        self.ax_authority_depth.pack(enc);
+        enc.get_size() - pos
     }
 
     fn unpack(&mut self, raw: &[u8]) -> usize {

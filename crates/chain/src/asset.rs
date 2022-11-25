@@ -101,8 +101,8 @@ impl Packer for SymbolCode {
     }
 
     ///
-    fn pack(&self) -> Vec<u8> {
-        self.value.pack()
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        self.value.pack(enc)
     }
 
     ///
@@ -174,8 +174,8 @@ impl Packer for Symbol {
     }
 
     ///
-    fn pack(&self) -> Vec<u8> {
-        self.value.pack()
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        self.value.pack(enc)
     }
 
     ///
@@ -370,11 +370,13 @@ impl Packer for Asset {
     }
 
     ///
-    fn pack(&self) -> Vec<u8> {
-        let mut enc = Encoder::new(self.size());
-        enc.pack(&self.amount);
-        enc.pack(&self.symbol);
-        return enc.get_bytes();
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        let pos = enc.get_size();
+
+        self.amount.pack(enc);
+        self.symbol.pack(enc);
+
+        enc.get_size() - pos
     }
 
     ///
@@ -423,11 +425,13 @@ impl Packer for ExtendedAsset {
     }
 
     ///
-    fn pack(&self) -> Vec<u8> {
-        let mut enc = Encoder::new(self.size());
-        enc.pack(&self.quantity);
-        enc.pack(&self.contract);
-        return enc.get_bytes();
+    fn pack(&self, enc: &mut Encoder) -> usize {
+        let pos = enc.get_size();
+
+        self.quantity.pack(enc);
+        self.contract.pack(enc);
+
+        enc.get_size() - pos
     }
 
     ///

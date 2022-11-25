@@ -22,7 +22,6 @@ pub mod testabi {
         ExtendedAsset,
 
         ECCPublicKey,
-
         check,
         eosio_println,
     };
@@ -132,12 +131,12 @@ pub mod testabi {
             check(a15 == 2.2, "bad a15 value!");
             {
                 let mut _a17 = TimePoint::default();
-                _a17.unpack(&a17.pack());
+                _a17.unpack(&Encoder::pack(&a17));
                 check(a17 == _a17, "a17 == _a17");
             }
             {
                 let mut _a18 = TimePointSec::new(0u32);
-                _a18.unpack(&a18.pack());
+                _a18.unpack(&Encoder::pack(&a18));
                 check(a18 == _a18, "a18 == _a18");
             }
             check(a20 == Name::new("eosio"), "bad value a20");
@@ -146,14 +145,14 @@ pub mod testabi {
 
             {
                 let mut a23_2 = Checksum160::default();
-                a23_2.unpack(&a23.pack());
+                a23_2.unpack(&Encoder::pack(&a23));
                 check(a23 == a23_2, "a23 == a23_2");
             }
             check(a23 == Checksum160::from_hex("bbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), "bad value 23");
             check(a24 == Checksum256::from_hex("bbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), "bad value 24");
             {
                 let mut a25_2 = Checksum512::default();
-                a25_2.unpack(&a25.pack());
+                a25_2.unpack(&Encoder::pack(&a25));
                 check(a25 == a25_2, "a25 == a25_2");
             }
             check(a25 == Checksum512::from_hex("bbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), "bad value 25");

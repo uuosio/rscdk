@@ -31,7 +31,7 @@ pub mod testname {
             check(a12 == Name::from_str(&a11), "bad value 1");
             check(a22 == Name::from_str(&a21), "bad value 2");
             let mut _a22 = Name::default();
-            _a22.unpack(&a22.pack());
+            _a22.unpack(&Encoder::pack(&a22));
             check(a22 == _a22, "a22 == _a22");
 
             check(Name::from_str("").n == 0, r#"Name::from_str("").n == 0"#);

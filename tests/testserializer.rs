@@ -7,7 +7,6 @@ pub mod testserializer {
         Name,
         // Symbol,
 
-        Encoder,
         Decoder,
 
         check,
@@ -45,7 +44,7 @@ pub mod testserializer {
             enc.pack_number(10i32);
 
             let v1 = vec![1u8;256];
-            enc.pack(&v1);
+            v1.pack(&mut enc);
 
             let raw = enc.get_bytes();
             let mut dec = Decoder::new(&raw);

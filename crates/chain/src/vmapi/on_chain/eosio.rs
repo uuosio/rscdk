@@ -17,6 +17,7 @@ use crate::name::{ Name };
 
 use crate::serializer::{
 	Packer,
+	Encoder,
 };
 
 use crate::{
@@ -154,9 +155,9 @@ pub fn check_transaction_authorization(
 	perms: &Vec<PermissionLevel>,
 	pubkeys: &Vec<PublicKey>
 ) -> i32 {
-	let trx_data = trx.pack();
-	let perms_data = perms.pack();
-	let pubkeys_data = pubkeys.pack();
+	let trx_data = Encoder::pack(trx);
+	let perms_data = Encoder::pack(perms);
+	let pubkeys_data = Encoder::pack(pubkeys);
 	unsafe {
 		return intrinsics::check_transaction_authorization(
 			trx_data.as_ptr(), trx_data.len() as u32,
@@ -174,8 +175,8 @@ pub fn check_permission_authorization(
 	pubkeys: &Vec<PublicKey>,
 	delay_us: u64
 ) -> i32 {
-	let perms_data = perms.pack();
-	let pubkeys_data = pubkeys.pack();
+	let perms_data = Encoder::pack(perms);
+	let pubkeys_data = Encoder::pack(pubkeys);
 	unsafe {
 		return intrinsics::check_permission_authorization(
 			account.n.into(), permission.n.into(),
@@ -357,7 +358,7 @@ pub fn set_resource_limits( account: Name, ram_bytes: i64, net_weight: i64, cpu_
 //TODO:
 ///
 pub fn set_proposed_producers(producer_keys: &Vec<ProducerKey>) -> i64 {
-	let packed = producer_keys.pack();
+	let packed = Encoder::pack(producer_keys);
 	unsafe {
 		intrinsics::set_proposed_producers(packed.as_ptr(), packed.len())
 	}
@@ -366,7 +367,7 @@ pub fn set_proposed_producers(producer_keys: &Vec<ProducerKey>) -> i64 {
 //TODO:
 ///
 pub fn set_proposed_producers_ex(producer_data_format: u64, producer_keys: &Vec<ProducerAuthority>) -> i64 {
-	let packed = producer_keys.pack();
+	let packed = Encoder::pack(producer_keys);
 	unsafe {
 		intrinsics::set_proposed_producers_ex(producer_data_format, packed.as_ptr(), packed.len() as u32)
 	}
@@ -388,7 +389,7 @@ pub fn set_privileged( account: Name, is_priv: bool) {
 
 ///
 pub fn set_blockchain_parameters(params: &BlockchainParameters) {
-	let data = params.pack();
+	let data = Encoder::pack(params);
 	unsafe {
 		intrinsics::set_blockchain_parameters_packed(data.as_ptr(), data.len() as u32);
 	}
