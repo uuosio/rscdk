@@ -454,7 +454,8 @@ impl Packer for Signature {
 
     ///
     fn pack(&self, enc: &mut Encoder) -> usize {
-        let data = enc.alloc(self.size());
+        self.ty.pack(enc);
+        let data = enc.alloc(self.data.len());
         slice_copy(data, &self.data);
         self.size()
     }
