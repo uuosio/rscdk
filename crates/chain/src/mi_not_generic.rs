@@ -256,7 +256,7 @@ impl MultiIndex {
         }
         let mut enc = Encoder::new(value.size());
         value.pack(&mut enc);
-        let it = self.db.store(primary, &enc.get_bytes(), payer);
+        let it = self.db.store(primary, enc.get_bytes(), payer);
         return it;
     }
 

@@ -85,7 +85,7 @@ impl Action {
             account,
             name,
             authorization: authorization,
-            data: enc.get_bytes()
+            data: enc.get_bytes().to_vec()
         }
     }
 

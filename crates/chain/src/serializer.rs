@@ -57,8 +57,8 @@ impl Encoder {
     }
     
     ///
-    pub fn get_bytes(&self) -> Vec<u8> {
-        return self.buf[0..].to_vec();
+    pub fn get_bytes(&self) -> &[u8] {
+        return &self.buf;
     }
 
     ///
@@ -79,7 +79,7 @@ impl Encoder {
     {
         let mut enc = Self::new(value.size());
         value.pack(&mut enc);
-        enc.get_bytes()
+        enc.get_bytes().to_vec()
     }
 }
 
