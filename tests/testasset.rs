@@ -63,11 +63,11 @@ pub mod testasset {
             check(!asset::is_valid_symbol_code(18331338125951297), "asset::is_valid_symbol_code(1)"); //'AAAAA A'
             check(!asset::is_valid_symbol_code(18296153753862465), "asset::is_valid_symbol_code(1)"); //'AAAAA\0A'
 
-            let sym = SymbolCode::new(280267669825); //AAAAA
+            let sym = SymbolCode{value: 280267669825}; //AAAAA
             check(sym.value() == 280267669825, "sym.value() == 280267669825");
             check(sym.to_string() == "AAAAA", r#"sym.to_string() == "AAAAA"#);
             check(sym.size() == 8, "sym.size() == 8");
-            let mut sym2 = SymbolCode::new(65);
+            let mut sym2 = SymbolCode::new("EOS");
             sym2.unpack(&Encoder::pack(&sym));
             check(sym == sym2, "sym == sym2");
 

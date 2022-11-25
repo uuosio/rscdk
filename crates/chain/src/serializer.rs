@@ -81,18 +81,6 @@ impl Encoder {
         value.pack(&mut enc);
         enc.get_bytes()
     }
-
-    ///
-    pub fn pack_number<T>(&mut self, n: T) -> usize {
-        let size: usize = size_of::<T>();
-        let vec_size = self.buf.len();
-        self.buf.resize_with(vec_size + size, Default::default);
-        let src = unsafe {
-            slice::from_raw_parts(&n as *const T as *const u8, size)
-        };
-        slice_copy(&mut self.buf[vec_size..vec_size+size], src);
-        return size;
-    }
 }
 
 ///
@@ -118,22 +106,7 @@ impl<'a> Decoder<'a> {
         return size;
     }
 
-        ///
-        pub fn unpack_number<T>(&mut self) -> T 
-        where T: Default
-        {
-            let size: usize = size_of::<T>();
-            let mut n = T::default();
-            check(self.pos + size <= self.buf.len(), "Decoder::unpack_number: buffer overflow!");
-            let dst = unsafe {
-                slice::from_raw_parts_mut(&mut n as *mut T as *mut u8, size)
-            };
-            slice_copy(dst, &self.buf[self.pos..self.pos+size]);
-            self.pos += size;
-            return n;
-        }
-
-        ///
+    ///
     pub fn get_pos(&self) -> usize {
         return self.pos;
     }
@@ -256,8 +229,6 @@ impl Packer for String {
     ///
     fn pack(&self, enc: &mut Encoder) -> usize {
         let pos = enc.get_size();
-
-        let size = self.size();
 
         let raw = self.as_bytes();
 

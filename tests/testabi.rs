@@ -141,7 +141,13 @@ pub mod testabi {
             }
             check(a20 == Name::new("eosio"), "bad value a20");
             check(a21 == String::from("hello").as_bytes().to_vec(), "bad value a21");
+            {
+                let mut _a22 = String::from("");
+                _a22.unpack(&Encoder::pack(&a22));
+                check(a22 == _a22, "a22 == _a22");
+            }
             check(a22 == String::from("hello"), "bad value a22");
+            
 
             {
                 let mut a23_2 = Checksum160::default();

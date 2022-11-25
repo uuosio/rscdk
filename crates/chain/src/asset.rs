@@ -59,13 +59,22 @@ pub fn is_valid_symbol_code(sym: u64) -> bool {
 #[derive(Copy, Clone, Default, Eq, PartialEq)]
 pub struct SymbolCode {
     ///
-    value: u64,
+    pub value: u64,
 }
 
 impl SymbolCode {
     ///
-    pub fn new(value: u64) -> Self {
-        check(is_valid_symbol_code(value), "bad symbol value");
+    pub fn new(sym: &str) -> Self {
+        let raw = sym.as_bytes();
+        check(raw.len() < 7, "bad symbol name");
+
+        let mut value: u64 = 0;
+        for i in (0..raw.len()).rev() {
+            let c = raw[i];
+            check(c >= 'A' as u8 && c <= 'Z' as u8, "invald symbol character");
+            value <<= 8;
+            value |= c as u64;
+        }
         Self{value}
     }
 
