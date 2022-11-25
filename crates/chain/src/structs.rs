@@ -553,7 +553,7 @@ impl Default for Uint256 {
 
 ///
 #[cfg_attr(feature = "std", derive(eosio_scale_info::TypeInfo))]
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Default, PartialEq)]
 pub struct TimePoint {
     /// elapsed in microseconds
     pub elapsed: u64,

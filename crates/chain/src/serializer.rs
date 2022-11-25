@@ -12,7 +12,6 @@ use core::mem::{
 };
 
 use crate::vmapi::eosio::{
-    eosio_memcpy,
     slice_copy,
     check,
 };
@@ -121,7 +120,10 @@ impl Encoder {
         let size: usize = size_of::<T>();
         let vec_size = self.buf.len();
         self.buf.resize_with(vec_size + size, Default::default);
-        eosio_memcpy(self.buf[vec_size..].as_mut_ptr(), &n as *const T as *const u8, size);
+        let src = unsafe {
+            slice::from_raw_parts(&n as *const T as *const u8, size)
+        };
+        slice_copy(&mut self.buf[vec_size..vec_size+size], src);
         return size;
     }
 }
@@ -154,9 +156,12 @@ impl<'a> Decoder<'a> {
         where T: Default
         {
             let size: usize = size_of::<T>();
-            let n = T::default();
+            let mut n = T::default();
             check(self.pos + size <= self.buf.len(), "Decoder::unpack_number: buffer overflow!");
-            eosio_memcpy(&n as *const T as *mut T as *mut u8, self.buf[self.pos..].as_ptr(), size);
+            let dst = unsafe {
+                slice::from_raw_parts_mut(&mut n as *mut T as *mut u8, size)
+            };
+            slice_copy(dst, &self.buf[self.pos..self.pos+size]);
             self.pos += size;
             return n;
         }

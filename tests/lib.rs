@@ -223,11 +223,10 @@ mod tests {
         let mut tester = ChainTester::new();
         if std::env::var("TEST_COVERAGE").is_ok() {
             get_globals().set_debug_mode(true);
+            let _ = tester.set_native_apply("hello", Some(super::testall::native_apply));
         } else {
             get_globals().set_debug_mode(false);
         }
-
-        let _ = tester.set_native_apply("hello", Some(super::testall::native_apply));
 
         let ref abi_file = format!("./target/{test_case}.abi");
         let ref wasm_file = format!("./target/testall.wasm");

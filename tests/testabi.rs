@@ -107,8 +107,6 @@ pub mod testabi {
             a30: Asset,
             a31: ExtendedAsset,
         ) {
-            let _ = a17;
-            let _ = a18;
             let _ = a28;
             let _ = a29;
 
@@ -132,13 +130,32 @@ pub mod testabi {
             check(a13.n == 0xffffffff, "bad a13 value!");
             check(a14 == 1.1, "bad a14 value!");
             check(a15 == 2.2, "bad a15 value!");
-
+            {
+                let mut _a17 = TimePoint::default();
+                _a17.unpack(&a17.pack());
+                check(a17 == _a17, "a17 == _a17");
+            }
+            {
+                let mut _a18 = TimePointSec::new(0u32);
+                _a18.unpack(&a18.pack());
+                check(a18 == _a18, "a18 == _a18");
+            }
             check(a20 == Name::new("eosio"), "bad value a20");
             check(a21 == String::from("hello").as_bytes().to_vec(), "bad value a21");
             check(a22 == String::from("hello"), "bad value a22");
 
+            {
+                let mut a23_2 = Checksum160::default();
+                a23_2.unpack(&a23.pack());
+                check(a23 == a23_2, "a23 == a23_2");
+            }
             check(a23 == Checksum160::from_hex("bbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), "bad value 23");
             check(a24 == Checksum256::from_hex("bbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), "bad value 24");
+            {
+                let mut a25_2 = Checksum512::default();
+                a25_2.unpack(&a25.pack());
+                check(a25 == a25_2, "a25 == a25_2");
+            }
             check(a25 == Checksum512::from_hex("bbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), "bad value 25");
 
             check(a26 == PublicKey::K1(ECCPublicKey::from_hex("0234ee2fc290bfad20635b8a79212b86ff13f8b866274a9fff9de79786a2eaafc6")), "bad value a26");

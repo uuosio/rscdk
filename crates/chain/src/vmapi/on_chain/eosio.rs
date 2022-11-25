@@ -133,7 +133,7 @@ pub fn eosio_memcpy( dst: *mut u8, src: *const u8, length: usize) {
 
 ///
 pub fn slice_copy( dst: &mut [u8], src: &[u8]) {
-	check(dst.len() == src.len(), "copy_slice: length not the same!");
+	check(dst.len() == src.len(), "slice_copy: length not the same!");
 	eosio_memcpy(dst.as_mut_ptr(), src.as_ptr(), dst.len());
 }
 
