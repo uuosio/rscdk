@@ -167,15 +167,15 @@ impl Packer for Transaction {
 
     fn unpack(&mut self, data: &[u8]) -> usize {
         let mut dec = Decoder::new(data);
-        dec.unpack::<TimePointSec>(&mut self.expiration);
-        dec.unpack::<u16>(&mut self.ref_block_num);
-        dec.unpack::<u32>(&mut self.ref_block_prefix);
-        dec.unpack::<VarUint32>(&mut self.max_net_usage_words);
-        dec.unpack::<u8>(&mut self.max_cpu_usage_ms);
-        dec.unpack::<VarUint32>(&mut self.delay_sec);
-        dec.unpack::<Vec<Action>>(&mut self.context_free_actions);
-        dec.unpack::<Vec<Action>>(&mut self.actions);
-        dec.unpack::<Vec<TransactionExtension>>(&mut self.extention);
+        dec.unpack(&mut self.expiration);
+        dec.unpack(&mut self.ref_block_num);
+        dec.unpack(&mut self.ref_block_prefix);
+        dec.unpack(&mut self.max_net_usage_words);
+        dec.unpack(&mut self.max_cpu_usage_ms);
+        dec.unpack(&mut self.delay_sec);
+        dec.unpack(&mut self.context_free_actions);
+        dec.unpack(&mut self.actions);
+        dec.unpack(&mut self.extention);
         return dec.get_pos();
     }
 }

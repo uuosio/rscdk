@@ -203,21 +203,26 @@ impl Printable for Float128 {
 ///
 #[macro_export]
 macro_rules! eosio_print {
-     ( $last:expr ) => { $last.print() };
-     ( $head:expr, $($tail:expr), +) => {
-       $head.print();
-       $crate::print::prints(" ");
-       eosio_print!($($tail),+)
-     };
+    ($last:expr) => {
+        $last.print();
+    };
+    ($head:expr, $($tail:expr), +) => {
+        $head.print();
+        $crate::print::prints(" ");
+        eosio_print!($($tail),+);
+    };
 }
 
 ///
 #[macro_export]
 macro_rules! eosio_println {
-    ( $last:expr ) => {$last.print(); $crate::print::prints("\n");};
-     ( $head:expr, $($tail:expr), +) => {
-       $head.print();
-       $crate::print::prints(" ");
-       eosio_println!($($tail),+)
-     };
+    ( $last:expr ) => {
+        $last.print();
+        $crate::print::prints("\n");
+    };
+    ( $head:expr, $($tail:expr), + ) => {
+        $head.print();
+        $crate::print::prints(" ");
+        eosio_println!($($tail),+);
+    };
 }
