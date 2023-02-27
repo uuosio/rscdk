@@ -220,7 +220,7 @@ fn is_amount_within_range(amount: i64) -> bool {
 impl Asset {
     ///
     pub fn new(amount: i64, symbol: Symbol) -> Self {
-        check(is_amount_within_range(amount), "bad amount value");
+        check(is_amount_within_range(amount), "magnitude of asset amount must be less than 2^62");
         check(symbol.is_valid(), "invalid symbol name");
         Self{amount, symbol}
     }
@@ -228,12 +228,18 @@ impl Asset {
     ///
     pub fn from_string(s: &str) -> Self {
         let mut status = AssetStringParseStatus::Initial;
-        let raw = s.as_bytes();
+        let mut raw = s.as_bytes();
 
+        let mut minus: bool = false;
         let mut amount: i64 = 0;
         let mut symbol: u64 = 0;
         let mut precision: u8 = 0;
         let mut raw_symbol: Vec<u8> = Vec::with_capacity(7);
+
+        if raw[0] == '-' as u8 {
+            minus = true;
+            raw = &raw[1..];
+        }
 
         for &c in raw {
             if c == '.' as u8 {
@@ -254,18 +260,25 @@ impl Asset {
                     check(c >= '0' as u8 && c <= '9' as u8, "Asset.from_string: bad amount");
                     amount *= 10;
                     amount += (c - '0' as u8) as i64;
+                    check(is_amount_within_range(amount), "bad amount");
                 }
                 AssetStringParseStatus::FoundDot => {
                     check(c >= '0' as u8 && c <= '9' as u8, "Asset.from_string: bad amount");
                     amount *= 10;
                     amount += (c - '0' as u8) as i64;
-                    precision += 1;                        
+                    precision += 1;
+                    check(is_amount_within_range(amount), "bad amount");
                 }
                 AssetStringParseStatus::FoundSpace => {
                     check(c >= 'A' as u8 && c <= 'Z' as u8, "Asset.from_string: bad symbol");
                     raw_symbol.push(c);
+                    check(raw_symbol.len() < 7, "Asset.from_string: bad symbol");
                 }
             }
+        }
+
+        if minus {
+            amount = -amount;
         }
 
         raw_symbol.reverse();

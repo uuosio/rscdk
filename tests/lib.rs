@@ -349,6 +349,14 @@ mod tests {
         }
         "#;
         tester.push_action("hello", "test5", args.into(), permissions).unwrap();
+
+        let args = r#"
+        {
+            "asset": "-1.0000 EOS"
+        }
+        "#;
+        tester.push_action("hello", "test51", args.into(), permissions).unwrap();
+
     }
 
     #[test]

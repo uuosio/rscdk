@@ -96,5 +96,13 @@ pub mod testasset {
             check(b.quantity() == Asset::new(11234, Symbol::new("EOS", 4u8)), r#"b.quantity() == Asset::new(11234, Symbol::new("EOS", 4u8))"#);
             check(b.contract() == name!("hello"), r#"b.contract() == name!("hello")"#);
         }
+
+        #[chain(action="test51")]
+        pub fn test51(&self, asset: Asset) {
+            check(asset == Asset::from_string("-1.0000 EOS"), "test failed");
+            check(Asset::new(-10000, Symbol::new("EOS", 4)) == Asset::from_string("-1.0000 EOS"), "test failed");
+            Asset::from_string("-461168601842738.7903 EOS");
+            Asset::from_string("461168601842738.7903 EOS");
+        }
     }
 }
