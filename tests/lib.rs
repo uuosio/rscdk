@@ -596,6 +596,7 @@ mod tests {
                 "a3": 255,
                 "a4": -1,
                 "a5": 65535,
+                "a5_2": 1,
                 "a6": -1,
                 "a7": 4294967295,
                 "a8": -1,
@@ -720,7 +721,7 @@ mod tests {
         tester.produce_block();
 
         let err = tester.push_action("hello", "test3", "".into(), permissions).unwrap_err();
-        err.check_err("bad hex charactors");
+        err.check_err("bad hex characters");
         tester.produce_block();
     }
 

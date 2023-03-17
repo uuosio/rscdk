@@ -37,7 +37,7 @@ where T: PrimaryValueInterface + SecondaryValueInterface + Packer + Default
 impl<T> MultiIndex<T> 
 where T: PrimaryValueInterface + SecondaryValueInterface + Packer + Default
 {
-    ///
+    /// Creates a new instance of the MultiIndex struct.
     pub fn new(code: Name, scope: Name, table: Name, indices: &[SecondaryType]) -> Self {
         let mut idxdbs: Vec<Box<dyn IdxTable>> = Vec::new();
         let mut i: usize = 0;
@@ -69,7 +69,6 @@ where T: PrimaryValueInterface + SecondaryValueInterface + Packer + Default
                         IdxF128Table::new(i, code, scope, Name::from_u64(idx_table + i as u64))
                     )
                 ),
-                // _ => check(false, "unsupported secondary index type"),
             }
             i += 1;
         }
@@ -83,7 +82,7 @@ where T: PrimaryValueInterface + SecondaryValueInterface + Packer + Default
         }
     }
 
-    ///
+    /// Stores a given value into the table with a specified payer.
     pub fn store(&self, value: &T, payer: Name) -> Iterator<T> {
         let primary = value.get_primary();
         for i in 0..self.idxdbs.len() {
@@ -94,16 +93,16 @@ where T: PrimaryValueInterface + SecondaryValueInterface + Packer + Default
         return it;
     }
 
-    ///
+    /// Searches for a record with a given primary key and returns an iterator.
     pub fn find(&self, id: u64) -> Iterator<T> {
         return self.db.find(id);
     }
 
-    ///
+    /// Updates the record pointed by the given iterator with a new value and payer.
     pub fn update(&self, iterator: &Iterator<T>, value: &T, payer: Name) {
         check(iterator.is_ok(), "MultiIndex::update: invalid iterator");
         let primary = iterator.get_primary().unwrap();
-        self.db.update(&iterator, value, payer);
+        self.db.update(&iterator,value, payer);
         for i in 0..self.idxdbs.len() {
             let v2 = value.get_secondary_value(i);
             let (it_secondary, secondary_value) = self.idxdbs[i].find_primary(primary);
@@ -114,7 +113,7 @@ where T: PrimaryValueInterface + SecondaryValueInterface + Packer + Default
         }
     }
 
-    ///
+    /// Removes the record pointed by the given iterator.
     pub fn remove(&self, iterator: &Iterator<T>) {
         check(iterator.is_ok(), "remove: invalid iterator");
         let primary = iterator.get_primary().unwrap();
@@ -125,7 +124,7 @@ where T: PrimaryValueInterface + SecondaryValueInterface + Packer + Default
         self.db.remove(&iterator);
     }
 
-    ///
+    /// Retrieves the value pointed by the given iterator.
     pub fn get(&self, iterator: &Iterator<T>) -> Option<T> {
         if !iterator.is_ok() {
             return None;
@@ -133,43 +132,43 @@ where T: PrimaryValueInterface + SecondaryValueInterface + Packer + Default
         self.db.get(iterator)
     }
 
-    ///
+    /// Retrieves the value by its primary key.
     pub fn get_by_primary(&self, primary: u64) -> Option<T> {
         let it = self.db.find(primary);
         return self.get(&it);
     }
 
-    ///
+    /// Returns an iterator pointing to the next record.
     pub fn next(&self, iterator: &Iterator<T>) -> Iterator<T> {
         return self.db.next(iterator);
     }
 
-    ///
+    /// Returns an iterator pointing to the previous record.
     pub fn previous(&self, iterator: &Iterator<T>) -> Iterator<T> {
         return self.db.previous(iterator);
     }
 
-    ///
+    /// Returns an iterator pointing to the first record that is not less than the given primary key.
     pub fn lower_bound(&self, id: u64) -> Iterator<T> {
         return self.db.lower_bound(id);
     }
 
-    ///
+    /// Returns an iterator pointing to the first record that is greater than the given primary key.
     pub fn upper_bound(&self, id: u64) -> Iterator<T> {
         return self.db.upper_bound(id);
     }
 
-    ///
+    /// Returns an iterator pointing to the end of the table.
     pub fn end(&self) -> Iterator<T> {
         return self.db.end();
     }
 
-    ///
+    /// Retrieves a reference to the secondary index database at the given index.
     pub fn get_idx_db(&self, i: usize) -> &dyn IdxTable {
         return self.idxdbs[i].as_ref();
     }
 
-    ///
+    /// Updates the secondary index with a given iterator, value, and payer.
     pub fn idx_update(&self, it: &SecondaryIterator, value: SecondaryValue, payer: Name) {
         let it_primary = self.find(it.primary).expect("idx_update: invalid primary");
         let mut db_value = it_primary.get_value().unwrap();

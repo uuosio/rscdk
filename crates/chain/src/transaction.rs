@@ -69,7 +69,7 @@ pub struct Transaction {
     delay_sec:              VarUint32, /// number of seconds to delay transaction, default: 0
     context_free_actions:   Vec<Action>,
     actions:                Vec<Action>,
-    extention:              Vec<TransactionExtension>,
+    extension:              Vec<TransactionExtension>,
 }
 
 impl Transaction {
@@ -83,7 +83,7 @@ impl Transaction {
             delay_sec: VarUint32::new(delay_sec),
             context_free_actions: Vec::new(),
             actions: Vec::new(),
-            extention: Vec::new()
+            extension: Vec::new()
         }
     }
 
@@ -111,20 +111,20 @@ impl Transaction {
         return self.delay_sec.value();
     }
 
-    pub fn actions(&self) -> Vec<Action> {
-        return self.actions.clone();
+    pub fn actions(&self) -> &Vec<Action> {
+        return &self.actions;
     }
 
     pub fn add_action(&mut self, action: Action) {
         self.actions.push(action);
     }
 
-    pub fn context_free_actions(&self) -> Vec<Action> {
-        return self.context_free_actions.clone();
+    pub fn context_free_actions(&self) -> &Vec<Action> {
+        return &self.context_free_actions;
     }
 
-    pub fn extention(&self) -> Vec<TransactionExtension> {
-        return self.extention.clone();
+    pub fn extension(&self) -> &Vec<TransactionExtension> {
+        return &self.extension;
     }
 
     pub fn send(&self, payer: Name, id: u128, replace_existing: bool) {
@@ -145,7 +145,7 @@ impl Packer for Transaction {
         _size += self.delay_sec.size();
         _size += self.context_free_actions.size();
         _size += self.actions.size();
-        _size += self.extention.size();
+        _size += self.extension.size();
         return _size;
     }
 
@@ -160,7 +160,7 @@ impl Packer for Transaction {
         self.delay_sec.pack(enc);
         self.context_free_actions.pack(enc);
         self.actions.pack(enc);
-        self.extention.pack(enc);
+        self.extension.pack(enc);
 
         enc.get_size() - pos
     }
@@ -175,7 +175,7 @@ impl Packer for Transaction {
         dec.unpack(&mut self.delay_sec);
         dec.unpack(&mut self.context_free_actions);
         dec.unpack(&mut self.actions);
-        dec.unpack(&mut self.extention);
+        dec.unpack(&mut self.extension);
         return dec.get_pos();
     }
 }

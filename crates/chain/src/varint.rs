@@ -1,5 +1,4 @@
 use crate::{
-    vec,
     vec::Vec,
 };
 
@@ -13,27 +12,28 @@ use crate::print::{
     printi,
 };
 
-///
+/// A variable-length unsigned integer structure.
 #[cfg_attr(feature = "std", derive(crate::eosio_scale_info::TypeInfo))]
 #[derive(Copy, Clone, Eq, PartialEq, Default)]
 pub struct VarUint32 {
-    ///
+    /// The unsigned integer value.
     pub n: u32,
 }
 
 impl VarUint32 {
-    ///
+    /// Create a new VarUint32 instance with the given value.
     pub fn new(n: u32) -> Self {
         Self { n: n }
     }
 
+    /// Get the value of the VarUint32 instance.
     pub fn value(&self) -> u32 {
         return self.n;
     }
 }
 
 impl Packer for VarUint32 {
-    ///
+    /// Calculate the size of the serialized VarUint32.
     fn size(&self) -> usize {
         let mut size: usize = 0;
         let mut val = self.n;
@@ -48,7 +48,7 @@ impl Packer for VarUint32 {
         return size;
     }
 
-    ///
+    /// Serialize the VarUint32 value.
     fn pack(&self, enc: &mut Encoder) -> usize {
         let mut val = self.n;
         if val == 0 {
@@ -70,6 +70,7 @@ impl Packer for VarUint32 {
         size
     }
 
+    /// Deserialize the VarUint32 value from the given byte slice.
     fn unpack(&mut self, data: &[u8]) -> usize {
         let mut by: u32 = 0;
         let mut value: u32 = 0;
@@ -88,6 +89,7 @@ impl Packer for VarUint32 {
 }
 
 impl Printable for VarUint32 {
+    /// Print the VarUint32 value.
     fn print(&self) {
         printi(self.n as i64);
     }

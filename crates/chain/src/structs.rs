@@ -662,7 +662,7 @@ impl ProducerKey {
 
 impl Packer for ProducerKey {
     fn size(&self) -> usize {
-        return 8 + self.block_signing_key.size();
+        8 + self.block_signing_key.size()
     }
 
     fn pack(&self, enc: &mut Encoder) -> usize {

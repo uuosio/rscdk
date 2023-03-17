@@ -79,6 +79,7 @@ pub mod testabi {
             a3: u8,
             a4: i16,
             a5: u16,
+            a5_2: u16,
             a6: i32,
             a7: u32,
             a8: i64,
@@ -116,6 +117,7 @@ pub mod testabi {
 
             check(a4 == -1, "bad a4 value!");
             check(a5 == 0xffff, "bad a5 value!");
+            check(a5_2 == 1, "bad a5_2 value!");
 
             check(a6 == -1, "bad a6 value!");
             check(a7 == 0xffffffff, "bad a7 value!");

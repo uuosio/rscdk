@@ -11,7 +11,7 @@ pub fn decode_hex(s: &str) -> Vec<u8> {
             if let Ok(c) = u8::from_str_radix(&s[i..i + 2], 16) {
                 c
             } else {
-                check(false, "bad hex charactors");
+                check(false, "bad hex characters");
                 0u8
             }
         })

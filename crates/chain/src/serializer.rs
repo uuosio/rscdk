@@ -231,20 +231,15 @@ macro_rules! impl_packed {
             /// Packs this value into the given encoder.
             fn pack(&self, enc: &mut Encoder) -> usize {
                 let data = enc.alloc(size_of::<$ty>());
-                let src = unsafe {
-                    slice::from_raw_parts_mut(self as *const $ty as *mut u8, size_of::<$ty>())
-                };
-                slice_copy(data, src);
+                let src = self.to_le_bytes();
+                slice_copy(data, &src);
                 self.size()
             }
         
             /// Unpacks this value from the given data.
             fn unpack(&mut self, data: &[u8]) -> usize {
                 check(data.len() >= self.size(), "number: buffer overflow");
-                let dst = unsafe {
-                    slice::from_raw_parts_mut(self as *const $ty as *mut u8, size_of::<$ty>())
-                };
-                slice_copy(dst, &data[..self.size()]);
+                *self = $ty::from_le_bytes(data[..self.size()].try_into().unwrap());
                 return size_of::<$ty>();
             }
         }

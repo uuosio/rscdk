@@ -26,10 +26,15 @@ use crate::vmapi::eosio::{
 };
 
 const MAX_AMOUNT: i64 = (1 << 62) - 1;
+const MAX_PRECISION: u8  = 18;
 
+/// Check if the given symbol code is valid.
 pub fn is_valid_symbol_code(sym: u64) -> bool {
     let mut i: i32 = 0;
     let mut tmp = sym;
+    if (sym >> 56) != 0 {
+        return false;
+    }
 
     for j in 0..7 {
         let c = (tmp & 0xFF) as u8;
@@ -54,7 +59,7 @@ pub fn is_valid_symbol_code(sym: u64) -> bool {
     return true;
 }
 
-///
+/// A struct representing the symbol code of an asset.
 #[cfg_attr(feature = "std", derive(eosio_scale_info::TypeInfo))]
 #[derive(Copy, Clone, Default, Eq, PartialEq)]
 pub struct SymbolCode {
@@ -66,7 +71,7 @@ impl SymbolCode {
     ///
     pub fn new(sym: &str) -> Self {
         let raw = sym.as_bytes();
-        check(raw.len() < 7, "bad symbol name");
+        check(raw.len() < 7 && raw.len() > 0, "bad symbol name");
 
         let mut value: u64 = 0;
         for i in (0..raw.len()).rev() {
@@ -88,7 +93,9 @@ impl SymbolCode {
         let mut v: Vec<u8> = Vec::with_capacity(7);
         let mut tmp = self.value;
         for _ in 0..7 {
-            v.push((tmp & 0xff) as u8);
+            let c = (tmp & 0xff) as u8;
+            check(c >= 'A' as u8 && c <= 'Z' as u8, "invald symbol character");
+            v.push(c);
             tmp >>= 8;
             if tmp <= 0 {
                 break;
@@ -123,7 +130,7 @@ impl Packer for SymbolCode {
     }
 }
 
-///
+/// A struct representing the symbol of an asset.
 #[cfg_attr(feature = "std", derive(eosio_scale_info::TypeInfo))]
 #[derive(Copy, Clone, Default, Eq, PartialEq)]
 pub struct Symbol {
@@ -135,7 +142,7 @@ impl Symbol {
     ///
     pub fn new(name: &str, precision: u8) -> Self {
         let raw = name.as_bytes();
-        check(raw.len() < 7, "bad symbol name");
+        check(raw.len() < 7 && raw.len() > 0, "bad symbol name");
 
         let mut value: u64 = 0;
         for i in (0..raw.len()).rev() {
@@ -196,7 +203,7 @@ impl Packer for Symbol {
     }
 }
 
-///
+/// A struct representing an asset with an amount and symbol.
 #[cfg_attr(feature = "std", derive(eosio_scale_info::TypeInfo))]
 #[derive(Copy, Clone, Default, Eq, PartialEq)]
 pub struct Asset {
@@ -227,6 +234,7 @@ impl Asset {
 
     ///
     pub fn from_string(s: &str) -> Self {
+        check(s.len() > 0, "Asset.from_string: empty string");
         let mut status = AssetStringParseStatus::Initial;
         let mut raw = s.as_bytes();
 
@@ -267,6 +275,7 @@ impl Asset {
                     amount *= 10;
                     amount += (c - '0' as u8) as i64;
                     precision += 1;
+                    check(precision <= MAX_PRECISION, "Asset.from_string: bad precision");
                     check(is_amount_within_range(amount), "bad amount");
                 }
                 AssetStringParseStatus::FoundSpace => {
@@ -276,6 +285,8 @@ impl Asset {
                 }
             }
         }
+
+        check(raw_symbol.len() != 0, "Asset.from_string: bad symbol");
 
         if minus {
             amount = -amount;
@@ -413,7 +424,7 @@ impl Packer for Asset {
     }
 }
 
-///
+/// A struct representing an extended asset with an associated contract.
 #[cfg_attr(feature = "std", derive(eosio_scale_info::TypeInfo))]
 #[derive(Copy, Clone, Default, Eq, PartialEq)]
 pub struct ExtendedAsset {
