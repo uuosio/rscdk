@@ -252,10 +252,10 @@ impl Contract {
                     match &arg {
                         attrs::AttributeArg::Table(_) => {
                             if let Some(name) = attr.table_name() {
-                                if !is_name_valid(&name.str()) {
+                                if !is_name_valid(&name.str()) || name.length == 0 {
                                     return Err(format_err_spanned!(
                                         attr.args().next().unwrap().ast,
-                                        "table name contain invalid character(s), valid charaters are a-z & 1-5: {}", name.str()
+                                        "table name is empty or contains invalid character(s). valid charaters are a-z & 1-5: {}", name.str()
                                     ));
                                 }
                                 if self.tables.iter().any(|table| {
@@ -295,10 +295,10 @@ impl Contract {
                                 }
                                 let attr = &chain_attrs[0];
                                 if let Some(name) = attr.action_name() {
-                                    if !is_name_valid(&name.str()) {
+                                    if !is_name_valid(&name.str()) || name.length == 0 {
                                         return Err(format_err_spanned!(
                                             attr.args().next().unwrap().ast,
-                                            "action name contain invalid character(s), valid charaters are a-z & 1-5: {}", name.str()
+                                            "Action name is empty or contains invalid character(s). Valid characters are a-z and 1-5.: {}", name.str()
                                         ));
                                     }
                                     if self.actions.iter().any(|action| {
