@@ -1,6 +1,3 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(feature = "std", allow(warnings))]
-
 use rust_chain as chain;
 
 #[chain::contract]
@@ -14,7 +11,9 @@ pub mod testintrinsics {
         PublicKey,
         Signature,
         Name,
-
+        action::{
+            get_code_hash,
+        },
         get_active_producers,
 
         assert_sha256,
@@ -244,6 +243,12 @@ pub mod testintrinsics {
         #[chain(action="testtime")]
         pub fn test_block_time(&self) {
             eosio_println!("+++++++current_time:", current_time().elapsed);
+        }
+
+        #[chain(action="testcodehash")]
+        pub fn test_code_hash(&self, hash: Checksum256) {
+            let ret = get_code_hash(self.first_receiver);
+            check(ret == hash, "bad code hash!");
         }
     }
 }
