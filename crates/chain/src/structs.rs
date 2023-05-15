@@ -26,7 +26,6 @@ use crate::varint::{
 };
 
 use crate::{
-    vec,
     vec::Vec,
     string::String,
 };

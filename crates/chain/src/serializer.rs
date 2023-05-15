@@ -1,6 +1,5 @@
 use core::{
     mem::size_of,
-    slice,
 };
 
 use crate::{

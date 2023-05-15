@@ -8,7 +8,6 @@
 use eosio_scale_info::TypeInfo;
 
 use crate::{
-    vec::Vec,
     string::String,
 };
 

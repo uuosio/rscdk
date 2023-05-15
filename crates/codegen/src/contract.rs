@@ -510,7 +510,6 @@ impl Contract {
             let serialize = packer.fields.iter().map(|packer_field| {
                 let span = packer_field.span();
                 let ident = &packer_field.ident;
-                let ty = &packer_field.ty;
                 quote_spanned!(span=>
                     self.#ident.pack(enc);
                 )

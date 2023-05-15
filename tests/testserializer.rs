@@ -1,6 +1,3 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(feature = "std", allow(warnings))]
-
 #[rust_chain::contract]
 pub mod testserializer {
     use rust_chain::{
@@ -19,13 +16,8 @@ pub mod testserializer {
         SymbolCode,
         Asset,
         ExtendedAsset,
-
-        ECCPublicKey,
-
-        Decoder,
         check,
         name,
-        eosio_println,
     };
     
     #[chain(packer)]

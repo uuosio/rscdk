@@ -1,7 +1,3 @@
-use crate::{
-    vec::Vec,
-};
-
 use crate::serializer::{
     Packer,
     Encoder,

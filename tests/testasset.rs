@@ -1,6 +1,3 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(feature = "std", allow(warnings))]
-
 #[rust_chain::contract]
 pub mod testasset {
     use rust_chain::{

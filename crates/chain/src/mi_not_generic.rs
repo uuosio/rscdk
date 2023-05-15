@@ -25,7 +25,6 @@ use crate::{
 
 use crate::boxed::Box;
 use crate::serializer::{
-    Packer,
     Encoder,
 };
 

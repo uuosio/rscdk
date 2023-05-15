@@ -17,7 +17,6 @@ use crate::name::{
 };
 
 use crate::serializer::{
-    Packer as _,
     Encoder,
 };
 
