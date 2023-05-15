@@ -1,37 +1,18 @@
-use crate::{
-    vec,
-    vec::Vec,
+use core::{
+    mem::size_of,
+    slice,
 };
 
 use crate::{
     string::String,
+    vec,
+    vec::Vec,
+    vmapi::eosio::{
+        check,
+        slice_copy,
+    },
+    varint::VarUint32,
 };
-
-use core::{
-    slice
-};
-
-use core::mem::{
-    size_of
-};
-
-use crate::vmapi::eosio::{
-    slice_copy,
-    check,
-};
-
-use crate::varint::{
-    VarUint32,
-};
-
-// use crate::{
-//     eosio_println,
-// };
-
-// use crate::print::{
-//     Printable,
-//     prints,
-// };
 
 ///
 /// The `Packer` trait provides methods for packing and unpacking values to and from byte arrays.
@@ -120,7 +101,7 @@ impl Encoder {
     ///
     /// A reference to the packed bytes of this encoder as a byte array.
     pub fn get_bytes(&self) -> &[u8] {
-        return &self.buf;
+        &self.buf
     }
 
     /// Returns the number of packed bytes in this encoder.
@@ -208,12 +189,12 @@ impl<'a> Decoder<'a> {
     {
         let size = packer.unpack(&self.buf[self.pos..]);
         self.pos += size;
-        return size;
+        size
     }
 
     /// Returns the current position of the decoder
     pub fn get_pos(&self) -> usize {
-        return self.pos;
+        self.pos
     }
 
 }
@@ -240,7 +221,7 @@ macro_rules! impl_packed {
             fn unpack(&mut self, data: &[u8]) -> usize {
                 check(data.len() >= self.size(), "number: buffer overflow");
                 *self = $ty::from_le_bytes(data[..self.size()].try_into().unwrap());
-                return size_of::<$ty>();
+                size_of::<$ty>()
             }
         }
     };
@@ -339,7 +320,7 @@ impl Packer for String {
 
     /// Returns the size of this value in bytes.
     fn size(&self) -> usize {
-        return VarUint32::new(self.len() as u32).size() + self.len();
+        VarUint32::new(self.len() as u32).size() + self.len()
     }
 
     /// Packs this value into the given encoder.
@@ -366,7 +347,7 @@ impl Packer for String {
         } else {
             check(false, "invalid utf8 string");
         }
-        return size + length.value() as usize;
+        size + length.value() as usize
     }
 }
 
@@ -382,7 +363,7 @@ impl<T> Packer for Vec<T> where T: Packer + Default {
         for i in 0..self.len() {
             size += self[i].size();
         }
-        return VarUint32::new(size as u32).size() + size;
+        VarUint32::new(size as u32).size() + size
     }
 
     /// Packs this value into the given encoder.
@@ -407,7 +388,7 @@ impl<T> Packer for Vec<T> where T: Packer + Default {
             dec.unpack(&mut v);
             self.push(v);
         }
-        return dec.get_pos();
+        dec.get_pos()
     }
 }
 

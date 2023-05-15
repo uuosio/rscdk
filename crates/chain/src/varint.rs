@@ -12,9 +12,13 @@ use crate::print::{
     printi,
 };
 
+use crate::vmapi::eosio::{
+    check,
+};
+
 /// A variable-length unsigned integer structure.
 #[cfg_attr(feature = "std", derive(crate::eosio_scale_info::TypeInfo))]
-#[derive(Copy, Clone, Eq, PartialEq, Default)]
+#[derive(Copy, Clone, Eq, PartialEq, Default, Debug)]
 pub struct VarUint32 {
     /// The unsigned integer value.
     pub n: u32,
@@ -82,6 +86,7 @@ impl Packer for VarUint32 {
             if (*b & 0x80) == 0 {
                 break;
             }
+            check(by < 32, "malformed varuint32 data");
         }
         self.n = value;
         return length;
@@ -92,5 +97,40 @@ impl Printable for VarUint32 {
     /// Print the VarUint32 value.
     fn print(&self) {
         printi(self.n as i64);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_varuint32_pack_unpack() {
+        let values = vec![
+            0,
+            1,
+            127,
+            128,
+            255,
+            256,
+            16383,
+            16384,
+            2097151,
+            2097152,
+            268435455,
+            268435456,
+            u32::MAX,
+        ];
+
+        for value in values {
+            let varuint32 = VarUint32::new(value);
+            let mut encoder = Encoder::new(varuint32.size());
+            varuint32.pack(&mut encoder);
+
+            let mut unpacked_varuint32 = VarUint32::default();
+            let _ = unpacked_varuint32.unpack(encoder.get_bytes());
+
+            assert_eq!(varuint32, unpacked_varuint32);
+        }
     }
 }

@@ -88,7 +88,46 @@ pub trait TableValue {
 	fn unpack(data: &[u8]) -> Self;
 }
 
+pub struct Primary<'a, T>
+where T: Packer + PrimaryValueInterface + Default
+{
+    pub(crate) value: T,
+    _marker: core::marker::PhantomData<&'a ()>,
+}
 
+impl <'a, T> Primary<'a, T>
+where T: Packer + PrimaryValueInterface + Default
+{
+    pub fn new(value: T) -> Self {
+        Self { value, _marker: core::marker::PhantomData::<>{} }
+    }
+
+    pub fn get_primary(&self) -> u64 {
+        self.value.get_primary()
+    }
+
+    pub fn value(self) -> T {
+        self.value
+    }
+}
+
+pub struct Secondary<T>
+where T: Packer + Default
+{
+    pub(crate) value: T,
+}
+
+impl <T> Secondary<T>
+where T: Packer + Default
+{
+    pub fn new(value: T) -> Self {
+        Self { value }
+    }
+
+    pub fn value(self) -> T {
+        self.value
+    }
+}
 
 ///
 pub struct Iterator<'a, T> 
