@@ -181,9 +181,12 @@ mod tests {
         get_test_mutex
     };
     use std::{
+        io,
         fs,
         path::Path,
     };
+
+    use sha2::{Sha256, Digest};
 
     // use std::sync::Once;
     // static INIT: Once = Once::new();
@@ -833,6 +836,16 @@ mod tests {
         tester.produce_block_ex(10);
 
         tester.push_action("hello", "testtime", "{}".into(), permissions).unwrap();
+
+        let ref wasm_file = format!("./target/testall.wasm");
+
+        let mut hasher = Sha256::new();
+        let mut file = fs::File::open(wasm_file).unwrap();
+        io::copy(&mut file, &mut hasher).unwrap();
+        // file.close().unwrap();      
+        let hash_bytes = hasher.finalize();
+        let args = format!("{{\"hash\": \"{:x}\"}}", hash_bytes);
+        tester.push_action("hello", "testcodehash", args.into(), permissions).unwrap();
     }
 
     #[test]

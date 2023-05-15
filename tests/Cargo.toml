@@ -6,6 +6,7 @@ edition = "2021"
 
 [dependencies]
 rust-chain = { version = "0.2", path = "../crates/chain", default-features = false }
+sha2 = "0.9.8"
 
 [lib]
 name = "testall"

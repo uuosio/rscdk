@@ -10,13 +10,22 @@ use chaintester::{
 	}
 };
 
+use crate::name::{
+	Name,
+};
+
 // void set_action_return_value(const char *data, uint32_t data_size);
 pub fn set_action_return_value(data: Vec<u8>) {
     let ret = get_vm_api_client().set_action_return_value(data);
     ret.unwrap();
 }
 
-// uint32_t get_code_hash(capi_name account, uint32_t struct_version, char* packed_result, uint32_t packed_result_len);
+// uint32_t get_code_hash(capi_name account, uint32_t struct_version, char* packed_result, uint32_t packed_result_len)
+pub fn get_code_hash(account: Name, struct_version: u32) -> Vec<u8> {
+    let ret = get_vm_api_client().get_code_hash(account.n.into(), struct_version as i64);
+    ret.unwrap()
+}
+
 // uint32_t get_block_num();
 pub fn get_block_num() -> u32 {
     let ret = get_vm_api_client().get_block_num();

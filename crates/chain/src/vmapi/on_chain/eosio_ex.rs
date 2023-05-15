@@ -3,6 +3,10 @@ use crate::{
 	vec::Vec,
 };
 
+use crate::name::{
+	Name,
+};
+
 mod intrinsics {
     extern "C" {
         pub fn set_action_return_value(data: *const u8, data_size: u32);
@@ -30,6 +34,15 @@ pub fn set_action_return_value(data: Vec<u8>) {
 }
 
 // uint32_t get_code_hash(capi_name account, uint32_t struct_version, char* packed_result, uint32_t packed_result_len);
+pub fn get_code_hash(account: Name, struct_version: u32) -> Vec<u8> {
+    let mut packed_result = [0u8; 43];
+    unsafe {
+        let ret = intrinsics::get_code_hash(account.n, struct_version, packed_result.as_mut_ptr(), 43u32);
+        crate::vmapi::eosio::eosio_assert(ret == 43u32, "bad get_code_hash return size");
+    }
+    packed_result.to_vec()
+}
+
 // uint32_t get_block_num();
 pub fn get_block_num() -> u32 {
     unsafe {
