@@ -298,7 +298,7 @@ impl Contract {
                                     if !is_name_valid(&name.str()) || name.length == 0 {
                                         return Err(format_err_spanned!(
                                             attr.args().next().unwrap().ast,
-                                            "Action name is empty or contains invalid character(s). Valid characters are a-z and 1-5.: {}", name.str()
+                                            "action name is empty or contains invalid character(s). valid characters are a-z and 1-5.: {}", name.str()
                                         ));
                                     }
                                     if self.actions.iter().any(|action| {

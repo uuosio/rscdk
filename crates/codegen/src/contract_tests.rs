@@ -84,7 +84,7 @@ mod tests {
             }
         );
         assert!(contract.is_err(), "bad return");
-        assert!(contract.err().unwrap().to_compile_error().to_string().contains("action name contain invalid character(s), valid charaters are a-z & 1-5: test9"));
+        assert!(contract.err().unwrap().to_compile_error().to_string().contains("action name is empty or contains invalid character(s). valid characters are a-z and 1-5.: test9"));
     }
 
     #[test]
@@ -102,7 +102,7 @@ mod tests {
             }
         );
         assert!(contract.is_err(), "bad return");
-        assert!(contract.err().unwrap().to_compile_error().to_string().contains("table name contain invalid character(s), valid charaters are a-z & 1-5: mydata9"));
+        assert!(contract.err().unwrap().to_compile_error().to_string().contains("table name is empty or contains invalid character(s). valid charaters are a-z & 1-5: mydata9"));
     }
 
     #[test]
