@@ -3,8 +3,6 @@ use crate::serializer::{
     Encoder
 };
 
-use crate::vec::Vec;
-
 #[cfg_attr(feature = "std", derive(eosio_scale_info::TypeInfo))]
 #[derive(Default)]
 pub struct BinaryExtension<T: Packer + Default> {

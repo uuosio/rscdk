@@ -8,10 +8,6 @@ use crate::serializer::{
     Decoder,
 };
 
-use crate::{
-    vec::Vec,
-};
-
 #[repr(C, align(8))]
 #[derive(Default)]
 pub struct BlockchainParameters {

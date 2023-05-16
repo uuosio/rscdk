@@ -370,7 +370,8 @@ pub mod testmi {
 
             if it_secondary.is_ok() {
                 eosio_println!("++++it_secondary:", it_secondary.i, it_secondary.primary);
-                mydb.idx_update(&it_secondary, SecondaryValue::Idx64(3), receiver);    
+                // mydb.idx_update(&it_secondary, SecondaryValue::Idx64(3), receiver);
+                mydb.update_a2(&it_secondary, 3u64, receiver);
             }
 
             {
@@ -435,7 +436,9 @@ pub mod testmi {
             let idx_a2 = mydb.get_idx_by_a2();
             let it_a2 = idx_a2.find(220);
             check(it_a2.primary == 11, "it_a2.primary == 11");
-            mydb.idx_update(&it_a2, 2200u64.into(), payer);
+            mydb.update_a2(&it_a2, 2200u64, payer);
+            // the same as:
+            // mydb.idx_update(&it_a2, 2200u64.into(), payer);
 
             let mydata = MyData{a1: 11, a2: 2200, a3: 33, a4: Uint256::new(44, 0), a5: 55.0, a6: a6_66};
             check(mydb.find(11).get_value().unwrap() == mydata, "mydb.find(11).get_value().unwrap() == mydata");

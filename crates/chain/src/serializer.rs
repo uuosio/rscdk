@@ -4,7 +4,6 @@ use core::{
 
 use crate::{
     string::String,
-    vec,
     vec::Vec,
     vmapi::eosio::{
         check,

@@ -589,7 +589,7 @@ impl Contract {
             let serialize = item.sig.inputs.iter().map(|arg| {
                 if let syn::FnArg::Typed(pat_type) = arg {
                     let span = arg.span();
-                    let ty = &*pat_type.ty;
+                    // let ty = &*pat_type.ty;
                     if let syn::Pat::Ident(x) = &*pat_type.pat {
                         quote_spanned!(span=>
                             self.#x.pack(enc);
@@ -915,12 +915,21 @@ impl Contract {
                         Some("Idx64") | Some("Idx128") | Some("Idx256") | Some("IdxF64") | Some("IdxF128") => {
                             let span = field.span();
                             let ty = &field.ty;
-                            let method_name = String::from("get_idx_by_") + &field.ident.as_ref().unwrap().to_string();
-                            let method_ident = syn::Ident::new(&method_name, span);
+                            let get_idx_method_name = String::from("get_idx_by_") + &field.ident.as_ref().unwrap().to_string();
+                            let get_idx_method_ident = syn::Ident::new(&get_idx_method_name, span);
+
+                            let update_idx_method_name = String::from("update_") + &field.ident.as_ref().unwrap().to_string();
+                            let update_idx_method_ident = syn::Ident::new(&update_idx_method_name, span);
+
                             return quote_spanned!(span =>
                                 #[allow(dead_code)]
-                                fn #method_ident(&self) -> ::rust_chain::db::IdxTableProxy<#ty, #idx_type> {
+                                fn #get_idx_method_ident(&self) -> ::rust_chain::db::IdxTableProxy<#ty, #idx_type> {
                                     return ::rust_chain::db::IdxTableProxy::<#ty, #idx_type>::new(self.mi.get_idx_db(#i));
+                                }
+
+                                #[allow(dead_code)]
+                                fn #update_idx_method_ident(&self, it: &::rust_chain::db::SecondaryIterator, value: #ty, payer: rust_chain::Name) {
+                                    self.mi.idx_update(it, value.into(), payer);
                                 }
                             )
                         }
@@ -940,6 +949,12 @@ impl Contract {
                     impl #mi_ident {
                         ///
                         pub fn new(code: rust_chain::Name, scope: rust_chain::Name, table: rust_chain::Name) -> Self {
+                            Self {
+                                mi: ::rust_chain::mi::MultiIndex::<#table_ident>::new(code, scope, table, &[rust_chain::db::SecondaryType::Idx64; 0]),
+                            }
+                        }
+
+                        pub fn new_table(code: rust_chain::Name, scope: rust_chain::Name, table: rust_chain::Name) -> Self {
                             Self {
                                 mi: ::rust_chain::mi::MultiIndex::<#table_ident>::new(code, scope, table, &[rust_chain::db::SecondaryType::Idx64; 0]),
                             }
