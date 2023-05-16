@@ -921,6 +921,8 @@ impl Contract {
                             let update_idx_method_name = String::from("update_") + &field.ident.as_ref().unwrap().to_string();
                             let update_idx_method_ident = syn::Ident::new(&update_idx_method_name, span);
 
+                            let error_message = String::from("invalid db index on update: ") + &field.ident.as_ref().unwrap().to_string();
+
                             return quote_spanned!(span =>
                                 #[allow(dead_code)]
                                 fn #get_idx_method_ident(&self) -> ::rust_chain::db::IdxTableProxy<#ty, #idx_type> {
@@ -929,6 +931,7 @@ impl Contract {
 
                                 #[allow(dead_code)]
                                 fn #update_idx_method_ident(&self, it: &::rust_chain::db::SecondaryIterator, value: #ty, payer: rust_chain::Name) {
+                                    rust_chain::check(it.db_index == #i, #error_message);
                                     self.mi.idx_update(it, value.into(), payer);
                                 }
                             )
