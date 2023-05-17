@@ -6,7 +6,7 @@ fn main() {
     println!("Target architecture: {}", target_arch);
 
     if target_arch == "wasm32" {
-        println!("cargo:rustc-link-search=./");
+        println!("cargo:rustc-link-search=./say_hello/build");
         println!("cargo:rustc-link-lib=static=say_hello");    
     }
 }

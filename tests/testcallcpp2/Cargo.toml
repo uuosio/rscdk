@@ -1,0 +1,19 @@
+[package]
+name = "testcallc"
+version = "0.1.0"
+authors = [""]
+edition = "2021"
+
+[dependencies]
+rust-chain = { version = "0.2", path = "../../crates/chain", default-features = false }
+
+[lib]
+name = "testcallc"
+path = "lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["std"]
+std = [
+    "rust-chain/std",
+]
