@@ -344,7 +344,7 @@ mod tests {
         tester.produce_block();
 
         let ret = tester.get_table_rows(true, "hello", "EOS", "stat", "", "", 1).unwrap();
-        let row = &ret["rows"][0]["data"];
+        let row = &ret["rows"][0];
         assert!(row["issuer"] == "hello");
         assert!(row["max_supply"] == "100.0000 EOS");
         assert!(row["supply"] == "0.0000 EOS");
@@ -360,13 +360,13 @@ mod tests {
         tester.produce_block();
 
         let ret = tester.get_table_rows(true, "hello", "EOS", "stat", "", "", 1).unwrap();
-        let row = &ret["rows"][0]["data"];
+        let row = &ret["rows"][0];
         assert!(row["issuer"] == "hello");
         assert!(row["max_supply"] == "100.0000 EOS");
         assert!(row["supply"] == "1.0000 EOS");
 
         let ret = tester.get_table_rows(true, "hello", "hello", "accounts", "", "", 1).unwrap();
-        let row = &ret["rows"][0]["data"];
+        let row = &ret["rows"][0];
         assert!(row["balance"] == "1.0000 EOS");
     
         let args = r#"
@@ -392,10 +392,10 @@ mod tests {
         tester.produce_block();
 
         let ret = tester.get_table_rows(true, "hello", "hello", "accounts", "", "", 1).unwrap();
-        assert!(ret["rows"][0]["data"]["balance"] == "0.0000 EOS");
+        assert!(ret["rows"][0]["balance"] == "0.0000 EOS");
     
         let ret = tester.get_table_rows(true, "hello", "alice", "accounts", "", "", 1).unwrap();
-        assert!(ret["rows"][0]["data"]["balance"] == "1.0000 EOS");
+        assert!(ret["rows"][0]["balance"] == "1.0000 EOS");
     
         //transfer back
         let args = r#"
@@ -426,10 +426,10 @@ mod tests {
         tester.produce_block();
 
         let ret = tester.get_table_rows(true, "hello", "hello", "accounts", "", "", 1).unwrap();
-        assert!(ret["rows"][0]["data"]["balance"] == "0.0000 EOS");
+        assert!(ret["rows"][0]["balance"] == "0.0000 EOS");
     
         let ret = tester.get_table_rows(true, "hello", "EOS", "stat", "", "", 1).unwrap();
-        assert!(ret["rows"][0]["data"]["supply"] == "0.0000 EOS");
+        assert!(ret["rows"][0]["supply"] == "0.0000 EOS");
     
         let ret = tester.get_table_rows(true, "hello", "helloworld11", "accounts", "", "", 1).unwrap();
         assert!(ret["rows"].as_array().unwrap().len() == 0);
@@ -446,7 +446,7 @@ mod tests {
         tester.produce_block();
 
         let r = tester.get_table_rows(true, "hello", "helloworld11", "accounts", "", "", 1).unwrap();
-        assert!(r["rows"][0]["data"]["balance"] == "0.0000 EOS");
+        assert!(r["rows"][0]["balance"] == "0.0000 EOS");
     
         //close
         let args = r#"
