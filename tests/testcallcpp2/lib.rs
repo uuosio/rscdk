@@ -8,11 +8,7 @@ mod hello {
     }
 
     use rust_chain::{
-        Asset,
         Name,
-        eosio_print,
-        eosio_println,
-        name,
     };
 
     #[chain(main)]
