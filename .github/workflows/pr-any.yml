@@ -79,6 +79,7 @@ jobs:
           python3 -m pip install pytest
           python3 -m pip install pytest-xdist
           python3 -m pip install ipyeos
+          python3 -m pip install eoscdt
           python3 -m pip install rust-contracts-builder
       - name: Run eosdebugger
         run: |
@@ -99,7 +100,7 @@ jobs:
           rust-contract build
           popd
           rust-contract build
-          cargo +nightly test --release -- --test-threads=1
+          RUST_BACKTRACE=1 cargo +nightly test --release -- --test-threads=1
       - name: code coverage report
         working-directory: tests
         run: |
