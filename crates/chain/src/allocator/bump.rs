@@ -142,4 +142,15 @@ fn required_pages(size: usize) -> Option<usize> {
         .and_then(|num| num.checked_div(PAGE_SIZE))
 }
 
+#[no_mangle]
+pub extern "C" fn malloc(size: usize) -> usize {
+    let align = core::mem::align_of::<usize>(); // Choose an appropriate alignment.    
+    let layout = Layout::from_size_align(size, align).unwrap();
+    unsafe {
+        INNER.alloc(layout).unwrap()
+    }
+}
 
+#[no_mangle]
+pub extern "C" fn free(_ptr: *mut u8) {
+}
