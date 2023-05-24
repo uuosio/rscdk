@@ -8,7 +8,7 @@ mod dbi64 {
         db::{
             TableI64,
         },
-        eosio_println,
+        chain_println,
     };
 
     #[chain(table="counter")]
@@ -43,11 +43,11 @@ mod dbi64 {
             if let Some(mut value) = it.get_value() {
                 value.count += 1;
                 db.update(&it, &value, payer);
-                eosio_println!("+++count:", value.count);
+                chain_println!("+++count:", value.count);
             } else {
                 let value = Counter{key: 1, count: 1};
                 db.store(&value, payer);
-                eosio_println!("+++count:", value.count);
+                chain_println!("+++count:", value.count);
             }
         }
     }

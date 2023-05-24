@@ -2,7 +2,7 @@
 pub mod testdestructor {
     use rust_chain::{
         Name,
-        eosio_println,
+        chain_println,
     };
 
     #[chain(table="states", singleton)]
@@ -36,14 +36,14 @@ pub mod testdestructor {
         #[chain(action = "inc")]
         pub fn inc_count(&mut self) {
             self.states.count += 1;
-            eosio_println!("++++count:", self.states.count);
+            chain_println!("++++count:", self.states.count);
         }
     }
 
     impl Drop for TestDestructor {
         fn drop(&mut self) {
             self.states_db.set(&self.states, self.receiver);
-            eosio_println!("++++drop");
+            chain_println!("++++drop");
         }
     }
 }

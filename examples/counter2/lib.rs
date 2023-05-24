@@ -4,7 +4,7 @@
 mod token {
     use rust_chain::{
         Name,
-        eosio_println,
+        chain_println,
     };
 
     #[chain(table="counter", singleton)]
@@ -32,7 +32,7 @@ mod token {
         pub fn inc_count(&self) {
             let db = Counter::new_table(self.receiver);
             let mut value = db.get().unwrap_or(Counter{count: 1});
-            eosio_println!("+++++count2:", value.count);
+            chain_println!("+++++count2:", value.count);
             value.count += 1;
             db.set(&value, self.receiver);
         }

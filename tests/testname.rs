@@ -4,7 +4,7 @@ pub mod testname {
         Name,
         name,
         check,
-        eosio_println,
+        chain_println,
     };
 
     #[chain(sub)]
@@ -52,7 +52,7 @@ pub mod testname {
 
             check(name::n2s(name::s2n("hello")) == "hello", r#"name::n2s(name::s2n("hello")) == "hello""#);
 
-            eosio_println!("hello", n1, n2, n3, n4, n5, n6, n7, n8, n9);
+            chain_println!("hello", n1, n2, n3, n4, n5, n6, n7, n8, n9);
         }
 
         #[chain(action="test2")]

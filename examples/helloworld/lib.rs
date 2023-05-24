@@ -4,7 +4,7 @@
 mod helloworld {
     use rust_chain::{
         Name,
-        eosio_println,
+        chain_println,
     };
 
     #[chain(main)]
@@ -26,7 +26,7 @@ mod helloworld {
 
         #[chain(action = "sayhello")]
         pub fn say_hello(&self) {
-            eosio_println!("hello,world!");
+            chain_println!("hello,world!");
         }
     }
 }

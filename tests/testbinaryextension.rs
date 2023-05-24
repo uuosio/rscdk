@@ -5,7 +5,7 @@ pub mod testbinaryextension {
         BinaryExtension,
         
         check,
-        eosio_println,
+        chain_println,
     };
 
     #[chain(sub)]
@@ -30,7 +30,7 @@ pub mod testbinaryextension {
             check(a == 111, "a == 111");
             check(b.value().is_some(), "bad value");
             check(*b.value().unwrap() == 123, "bad value");
-            eosio_println!("test BinaryExtension done!");
+            chain_println!("test BinaryExtension done!");
 
             let mut _b = BinaryExtension::<u64>::new(Some(1));
             check(_b.size() == 8, "b.size() == 8");
@@ -47,7 +47,7 @@ pub mod testbinaryextension {
             check(_b.size() == 8, "b.size() == 8");
             _b.unpack(&Encoder::pack(&b));
             check(_b.value().is_none(), "_b.value().is_none()");
-            eosio_println!("test2 BinaryExtension done!");
+            chain_println!("test2 BinaryExtension done!");
         }
     }
 }

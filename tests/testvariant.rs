@@ -2,7 +2,7 @@
 pub mod testvariant {
     use rust_chain::{
         Name,
-        eosio_println,
+        chain_println,
     };
 
     #[chain(variant)]
@@ -32,7 +32,7 @@ pub mod testvariant {
         #[chain(action="test")]
         pub fn test(&self, v: MyVariant) {
             if let MyVariant::B(b) = v {
-                eosio_println!("hello", b);
+                chain_println!("hello", b);
             }
         }
     }

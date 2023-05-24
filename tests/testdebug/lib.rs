@@ -9,7 +9,7 @@ mod hello {
         Uint256,
 
         name,
-        eosio_println,
+        chain_println,
         check,
 
         db::{
@@ -65,7 +65,7 @@ mod hello {
         #[chain(action="sayhello")]
         pub fn say_hello(&self, name: String) {
             for _ in 0..=1 {
-                eosio_println!("++++hello:", name);
+                chain_println!("++++hello:", name);
                 // return;
                 let perms: Vec<PermissionLevel> = vec![PermissionLevel{actor: name!("hello"), permission: ACTIVE}];
                 let say_goodbye = saygoodbye{name: name.clone()};
@@ -76,7 +76,7 @@ mod hello {
 
         #[chain(action="saygoodbye")]
         pub fn say_goodbye(&self, name: String) {
-            eosio_println!("++++hello:", name);
+            chain_println!("++++hello:", name);
         }
 
         #[chain(action = "inc")]
@@ -84,7 +84,7 @@ mod hello {
             for _ in 0..1 {
                 let db = Counter::new_table(self.receiver);
                 let mut value = db.get().unwrap_or(Counter{count: 1});
-                eosio_println!("+++++count2:", value.count);
+                chain_println!("+++++count2:", value.count);
                 value.count += 1;
                 db.set(&value, self.receiver);    
             }
@@ -92,7 +92,7 @@ mod hello {
 
         #[chain(action="testmi")]
         pub fn testmi(&self) {
-            eosio_println!("+++++test2");
+            chain_println!("+++++test2");
             let receiver = self.receiver;
 
             let mydb = MyData::new_table(receiver);
@@ -183,7 +183,7 @@ mod hello {
                 {
                     let (it_secondary, secondary) = idx.upper_bound(22);
                     check(it_secondary.primary == 111, "upper_bound: bad primary value!");
-                    eosio_println!("+++++++secondary:", secondary);
+                    chain_println!("+++++++secondary:", secondary);
                     check(secondary == 222, "Id64Table.upper_boundd: bad secondary value!");
 
                     let ret = check_fn(it_secondary, |data: &MyData| {
@@ -220,7 +220,7 @@ mod hello {
                 {
                     let (it_secondary, secondary) = idx.lower_bound(33);
                     check(it_secondary.primary == 11, "bad primary value!");
-                    eosio_println!(it_secondary.primary, secondary);
+                    chain_println!(it_secondary.primary, secondary);
                     check(secondary == 33, "Idx128Table.lower_bound: bad secondary value!");
 
                     let ret = check_fn(it_secondary, |data: &MyData| {
@@ -233,7 +233,7 @@ mod hello {
                 {
                     let (it_secondary, secondary) = idx.upper_bound(33);
                     check(it_secondary.primary == 111, "upper_bound: bad primary value!");
-                    eosio_println!("+++++++secondary:", secondary);
+                    chain_println!("+++++++secondary:", secondary);
                     check(secondary == 333, "Idx128Table.upper_bound: bad secondary value!");
 
                     let ret = check_fn(it_secondary, |data: &MyData| {
@@ -282,7 +282,7 @@ mod hello {
                 {
                     let (it_secondary, secondary) = idx.upper_bound(Uint256::new(44, 0));
                     check(it_secondary.primary == 111, "upper_bound: bad primary value!");
-                    eosio_println!("+++++++secondary:", secondary);
+                    chain_println!("+++++++secondary:", secondary);
                     check(secondary == Uint256::new(444, 0), "Idx256Table.upper_bound: bad secondary value!");
 
                     let ret = check_fn(it_secondary, |data: &MyData| {
@@ -331,7 +331,7 @@ mod hello {
                 {
                     let (it_secondary, secondary) = idx.upper_bound(55.0);
                     check(it_secondary.primary == 111, "upper_bound: bad primary value!");
-                    eosio_println!("+++++++secondary:", secondary);
+                    chain_println!("+++++++secondary:", secondary);
                     check(secondary == 555.0, "IdxF64Table.upper_bound: bad secondary value!");
 
                     let ret = check_fn(it_secondary, |data: &MyData| {
@@ -350,7 +350,7 @@ mod hello {
                     let it_secondary_previous = idx.previous(&it_secondary);
                     let ret = check_fn(it_secondary_previous, |data: &MyData| {
                         let a6_6: Float128 = Float128::new([0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0x01,0x40]);
-                        eosio_println!("a6_6", a6_6);
+                        chain_println!("a6_6", a6_6);
                         data.a1 == 1 && data.a2 == 2 && data.a3 == 3 && data.a4 == Uint256::new(4, 0) && data.a5 == 5.0 && data.a6 == a6_6
                     });
 
@@ -385,7 +385,7 @@ mod hello {
                 {
                     let (it_secondary, secondary) = idx.upper_bound(a6_66);
                     check(it_secondary.primary == 111, "upper_bound: bad primary value!");
-                    eosio_println!("+++++++secondary:", secondary);
+                    chain_println!("+++++++secondary:", secondary);
                     check(secondary == a6_666, "IdxF128Table.upper_bound: bad secondary value!");
 
                     let ret = check_fn(it_secondary, |data: &MyData| {
@@ -395,24 +395,24 @@ mod hello {
                     check(ret, "IdxF128Db.upper_bound: bad secondary value");
                 }
             }
-            // eosio_println!("+++++MyDataIdx::a2:", MyDataIdx::a2 as usize);
+            // chain_println!("+++++MyDataIdx::a2:", MyDataIdx::a2 as usize);
             let idx_db = mydb.get_idx_db(0 as usize);
             let mut it_secondary = idx_db.find(SecondaryValue::Idx64(2));
-            eosio_println!("+++++++2 it_secondary.is_ok():", it_secondary.is_ok(), it_secondary.i);
+            chain_println!("+++++++2 it_secondary.is_ok():", it_secondary.is_ok(), it_secondary.i);
             it_secondary = idx_db.find(SecondaryValue::Idx64(3));
-            eosio_println!("+++++++3 it_secondary.is_ok():", it_secondary.is_ok(), it_secondary.i);
+            chain_println!("+++++++3 it_secondary.is_ok():", it_secondary.is_ok(), it_secondary.i);
 
             if it_secondary.is_ok() {
-                eosio_println!("++++it_secondary:", it_secondary.i, it_secondary.primary);
+                chain_println!("++++it_secondary:", it_secondary.i, it_secondary.primary);
                 mydb.idx_update(&it_secondary, SecondaryValue::Idx64(3), receiver);    
             }
 
             {
                 if let Some(value) = mydb.get_by_primary(1) {
-                    eosio_println!("+++value:", value.a1, value.a2);
+                    chain_println!("+++value:", value.a1, value.a2);
                 }
             }
-            eosio_println!("test2 done!");
+            chain_println!("test2 done!");
         }
     }
 

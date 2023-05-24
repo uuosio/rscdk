@@ -215,7 +215,7 @@ macro_rules! eosio_print {
 
 ///
 #[macro_export]
-macro_rules! eosio_println {
+macro_rules! chain_println {
     ( $last:expr ) => {
         $last.print();
         $crate::print::prints("\n");
@@ -223,6 +223,6 @@ macro_rules! eosio_println {
     ( $head:expr, $($tail:expr), + ) => {
         $head.print();
         $crate::print::prints(" ");
-        eosio_println!($($tail),+);
+        chain_println!($($tail),+);
     };
 }

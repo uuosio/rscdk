@@ -7,7 +7,7 @@ pub mod testprint {
             // Printable as _,
             prints,
         },
-        // eosio_println,
+        // chain_println,
     };
 
     #[chain(sub)]

@@ -63,7 +63,7 @@ pub mod testintrinsics {
         current_time,
 
         check,
-        eosio_println,
+        chain_println,
         name,
     };
 
@@ -97,7 +97,7 @@ pub mod testintrinsics {
 
         #[chain(action="test")]
         pub fn test(&self, msg: String, digest: Checksum256, sig: Signature, pubkey: PublicKey) {
-            eosio_println!("+++++++msg:", msg);
+            chain_println!("+++++++msg:", msg);
             if "goodbye" == msg {
                 return;
             }
@@ -139,15 +139,15 @@ pub mod testintrinsics {
 
             // int64_t get_permission_last_used( capi_name account, capi_name permission );
             let time = get_permission_last_used(name!("hello"), name!("active"));
-            eosio_println!("+++time.elapsed:", time.elapsed);
+            chain_println!("+++time.elapsed:", time.elapsed);
 
             // int64_t get_account_creation_time( capi_name account );
             let time = get_account_creation_time(name!("hello"));
-            eosio_println!("+++time.elapsed:", time.elapsed);
+            chain_println!("+++time.elapsed:", time.elapsed);
 
             // uint32_t read_action_data( void* msg, uint32_t len );
             let data = read_action_data();
-            eosio_println!("+++data.len:", data.len());
+            chain_println!("+++data.len:", data.len());
             
             // test is a generated struct
             let mut test = test::default();
@@ -178,12 +178,12 @@ pub mod testintrinsics {
 
             // void send_context_free_inline(char *serialized_action, uint32_t size);
             // a.authorization = vec![];
-            // eosio_println!("+++a.pack():", a.pack());
+            // chain_println!("+++a.pack():", a.pack());
             // send_context_free_inline(&a.pack());
 
             // uint64_t  publication_time();
             let time = publication_time();
-            eosio_println!("++++++publication time:", time.elapsed);
+            chain_println!("++++++publication time:", time.elapsed);
 
             // capi_name current_receiver();
             check(current_receiver() == name!("hello"), "bad receiver");
@@ -192,12 +192,12 @@ pub mod testintrinsics {
             //privileged.h
             // void get_resource_limits( capi_name account, int64_t* ram_bytes, int64_t* net_weight, int64_t* cpu_weight );
             let (ram_bytes, net_weight, cpu_weight) = get_resource_limits(name!("hello"));
-            eosio_println!(ram_bytes, net_weight, cpu_weight);
+            chain_println!(ram_bytes, net_weight, cpu_weight);
 
             // void set_resource_limits( capi_name account, int64_t ram_bytes, int64_t net_weight, int64_t cpu_weight );
             set_resource_limits(name!("hello"), 10000000, 10000000, 10000000);
             let (ram_bytes, net_weight, cpu_weight) = get_resource_limits(name!("hello"));
-            eosio_println!(ram_bytes, net_weight, cpu_weight);
+            chain_println!(ram_bytes, net_weight, cpu_weight);
 
             // int64_t set_proposed_producers( const char *producer_data, uint32_t producer_data_size );
             // int64_t set_proposed_producers_ex( uint64_t producer_data_format, const char *producer_data, uint32_t producer_data_size );
@@ -216,10 +216,10 @@ pub mod testintrinsics {
 
             //chain.h
             let prods = get_active_producers();
-            eosio_println!("++++++prods.len():", prods.len());
+            chain_println!("++++++prods.len():", prods.len());
             check(prods.len() == 1, "prods.len() == 1");
             check(prods[0] == name!("eosio"), "bad value");
-            eosio_println!("intrinsics tests done!");
+            chain_println!("intrinsics tests done!");
         }
 
         #[chain(action="test2")]
@@ -236,13 +236,13 @@ pub mod testintrinsics {
         pub fn test_context_free_action(&self) {
             let mut a = Action::new(name!("hello"), name!("testsendfree"), vec![], &MyData{a1:1, a2: 2});
             a.authorization = vec![];
-            eosio_println!("+++a.pack():", Encoder::pack(&a));
+            chain_println!("+++a.pack():", Encoder::pack(&a));
             send_context_free_inline(&Encoder::pack(&a));
         }
 
         #[chain(action="testtime")]
         pub fn test_block_time(&self) {
-            eosio_println!("+++++++current_time:", current_time().elapsed);
+            chain_println!("+++++++current_time:", current_time().elapsed);
         }
 
         #[chain(action="testcodehash")]

@@ -8,7 +8,7 @@ pub mod saygoodbye {
         Uint256,
 
         name,
-        eosio_println,
+        chain_println,
         check,
 
         db::{
@@ -64,7 +64,7 @@ pub mod saygoodbye {
 
         #[chain(action="saygoodbye")]
         pub fn say_goodbye(&self, name: String) {
-            eosio_println!("++++hello:", name);
+            chain_println!("++++hello:", name);
         }
     }
 }

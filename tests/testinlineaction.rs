@@ -8,7 +8,7 @@ pub mod testinlineaction {
     use rust_chain::{
         Name,
         name,
-        eosio_println,
+        chain_println,
     };
 
     #[chain(packer)]
@@ -36,7 +36,7 @@ pub mod testinlineaction {
 
         #[chain(action="test")]
         pub fn test(&self, name: String) {
-            eosio_println!("send sayhello action", &name);
+            chain_println!("send sayhello action", &name);
             let say_hello = SayHello{name: name};
             let perms: Vec<PermissionLevel> = vec![PermissionLevel::new(name!("hello"), name!("active"))];
             let action = Action::new(name!("hello"), name!("sayhello"), perms, &say_hello);
@@ -45,7 +45,7 @@ pub mod testinlineaction {
 
         #[chain(action="sayhello")]
         pub fn sayhello(&self, name: String) {
-            eosio_println!("hello", name);
+            chain_println!("hello", name);
         }
 
         #[chain(action="test2")]

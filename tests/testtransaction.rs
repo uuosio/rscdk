@@ -4,7 +4,7 @@ pub mod testtransaction {
         Name,
         name,
         check,
-        eosio_println,
+        chain_println,
         read_transaction,
 
         Asset,
@@ -48,9 +48,9 @@ pub mod testtransaction {
             tx2.unpack(&Encoder::pack(&tx));
             check(tx == tx2, "tx == tx2");
 
-            eosio_println!("++++test:", tx.expiration().seconds());
+            chain_println!("++++test:", tx.expiration().seconds());
 
-            eosio_println!(tx.ref_block_num(), tx.ref_block_prefix(), tx.max_net_usage_words(), tx.max_cpu_usage_ms(), tx.delay_sec());
+            chain_println!(tx.ref_block_num(), tx.ref_block_prefix(), tx.max_net_usage_words(), tx.max_cpu_usage_ms(), tx.delay_sec());
 
             let actions = tx.actions();
             check(actions.len() == 1, "bad actions");

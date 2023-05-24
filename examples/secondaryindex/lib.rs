@@ -4,7 +4,7 @@
 mod secondaryindex {
     use rust_chain::{
         Name,
-        eosio_println,
+        chain_println,
     };
 
     #[chain(table="counter")]
@@ -39,22 +39,22 @@ mod secondaryindex {
             if let Some(mut data) = it.get_value() {
                 data.value = value;
                 db.update(&it, &data, self.receiver);
-                eosio_println!("key is:", data.key, "value is:", data.value);
+                chain_println!("key is:", data.key, "value is:", data.value);
             } else {
                 let data = &MyData{key: key, value: value};
                 db.store(&data, self.receiver);
-                eosio_println!("key is:", data.key, "value is:", data.value);
+                chain_println!("key is:", data.key, "value is:", data.value);
             }
         }
 
         #[chain(action = "test2")]
         pub fn test2(&self, value: u64) {
-            eosio_println!("+++value:", value);
+            chain_println!("+++value:", value);
             let db = MyData::new_table(self.receiver);
             let idx = db.get_idx_by_value();
             let (it_secondary, mut secondary_value) = idx.lower_bound(value);
             if it_secondary.is_ok() {
-                eosio_println!("++++primary value", it_secondary.primary, "secondary value:", secondary_value);
+                chain_println!("++++primary value", it_secondary.primary, "secondary value:", secondary_value);
                 // update secondary value
                 let payer = self.receiver;
                 secondary_value += 1;

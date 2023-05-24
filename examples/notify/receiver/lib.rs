@@ -7,7 +7,7 @@ mod hello {
     use ::rust_chain::{
         Name,
         require_recipient,
-        eosio_println,
+        chain_println,
     };
 
     #[chain(packer)]
@@ -34,7 +34,7 @@ mod hello {
 
         #[chain(action="test", notify)]
         pub fn test(&self, name: String) {
-            eosio_println!("++++++++receiver:", name);
+            chain_println!("++++++++receiver:", name);
         }
     }
 }

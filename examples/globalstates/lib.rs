@@ -4,7 +4,7 @@
 mod test {
     use rust_chain::{
         Name,
-        eosio_println,
+        chain_println,
     };
 
     #[chain(table="states", singleton)]
@@ -38,7 +38,7 @@ mod test {
         #[chain(action = "inc")]
         pub fn inc_count(&mut self) {
             self.states.count += 1;
-            eosio_println!("++++count:", self.states.count);
+            chain_println!("++++count:", self.states.count);
         }
     }
 

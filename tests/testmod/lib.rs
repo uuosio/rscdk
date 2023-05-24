@@ -10,7 +10,7 @@ mod hello {
         Asset,
         Name,
         eosio_print,
-        eosio_println,
+        chain_println,
         name,
     };
 
@@ -85,7 +85,7 @@ mod hello {
         #[chain(action="test")]
         pub fn test(&self, name: String) {
             let mut v = vec![1, 2, 3, 4];
-            eosio_println!("++++hello:", name, v);
+            chain_println!("++++hello:", name, v);
         }
     }
 }

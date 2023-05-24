@@ -8,7 +8,7 @@ pub mod sayhello {
         Uint256,
 
         name,
-        eosio_println,
+        chain_println,
         check,
 
         db::{
@@ -70,7 +70,7 @@ pub mod sayhello {
         #[chain(action="sayhello")]
         pub fn say_hello(&self, name: String) {
             // check(false, "oops!");
-            eosio_println!("++++hello:", name);
+            chain_println!("++++hello:", name);
             let perms: Vec<PermissionLevel> = vec![PermissionLevel{actor: name!("hello"), permission: ACTIVE}];
             let say_goodbye = SayGoodbye{name: name.clone()};
             let action = Action::new(name!("bob"), name!("saygoodbye"), &perms, &say_goodbye);

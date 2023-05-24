@@ -45,7 +45,7 @@ mod testall {
 
         name,
         check,
-        eosio_println,
+        chain_println,
     };
 
     #[chain(table="testcase", singleton)]
@@ -69,7 +69,7 @@ mod testall {
 
         #[chain(action="sayhello")]
         pub fn say_hello(&self, name: String) {
-            eosio_println!("++++++hello ", name);
+            chain_println!("++++++hello ", name);
         }
 
         #[chain(action="settest")]
@@ -91,7 +91,7 @@ mod testall {
             Main::new(_receiver, _first_receiver, _action).set_test();
             return;
         } else if action == name!("testsendfree").n {
-            eosio_println!("+++++++testsendfree");
+            chain_println!("+++++++testsendfree");
             return;
         }
 

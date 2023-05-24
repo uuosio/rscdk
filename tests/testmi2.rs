@@ -19,7 +19,7 @@ pub mod testmi2 {
 
         name,
         check,
-        eosio_println,
+        chain_println,
     };
 
     #[chain(sub)]
@@ -102,7 +102,7 @@ pub mod testmi2 {
             mi.set(&MyStruct{amount: 1, symbol: 2}, payer);
             mi.set(&MyStruct{amount: 11, symbol: 22}, payer);
             mi.set(&MyStruct{amount: 111, symbol: 222}, payer);
-            eosio_println!("test done!");
+            chain_println!("test done!");
         }
 
         #[chain(action="test2")]
@@ -148,14 +148,14 @@ pub mod testmi2 {
             //     if let Some(x) = value.as_any_mut().downcast_mut::<MyStruct>() {
             //         x.amount += 1;
             //         mi.update(&it, x, self.receiver);
-            //         eosio_println!("++++amount:", x.amount);
+            //         chain_println!("++++amount:", x.amount);
             //     }
             // } else {
             //     let mystruct = MyStruct{amount: 1, symbol: 1};
             //     mi.store(&mystruct, self.receiver);
-            //     eosio_println!("++++amount:", mystruct.amount);
+            //     chain_println!("++++amount:", mystruct.amount);
             // }
-            eosio_println!("test done!");
+            chain_println!("test done!");
         }
     }
 

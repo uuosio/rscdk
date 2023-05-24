@@ -187,7 +187,7 @@ mod tests {
                         Uint256,
                 
                         check,
-                        eosio_println,
+                        chain_println,
                         db::{
                             SecondaryValue,
                             SecondaryIterator,
@@ -233,7 +233,7 @@ mod tests {
                         Uint256,
                 
                         check,
-                        eosio_println,
+                        chain_println,
                         db::{
                             SecondaryValue,
                             SecondaryIterator,

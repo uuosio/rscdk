@@ -24,7 +24,7 @@ pub mod testcrypto {
         ripemd160,
 
         check,
-        eosio_println,
+        chain_println,
     };
 
     #[chain(table="mydata")]
@@ -61,7 +61,7 @@ pub mod testcrypto {
 
         #[chain(action="test")]
         pub fn test(&self, msg: String, digest: Checksum256, sig: Signature, k1: PublicKey, r1: PublicKey, web_auth_n: PublicKey) {
-            eosio_println!("++++++msg:", msg);
+            chain_println!("++++++msg:", msg);
             let _pubkey = crypto::recover_key(&digest, &sig);
             check(_pubkey == k1, "_pubkey == k1");
             crypto::assert_recover_key(&digest, &sig, &k1);
@@ -85,7 +85,7 @@ pub mod testcrypto {
 
             let ret = ripemd160(&data);
             assert_ripemd160(&data, &ret);
-            eosio_println!("done!");
+            chain_println!("done!");
         }
 
         #[chain(action="test2")]

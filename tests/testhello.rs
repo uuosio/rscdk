@@ -2,7 +2,7 @@
 pub mod testhello {
     use rust_chain::{
         Name,
-        eosio_println,
+        chain_println,
     };
 
     #[chain(sub)]
@@ -25,7 +25,7 @@ pub mod testhello {
 
         #[chain(action="sayhello")]
         pub fn say_hello(&self, name: String) {
-            eosio_println!("++++hello", name);
+            chain_println!("++++hello", name);
         }
     }
 }

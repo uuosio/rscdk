@@ -11,7 +11,7 @@ pub mod testasset {
 
         check,
         name,
-        eosio_println,
+        chain_println,
     };
 
     #[chain(sub)]
@@ -36,7 +36,7 @@ pub mod testasset {
 
         #[chain(action="test")]
         pub fn test(&self, a: Asset) {
-            eosio_println!("+++++=a:", a);
+            chain_println!("+++++=a:", a);
             check(a.is_valid(), "a.is_valid()");
             check(a.amount() == 11234, "a.amount() == 11234");
             check(a == Asset::from_string("1.1234 EOS"), "1: bad asset!");
@@ -69,7 +69,7 @@ pub mod testasset {
             sym2.unpack(&Encoder::pack(&sym));
             check(sym == sym2, "sym == sym2");
 
-            eosio_println!("Done!");
+            chain_println!("Done!");
         }
 
         #[chain(action="test2")]

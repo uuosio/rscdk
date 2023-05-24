@@ -10,7 +10,7 @@ mod inline_action_example {
         },
         name,
         ACTIVE,
-        eosio_println,
+        chain_println,
     };
 
     #[chain(packer)]
@@ -36,7 +36,7 @@ mod inline_action_example {
 
         #[chain(action = "sayhello")]
         pub fn say_hello(&self, name: String) {
-            eosio_println!("hello", name);
+            chain_println!("hello", name);
             let perms: Vec<PermissionLevel> = vec![PermissionLevel{actor: name!("hello"), permission: ACTIVE}];
             let say_goodbye = SayGoodbye{name: name};
             let action = Action::new(name!("hello"), name!("saygoodbye"), perms, &say_goodbye);
@@ -45,7 +45,7 @@ mod inline_action_example {
 
         #[chain(action = "saygoodbye")]
         pub fn say_goodbye(&self, name: String) {
-            eosio_println!("goodbye", name);
+            chain_println!("goodbye", name);
         }
     }
 }

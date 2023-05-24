@@ -21,7 +21,7 @@ pub mod testabi {
 
         ECCPublicKey,
         check,
-        eosio_println,
+        chain_println,
     };
 
     #[chain(table="mydata")]
@@ -168,8 +168,8 @@ pub mod testabi {
 
             check(a30 == Asset::from_string("1.0000 EOS"), "bad value a30");
             check(a31 == ExtendedAsset::new(Asset::from_string("1.0000 EOS"), Name::new("eosio.token")), "bad value a31");
-            eosio_println!("test serializer done!");
-            // eosio_println!(
+            chain_println!("test serializer done!");
+            // chain_println!(
             //     a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a13,
             //     a14, a15,
             //     a11, a13,

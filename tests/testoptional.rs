@@ -5,7 +5,7 @@ pub mod testoptional {
     use rust_chain::{
         Name,
         check,
-        eosio_println,
+        chain_println,
     };
 
     #[chain(sub)]
@@ -85,7 +85,7 @@ pub mod testoptional {
             } else {
                 check(false, "bad value a4");
             }
-            eosio_println!("+++++optional test done!");
+            chain_println!("+++++optional test done!");
         }
     }
 }
