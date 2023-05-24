@@ -1,6 +1,6 @@
 [package]
 name = "eosio-codegen"
-version = "0.2.4"
+version = "0.2.5"
 authors = ["learnforpractice@gmail.com"]
 edition = "2021"
 
