@@ -4,7 +4,7 @@
 #[rust_chain::contract]
 mod hello {
     extern "C" {
-        fn say_hello(name: *const u8);
+        fn say_hello(name: *const u8, size: u32);
     }
 
     use rust_chain::{
@@ -31,7 +31,7 @@ mod hello {
         #[chain(action="test")]
         pub fn test(&self, name: String) {
             unsafe {
-                say_hello(name.as_ptr());
+                say_hello(name.as_ptr(), name.len());
             }
         }
     }

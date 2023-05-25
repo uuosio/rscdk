@@ -647,7 +647,6 @@ impl ChainTester {
     pub fn get_balance_ex(&mut self, account: &str, token_account: &str, symbol: &str) -> u64 {
         let ret = self.get_table_rows(false, token_account, account, "accounts", symbol, "", 1).unwrap();
         let rows = ret["rows"].as_array().unwrap();
-        println!("++++++++++++rows:{:?}", rows);
         if rows.len() == 0 {
             return 0;
         }
