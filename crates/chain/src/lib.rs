@@ -98,10 +98,27 @@ pub mod serializer;
 pub use serializer::{
     Encoder,
     Decoder,
+    Packer,
 };
 
 ///
 pub mod db;
+pub use db::{
+    PrimaryValueInterface,
+    SecondaryValueInterface,
+    Secondary,
+    Iterator,
+    SecondaryIterator,
+    SecondaryValue,
+    TableI64,
+    Idx64Table,
+    Idx128Table,
+    Idx256Table,
+    IdxF64Table,
+    IdxF128Table,
+    IdxTable,
+    IdxTableProxy,
+};
 
 ///
 #[macro_use]
