@@ -42,6 +42,12 @@ pub struct TableError {
     pub message: String,
 }
 
+impl PrimaryValueInterface for Name {
+    fn get_primary(&self) -> u64 {
+        return self.value();
+    }
+}
+
 impl PrimaryValueInterface for u64 {
     fn get_primary(&self) -> u64 {
         return *self;
@@ -75,16 +81,6 @@ pub trait AsAny {
 ///
 pub trait MultiIndexValue: PrimaryValueInterface + SecondaryValueInterface + Packer + AsAny {
 
-}
-
-///
-pub trait TableValue {
-    ///
-	fn get_primary(&self) -> u64;
-    ///
-	fn pack(&self) -> Vec<u8>;
-    ///
-	fn unpack(data: &[u8]) -> Self;
 }
 
 pub struct Primary<'a, T>
