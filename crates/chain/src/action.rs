@@ -1,4 +1,5 @@
 use crate::{
+    vec,
     vec::Vec,
 };
 
@@ -85,13 +86,24 @@ pub struct Action {
 
 impl Action {
     /// Creates an action by specifying contract account, action name, authorization and data.
-    pub fn new(account: Name, name: Name, authorization: Vec<PermissionLevel>, data: &dyn Packer) -> Self {
+    pub fn new(account: Name, name: Name, authorization: PermissionLevel, data: &dyn Packer) -> Self {
         let mut enc = Encoder::new(data.size());
         data.pack(&mut enc);
         Self {
             account,
             name,
-            authorization: authorization,
+            authorization: vec![authorization],
+            data: enc.get_bytes().to_vec()
+        }
+    }
+
+    pub fn new_ex(account: Name, name: Name, authorizations: Vec<PermissionLevel>, data: &dyn Packer) -> Self {
+        let mut enc = Encoder::new(data.size());
+        data.pack(&mut enc);
+        Self {
+            account,
+            name,
+            authorization: authorizations,
             data: enc.get_bytes().to_vec()
         }
     }

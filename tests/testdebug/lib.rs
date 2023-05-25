@@ -67,9 +67,9 @@ mod hello {
             for _ in 0..=1 {
                 chain_println!("++++hello:", name);
                 // return;
-                let perms: Vec<PermissionLevel> = vec![PermissionLevel{actor: name!("hello"), permission: ACTIVE}];
+                let perm = PermissionLevel{actor: name!("hello"), permission: ACTIVE};
                 let say_goodbye = saygoodbye{name: name.clone()};
-                let action = Action::new(name!("hello"), name!("saygoodbye"), &perms, &say_goodbye);
+                let action = Action::new(name!("hello"), name!("saygoodbye"), perm, &say_goodbye);
                 action.send();
             }
         }

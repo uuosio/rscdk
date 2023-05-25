@@ -38,8 +38,8 @@ pub mod testinlineaction {
         pub fn test(&self, name: String) {
             chain_println!("send sayhello action", &name);
             let say_hello = SayHello{name: name};
-            let perms: Vec<PermissionLevel> = vec![PermissionLevel::new(name!("hello"), name!("active"))];
-            let action = Action::new(name!("hello"), name!("sayhello"), perms, &say_hello);
+            let perm = PermissionLevel::new(name!("hello"), name!("active"));
+            let action = Action::new(name!("hello"), name!("sayhello"), perm, &say_hello);
             action.send();
         }
 

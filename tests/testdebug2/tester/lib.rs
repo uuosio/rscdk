@@ -41,6 +41,18 @@ mod tests {
     use rust_chain::serializer::Packer;
     use rust_chain::chaintester;
  
+
+    use rust_chain::chaintester::interfaces::ActionArguments;
+    use rust_chain::serializer::Packer;
+    use rust_chain::Encoder;
+    use std::convert::{From, TryFrom};
+    
+    impl From<sayhello::sayhello::sayhello> for ActionArguments {
+      fn from(value: sayhello::sayhello::sayhello) -> Self {
+          ActionArguments::RawArgs(Encoder::pack(&value))
+      }
+    }
+
     #[no_mangle]
     fn native_apply(receiver: u64, first_receiver: u64, action: u64) {
         if receiver == s2n("hello") {
@@ -115,6 +127,8 @@ mod tests {
         let args = sayhello::sayhello::sayhello{name: "rust".into()};
         tester.push_action("hello", "sayhello", Encoder::pack(&args).into(), permissions).unwrap();
         tester.produce_block();
-    }
 
+        tester.push_action("hello", "sayhello", args.into(), permissions).unwrap();
+        tester.produce_block();
+    }
 }

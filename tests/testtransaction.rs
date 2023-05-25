@@ -69,7 +69,7 @@ pub mod testtransaction {
         pub fn test2(&self) {
             let mut tx = Transaction::new(1, 0);
             // pub fn new(account: Name, name: Name, authorization: &Vec<PermissionLevel>, data: &dyn Packer) -> Self {
-            let perm = vec![PermissionLevel{actor: name!("hello"), permission: name!{"active"}}];
+            let perm = PermissionLevel{actor: name!("hello"), permission: name!{"active"}};
             let transfer = Transfer {
                 from: self.receiver,
                 to: name!("eosio"),

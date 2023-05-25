@@ -37,9 +37,9 @@ mod inline_action_example {
         #[chain(action = "sayhello")]
         pub fn say_hello(&self, name: String) {
             chain_println!("hello", name);
-            let perms: Vec<PermissionLevel> = vec![PermissionLevel{actor: name!("hello"), permission: ACTIVE}];
+            let perm = PermissionLevel{actor: name!("hello"), permission: ACTIVE};
             let say_goodbye = SayGoodbye{name: name};
-            let action = Action::new(name!("hello"), name!("saygoodbye"), perms, &say_goodbye);
+            let action = Action::new(name!("hello"), name!("saygoodbye"), perm, &say_goodbye);
             action.send();
         }
 

@@ -71,9 +71,9 @@ pub mod sayhello {
         pub fn say_hello(&self, name: String) {
             // check(false, "oops!");
             chain_println!("++++hello:", name);
-            let perms: Vec<PermissionLevel> = vec![PermissionLevel{actor: name!("hello"), permission: ACTIVE}];
+            let perm = PermissionLevel{actor: name!("hello"), permission: ACTIVE};
             let say_goodbye = SayGoodbye{name: name.clone()};
-            let action = Action::new(name!("bob"), name!("saygoodbye"), &perms, &say_goodbye);
+            let action = Action::new(name!("bob"), name!("saygoodbye"), perm, &say_goodbye);
             action.send();
         }
     }
