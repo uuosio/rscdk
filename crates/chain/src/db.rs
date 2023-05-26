@@ -30,11 +30,6 @@ use crate::print::{
     Printable
 };
 
-use crate::{
-    vec::Vec,
-};
-
-
 ///
 #[derive(Clone, Debug, Default)]
 pub struct TableError {
