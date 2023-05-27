@@ -94,13 +94,13 @@ jobs:
           rust-contract build
           popd
           rust-contract build
-          RUST_BACKTRACE=1 cargo +nightly test --release -- --test-threads=1
+          RUST_BACKTRACE=1 cargo test --release -- --test-threads=1
       - name: code coverage report
         working-directory: tests
         run: |
           export CARGO_INCREMENTAL=0
           export RUSTFLAGS="-Cinstrument-coverage -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off"
-          TEST_COVERAGE=TRUE cargo +nightly test -- --test-threads=1
+          TEST_COVERAGE=TRUE cargo test -- --test-threads=1
           grcov . --binary-path=target/debug -s ../crates -t lcov --llvm --branch --ignore-not-existing -o chain.lcov
           curl -S -f https://codecov.io/bash -o codecov
           chmod +x codecov
