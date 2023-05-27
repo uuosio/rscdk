@@ -84,7 +84,27 @@ cfg_if! {
 pub mod vmapi;
 ///
 pub mod structs;
-pub use self::structs::*;
+pub use self::structs:: {
+    Float128,
+    Checksum160,
+    Checksum256,
+    Checksum512,
+    ECCPublicKey,
+    UserPresence,
+    WebAuthNPublicKey,
+    PublicKey,
+    Signature,
+    Uint128,
+    Int128,
+    Uint256,
+    TimePoint,
+    TimePointSec,
+    BlockTimeStampType,
+    ProducerKey,
+    KeyWeight,
+    BlockSigningAuthority,
+    ProducerAuthority,
+};
 
 ///
 pub mod transaction;
@@ -135,6 +155,8 @@ pub mod asset;
 pub use asset::{
     Asset,
     Symbol,
+    SymbolCode,
+    ExtendedAsset
 };
 
 mod privileged;
@@ -231,6 +253,9 @@ pub use action::{
 pub mod utils;
 ///
 pub mod varint;
+pub use varint::{
+    VarUint32,
+};
 
 ///
 pub mod binary_extension;
