@@ -36,7 +36,8 @@ pub fn generate_abi() -> String {
         "variants": [],
         "abi_extensions": [],
         "error_messages": [],
-        "ricardian_clauses": []
+        "ricardian_clauses": [],
+        "action_results": []
       }
     "#.into();
 }
