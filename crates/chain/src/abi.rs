@@ -70,16 +70,42 @@ pub struct ABIVariant {
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ABITypes {
+	new_type_name: String,
+    #[serde(rename = "type")]
+    ty: String,
+}
+
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ABIRicardianClause {
+	id: String,
+    body: String,
+}
+
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ABIActionResult {
+	name: String,
+    result_type: String,
+}
+
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ABIErrorMessage {
+	error_code: u64,
+    error_msg: String,
+}
+
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ABI {
 	version: String,
-	types: Vec<String>,
+	types: Vec<ABITypes>,
     structs: Vec<ABIStruct>,
     actions: Vec<ABIAction>,
     tables: Vec<ABITable>,
     variants: Vec<ABIVariant>,
     abi_extensions: Vec<String>,
-    error_messages: Vec<String>,
-    ricardian_clauses: Vec<String>,
+    error_messages: Vec<ABIErrorMessage>,
+    ricardian_clauses: Vec<ABIRicardianClause>,
+    action_results: Vec<ABIActionResult>,
 }
 
 fn native_type_to_abi_type(tp: &str) -> &str {
@@ -264,7 +290,8 @@ pub fn parse_abi_info(info: &mut ABIInfo) -> String {
         variants: Vec::new(),
         abi_extensions: Vec::new(),
         error_messages: Vec::new(),
-        ricardian_clauses: Vec::new(),    
+        ricardian_clauses: Vec::new(),
+        action_results: Vec::new(),
     };
 
 
