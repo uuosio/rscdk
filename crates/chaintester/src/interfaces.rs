@@ -1048,7 +1048,7 @@ pub trait TIPCChainTesterSyncClient {
   fn push_action(&mut self, id: i32, account: String, action: String, arguments: ActionArguments, permissions: String) -> thrift::Result<Vec<u8>>;
   fn push_actions(&mut self, id: i32, actions: Vec<Box<Action>>) -> thrift::Result<Vec<u8>>;
   fn deploy_contract(&mut self, id: i32, account: String, wasm: String, abi: String) -> thrift::Result<Vec<u8>>;
-  fn get_table_rows(&mut self, id: i32, json: bool, code: String, scope: String, table: String, lower_bound: String, upper_bound: String, limit: i64, key_type: String, index_position: String, reverse: bool, show_payer: bool) -> thrift::Result<String>;
+  fn get_table_rows(&mut self, id: i32, json: bool, code: String, scope: String, table: String, lower_bound: String, upper_bound: String, limit: i64, key_type: String, index_position: String, encode_type: String, reverse: bool, show_payer: bool) -> thrift::Result<String>;
 }
 
 pub trait TIPCChainTesterSyncClientMarker {}
@@ -1619,12 +1619,12 @@ impl <C: TThriftClient + TIPCChainTesterSyncClientMarker> TIPCChainTesterSyncCli
       result.ok_or()
     }
   }
-  fn get_table_rows(&mut self, id: i32, json: bool, code: String, scope: String, table: String, lower_bound: String, upper_bound: String, limit: i64, key_type: String, index_position: String, reverse: bool, show_payer: bool) -> thrift::Result<String> {
+  fn get_table_rows(&mut self, id: i32, json: bool, code: String, scope: String, table: String, lower_bound: String, upper_bound: String, limit: i64, key_type: String, index_position: String, encode_type: String, reverse: bool, show_payer: bool) -> thrift::Result<String> {
     (
       {
         self.increment_sequence_number();
         let message_ident = TMessageIdentifier::new("get_table_rows", TMessageType::Call, self.sequence_number());
-        let call_args = IPCChainTesterGetTableRowsArgs { id, json, code, scope, table, lower_bound, upper_bound, limit, key_type, index_position, reverse, show_payer };
+        let call_args = IPCChainTesterGetTableRowsArgs { id, json, code, scope, table, lower_bound, upper_bound, limit, key_type, index_position, encode_type, reverse, show_payer };
         self.o_prot_mut().write_message_begin(&message_ident)?;
         call_args.write_to_out_protocol(self.o_prot_mut())?;
         self.o_prot_mut().write_message_end()?;
@@ -1674,7 +1674,7 @@ pub trait IPCChainTesterSyncHandler {
   fn handle_push_action(&self, id: i32, account: String, action: String, arguments: ActionArguments, permissions: String) -> thrift::Result<Vec<u8>>;
   fn handle_push_actions(&self, id: i32, actions: Vec<Box<Action>>) -> thrift::Result<Vec<u8>>;
   fn handle_deploy_contract(&self, id: i32, account: String, wasm: String, abi: String) -> thrift::Result<Vec<u8>>;
-  fn handle_get_table_rows(&self, id: i32, json: bool, code: String, scope: String, table: String, lower_bound: String, upper_bound: String, limit: i64, key_type: String, index_position: String, reverse: bool, show_payer: bool) -> thrift::Result<String>;
+  fn handle_get_table_rows(&self, id: i32, json: bool, code: String, scope: String, table: String, lower_bound: String, upper_bound: String, limit: i64, key_type: String, index_position: String, encode_type: String, reverse: bool, show_payer: bool) -> thrift::Result<String>;
 }
 
 pub struct IPCChainTesterSyncProcessor<H: IPCChainTesterSyncHandler> {
@@ -2511,7 +2511,7 @@ impl TIPCChainTesterProcessFunctions {
   }
   pub fn process_get_table_rows<H: IPCChainTesterSyncHandler>(handler: &H, incoming_sequence_number: i32, i_prot: &mut dyn TInputProtocol, o_prot: &mut dyn TOutputProtocol) -> thrift::Result<()> {
     let args = IPCChainTesterGetTableRowsArgs::read_from_in_protocol(i_prot)?;
-    match handler.handle_get_table_rows(args.id, args.json, args.code, args.scope, args.table, args.lower_bound, args.upper_bound, args.limit, args.key_type, args.index_position, args.reverse, args.show_payer) {
+    match handler.handle_get_table_rows(args.id, args.json, args.code, args.scope, args.table, args.lower_bound, args.upper_bound, args.limit, args.key_type, args.index_position, args.encode_type, args.reverse, args.show_payer) {
       Ok(handler_return) => {
         let message_ident = TMessageIdentifier::new("get_table_rows", TMessageType::Reply, incoming_sequence_number);
         o_prot.write_message_begin(&message_ident)?;
@@ -5130,6 +5130,7 @@ struct IPCChainTesterGetTableRowsArgs {
   limit: i64,
   key_type: String,
   index_position: String,
+  encode_type: String,
   reverse: bool,
   show_payer: bool,
 }
@@ -5147,8 +5148,9 @@ impl IPCChainTesterGetTableRowsArgs {
     let mut f_8: Option<i64> = None;
     let mut f_9: Option<String> = None;
     let mut f_10: Option<String> = None;
-    let mut f_11: Option<bool> = None;
+    let mut f_11: Option<String> = None;
     let mut f_12: Option<bool> = None;
+    let mut f_13: Option<bool> = None;
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -5197,12 +5199,16 @@ impl IPCChainTesterGetTableRowsArgs {
           f_10 = Some(val);
         },
         11 => {
-          let val = i_prot.read_bool()?;
+          let val = i_prot.read_string()?;
           f_11 = Some(val);
         },
         12 => {
           let val = i_prot.read_bool()?;
           f_12 = Some(val);
+        },
+        13 => {
+          let val = i_prot.read_bool()?;
+          f_13 = Some(val);
         },
         _ => {
           i_prot.skip(field_ident.field_type)?;
@@ -5221,8 +5227,9 @@ impl IPCChainTesterGetTableRowsArgs {
     verify_required_field_exists("IPCChainTesterGetTableRowsArgs.limit", &f_8)?;
     verify_required_field_exists("IPCChainTesterGetTableRowsArgs.key_type", &f_9)?;
     verify_required_field_exists("IPCChainTesterGetTableRowsArgs.index_position", &f_10)?;
-    verify_required_field_exists("IPCChainTesterGetTableRowsArgs.reverse", &f_11)?;
-    verify_required_field_exists("IPCChainTesterGetTableRowsArgs.show_payer", &f_12)?;
+    verify_required_field_exists("IPCChainTesterGetTableRowsArgs.encode_type", &f_11)?;
+    verify_required_field_exists("IPCChainTesterGetTableRowsArgs.reverse", &f_12)?;
+    verify_required_field_exists("IPCChainTesterGetTableRowsArgs.show_payer", &f_13)?;
     let ret = IPCChainTesterGetTableRowsArgs {
       id: f_1.expect("auto-generated code should have checked for presence of required fields"),
       json: f_2.expect("auto-generated code should have checked for presence of required fields"),
@@ -5234,8 +5241,9 @@ impl IPCChainTesterGetTableRowsArgs {
       limit: f_8.expect("auto-generated code should have checked for presence of required fields"),
       key_type: f_9.expect("auto-generated code should have checked for presence of required fields"),
       index_position: f_10.expect("auto-generated code should have checked for presence of required fields"),
-      reverse: f_11.expect("auto-generated code should have checked for presence of required fields"),
-      show_payer: f_12.expect("auto-generated code should have checked for presence of required fields"),
+      encode_type: f_11.expect("auto-generated code should have checked for presence of required fields"),
+      reverse: f_12.expect("auto-generated code should have checked for presence of required fields"),
+      show_payer: f_13.expect("auto-generated code should have checked for presence of required fields"),
     };
     Ok(ret)
   }
@@ -5272,10 +5280,13 @@ impl IPCChainTesterGetTableRowsArgs {
     o_prot.write_field_begin(&TFieldIdentifier::new("index_position", TType::String, 10))?;
     o_prot.write_string(&self.index_position)?;
     o_prot.write_field_end()?;
-    o_prot.write_field_begin(&TFieldIdentifier::new("reverse", TType::Bool, 11))?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("encode_type", TType::String, 11))?;
+    o_prot.write_string(&self.encode_type)?;
+    o_prot.write_field_end()?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("reverse", TType::Bool, 12))?;
     o_prot.write_bool(self.reverse)?;
     o_prot.write_field_end()?;
-    o_prot.write_field_begin(&TFieldIdentifier::new("show_payer", TType::Bool, 12))?;
+    o_prot.write_field_begin(&TFieldIdentifier::new("show_payer", TType::Bool, 13))?;
     o_prot.write_bool(self.show_payer)?;
     o_prot.write_field_end()?;
     o_prot.write_field_stop()?;

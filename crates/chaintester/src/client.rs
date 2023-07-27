@@ -128,6 +128,7 @@ pub struct GetTableRowsPrams<'a> {
     pub limit: i64,
     pub key_type: &'a str,
     pub index_position: &'a str,
+    pub encode_type: &'a str,
     pub reverse: bool,
     pub show_payer: bool,
 }
@@ -144,6 +145,7 @@ impl<'a> Default for GetTableRowsPrams<'a> {
             limit: 10,
             key_type: "",
             index_position: "",
+            encode_type: "",
             reverse: false,
             show_payer: false
         }
@@ -616,6 +618,7 @@ impl ChainTester {
             limit: limit,
             key_type: "",
             index_position: "",
+            encode_type: "",
             reverse: false,
             show_payer: true,
         };
@@ -634,6 +637,7 @@ impl ChainTester {
             params.limit,
             params.key_type.into(),
             params.index_position.into(),
+            params.encode_type.into(),
             params.reverse,
             params.show_payer,
         );
@@ -650,7 +654,7 @@ impl ChainTester {
         if rows.len() == 0 {
             return 0;
         }
-        let balance = rows[0].as_str().unwrap();
+        let balance = rows[0]["data"].as_str().unwrap();
         let _balance = hex::decode(balance).unwrap();
         let amount: [u8;8] = match _balance[0..8].try_into() {
             Ok(v) => v,
