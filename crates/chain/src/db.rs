@@ -843,7 +843,8 @@ impl IdxTable for Idx256Table {
 
     fn store(&self, key: u64, secondary: SecondaryValue, payer: Name) -> SecondaryIterator {
         if let SecondaryValue::Idx256(value) = secondary {
-            let ret = db_idx256_store(self.scope, self.table, payer.value(), key, value.data.as_ptr() as *mut Uint128, 2);
+            let _value = value.swap();
+            let ret = db_idx256_store(self.scope, self.table, payer.value(), key, _value.data.as_ptr() as *const Uint128, 2);
             return SecondaryIterator{ i: ret, primary: key, db_index: self.db_index };
         }
         check(false, "Idx256Table::store: bad secondary type");
@@ -852,7 +853,8 @@ impl IdxTable for Idx256Table {
 
     fn update(&self, iterator: &SecondaryIterator, secondary: SecondaryValue, payer: Name) {
         if let SecondaryValue::Idx256(value) = secondary {
-            db_idx256_update(iterator.i, payer.value(), value.data.as_ptr() as *mut Uint128, 2);
+            let _value = value.swap();
+            db_idx256_update(iterator.i, payer.value(), _value.data.as_ptr() as *mut Uint128, 2);
         } else {
             check(false, "Idx256Table::update: bad secondary type");
         }
@@ -878,13 +880,14 @@ impl IdxTable for Idx256Table {
         //initialize Uint128
         let mut secondary = Uint256{data: [0; 2]};
         let ret = db_idx256_find_primary(self.code, self.scope, self.table, secondary.data.as_mut_ptr() as *mut Uint128, 2, primary);
-        return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx256(secondary));
+        return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx256(secondary.swap()));
     }
 
     fn find(&self, secondary: SecondaryValue) -> SecondaryIterator {
-        if let SecondaryValue::Idx256(mut value) = secondary {
+        if let SecondaryValue::Idx256(value) = secondary {
             let mut primary = 0;
-            let ret = db_idx256_find_secondary(self.code, self.scope, self.table, value.data.as_mut_ptr() as *mut Uint128, 2, &mut primary);
+            let _value = value.swap();
+            let ret = db_idx256_find_secondary(self.code, self.scope, self.table, _value.data.as_ptr() as *const Uint128, 2, &mut primary);
             return SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index };
         }
         check(false, "Idx256Table::find_secondary: bad secondary type");
@@ -892,10 +895,15 @@ impl IdxTable for Idx256Table {
     }
 
     fn lower_bound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
-        if let SecondaryValue::Idx256(mut value) = secondary {
+        if let SecondaryValue::Idx256(value) = secondary {
             let mut primary = 0;
-            let ret = db_idx256_lowerbound(self.code, self.scope, self.table, value.data.as_mut_ptr() as *mut u8 as *mut Uint128, 2, &mut primary);
-            return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx256(value));
+            let mut _value = value.swap();
+            let ret = db_idx256_lowerbound(self.code, self.scope, self.table, _value.data.as_mut_ptr() as *mut u8 as *mut Uint128, 2, &mut primary);
+            if ret >= 0 {
+                return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx256(_value.swap()));
+            } else {
+                return (SecondaryIterator{ i: ret, primary: 0, db_index: self.db_index }, SecondaryValue::Idx256(Default::default()));
+            }
         }
         check(false, "Idx256Table::lower_bound: bad secondary type");
         return (Default::default(), SecondaryValue::Idx128(0));
@@ -903,10 +911,15 @@ impl IdxTable for Idx256Table {
 
     fn upper_bound(&self, secondary: SecondaryValue) -> (SecondaryIterator, SecondaryValue) {
         match secondary {
-            SecondaryValue::Idx256(mut value) => {
+            SecondaryValue::Idx256(value) => {
                 let mut primary = 0;
-                let ret = db_idx256_upperbound(self.code, self.scope, self.table, value.data.as_mut_ptr() as *mut u8 as *mut Uint128, 2, &mut primary);
-                return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx256(value));
+                let mut _value = value.swap();
+                let ret = db_idx256_upperbound(self.code, self.scope, self.table, _value.data.as_mut_ptr() as *mut u8 as *mut Uint128, 2, &mut primary);
+                if ret >= 0 {
+                    return (SecondaryIterator{ i: ret, primary: primary, db_index: self.db_index }, SecondaryValue::Idx256(_value.swap()));
+                } else {
+                    return (SecondaryIterator{ i: ret, primary: 0, db_index: self.db_index }, SecondaryValue::Idx256(Default::default()));
+                }
             },
             _ => {
                 check(false, "Idx256Table::upper_boundd: bad secondary type");

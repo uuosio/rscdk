@@ -43,13 +43,14 @@ pub fn generate_abi() -> String {
 }
 
 #[cfg(test)]
+#[cfg(feature = "std")]
 mod tests {
 
     use chaintester::ChainTester;
 
     fn deploy_contract(tester: &mut ChainTester) {
-        let ref wasm_file = format!("./target/tests.wasm");
-        let ref abi_file = format!("./target/tests.abi");
+        let ref wasm_file = "./target/tests.wasm";
+        let ref abi_file = "./target/tests.abi";
         tester.deploy_contract("hello", wasm_file, abi_file).unwrap();
     }
 

@@ -17,17 +17,17 @@ pub mod testmi {
     #[chain(table="mydata")]
     pub struct MyData {
         #[chain(primary)]
-        a1: u64,
+        pub a1: u64,
         #[chain(secondary)]
-        a2: u64,
+        pub a2: u64,
         #[chain(secondary)]
-        a3: u128,
+        pub a3: u128,
         #[chain(secondary)]
-        a4: Uint256,
+        pub a4: Uint256,
         #[chain(secondary)]
-        a5: f64,
+        pub a5: f64,
         #[chain(secondary)]
-        a6: Float128,
+        pub a6: Float128,
     }
 
     #[chain(sub)]
@@ -449,6 +449,21 @@ pub mod testmi {
             check(!mydb.find(11).is_ok(), "value should be deleted!");
 
             chain_println!("test2 done!");
+        }
+
+        #[chain(action="teststore")]
+        pub fn test_store(&self, data: MyData) {
+            chain_println!("++++++++test store");
+            let mydb = MyData::new_table(self.receiver);
+            mydb.store(&data, self.receiver);
+        }
+
+        #[chain(action="testupdate")]
+        pub fn test_update(&self, data: MyData) {
+            let mydb = MyData::new_table(self.receiver);
+            let it = mydb.find(data.a1);
+            check(it.is_ok(), "value not found!");
+            mydb.update(&it, &data, self.receiver);
         }
     }
 }

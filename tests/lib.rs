@@ -153,7 +153,7 @@ mod testall {
 
 #[cfg(test)]
 mod tests {
-    // use super::testmi;
+    use super::testmi;
     // use super::testmi2;
     use super::testoptional; 
     use super::testvariant;
@@ -178,7 +178,8 @@ mod tests {
 
     use rust_chain::chaintester::{
         get_globals,
-        get_test_mutex
+        get_test_mutex,
+        GetTableRowsPrams,
     };
     use std::{
         io,
@@ -187,6 +188,12 @@ mod tests {
     };
 
     use sha2::{Sha256, Digest};
+
+    use rust_chain::{
+        Name,
+        Float128,
+        Uint256,
+    };
 
     // use std::sync::Once;
     // static INIT: Once = Once::new();
@@ -666,6 +673,94 @@ mod tests {
 
         tester.push_action("hello", "test2", args.into(), permissions).unwrap();
         tester.produce_block();
+
+        tester.free();
+
+        tester = init_test("testmi");
+        //6.0
+        let a6_6: Float128 = Float128::new([0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0x01,0x40]);
+        //66.0
+        let a6_66: Float128 = Float128::new([0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x08,0x05,0x40]);
+        //666.0
+        let a6_666: Float128 = Float128::new([0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x4d,0x08,0x40]);
+        let mydata1 = testmi::testmi::MyData{a1: 1, a2: 2, a3: 3, a4: Uint256::new(10, 0), a5: 5.0, a6: a6_6};
+        tester.push_action("hello", "teststore", Encoder::pack(&mydata1).into(), permissions).unwrap();
+
+        let mydata1 = testmi::testmi::MyData{a1: 11, a2: 22, a3: 33, a4: Uint256::new(0, 5), a5: 5.0, a6: a6_6};
+        tester.push_action("hello", "teststore", Encoder::pack(&mydata1).into(), permissions).unwrap();
+
+        tester.produce_block();
+
+        let param = GetTableRowsPrams {
+            json: true,
+            code: "hello",
+            scope: "",
+            table: "mydata",
+            lower_bound: "0x000000000000000000000000000000000000000000000000000000000000000a",
+            upper_bound: "",
+            limit: 10,
+            key_type: "i256",
+            index_position: "4",
+            encode_type: "",
+            reverse: false,
+            show_payer: true,
+        };
+        let ret = tester.get_table_rows_ex(&param).unwrap();
+        assert_eq!(ret["rows"][1]["data"]["a4"], "0000000000000000000000000000000005000000000000000000000000000000");
+
+        let mydata1 = testmi::testmi::MyData{a1: 11, a2: 22, a3: 33, a4: Uint256::new(0, 6), a5: 5.0, a6: a6_6};
+        tester.push_action("hello", "testupdate", Encoder::pack(&mydata1).into(), permissions).unwrap();
+
+        let param = GetTableRowsPrams {
+            json: true,
+            code: "hello",
+            scope: "",
+            table: "mydata",
+            lower_bound: "0x000000000000000000000000000000000000000000000000000000000000000a",
+            upper_bound: "",
+            limit: 10,
+            key_type: "i256",
+            index_position: "4",
+            encode_type: "",
+            reverse: false,
+            show_payer: true,
+        };
+        let ret = tester.get_table_rows_ex(&param).unwrap();
+        assert_eq!(ret["rows"][1]["data"]["a4"], "0000000000000000000000000000000006000000000000000000000000000000");
+
+        let param = GetTableRowsPrams {
+            json: true,
+            code: "hello",
+            scope: "",
+            table: "mydata",
+            lower_bound: "10",
+            upper_bound: "",
+            limit: 10,
+            key_type: "i256",
+            index_position: "4",
+            encode_type: "",
+            reverse: false,
+            show_payer: true,
+        };
+        let ret = tester.get_table_rows_ex(&param).unwrap();
+        assert_eq!(ret["rows"][1]["data"]["a4"], "0000000000000000000000000000000006000000000000000000000000000000");
+
+        let param = GetTableRowsPrams {
+            json: true,
+            code: "hello",
+            scope: "",
+            table: "mydata",
+            lower_bound: "000000000000000000000000000000000000000000000000000000000000000a",
+            upper_bound: "",
+            limit: 10,
+            key_type: "sha256",
+            index_position: "4",
+            encode_type: "",
+            reverse: false,
+            show_payer: true,
+        };
+        let ret = tester.get_table_rows_ex(&param).unwrap();
+        assert_eq!(ret["rows"][1]["data"]["a4"], "0000000000000000000000000000000006000000000000000000000000000000");
     }
 
     #[test]

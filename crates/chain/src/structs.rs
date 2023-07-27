@@ -517,6 +517,11 @@ impl Uint256 {
     pub fn new(lo: u128, hi: u128) -> Self {
         Self { data: [lo, hi] }
     }
+
+    ///
+    pub fn swap(&self) -> Self {
+        Self { data: [self.data[1], self.data[0]] }
+    }
 }
 
 impl Packer for Uint256 {
