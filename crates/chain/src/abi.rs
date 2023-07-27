@@ -64,22 +64,48 @@ pub struct ABITable {
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ABIVariant {
-	name: String,
+    name: String,
     // #[serde(deserialize_with = "string_or_seq_string")]
     types: Vec<String>,
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ABITypes {
+    new_type_name: String,
+    #[serde(rename = "type")]
+    ty: String,
+}
+
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ABIRicardianClause {
+    id: String,
+    body: String,
+}
+
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ABIActionResult {
+    name: String,
+    result_type: String,
+}
+
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ABIErrorMessage {
+    error_code: u64,
+    error_msg: String,
+}
+
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ABI {
-	version: String,
-	types: Vec<String>,
+    version: String,
+    types: Vec<ABITypes>,
     structs: Vec<ABIStruct>,
     actions: Vec<ABIAction>,
     tables: Vec<ABITable>,
     variants: Vec<ABIVariant>,
     abi_extensions: Vec<String>,
-    error_messages: Vec<String>,
-    ricardian_clauses: Vec<String>,
+    error_messages: Vec<ABIErrorMessage>,
+    ricardian_clauses: Vec<ABIRicardianClause>,
+    action_results: Vec<ABIActionResult>,
 }
 
 fn native_type_to_abi_type(tp: &str) -> &str {
@@ -264,7 +290,8 @@ pub fn parse_abi_info(info: &mut ABIInfo) -> String {
         variants: Vec::new(),
         abi_extensions: Vec::new(),
         error_messages: Vec::new(),
-        ricardian_clauses: Vec::new(),    
+        ricardian_clauses: Vec::new(),
+        action_results: Vec::new(),
     };
 
 
@@ -330,8 +357,8 @@ pub fn parse_abi_info(info: &mut ABIInfo) -> String {
     });
 
     info.tables.iter().for_each(|table|{
-		if let ::eosio_scale_info::TypeDef::Composite(_) = table.info.type_def() {
-			let name = table.info.path().segments().last().unwrap();
+        if let ::eosio_scale_info::TypeDef::Composite(_) = table.info.type_def() {
+            let name = table.info.path().segments().last().unwrap();
             abi.tables.push(ABITable {
                 name: table.name.clone(),
                 ty: String::from(*name),
@@ -343,8 +370,8 @@ pub fn parse_abi_info(info: &mut ABIInfo) -> String {
     });
 
     info.actions.iter().for_each(|action|{
-		if let ::eosio_scale_info::TypeDef::Composite(_) = action.info.type_def() {
-			let name = action.info.path().segments().last().unwrap();
+        if let ::eosio_scale_info::TypeDef::Composite(_) = action.info.type_def() {
+            let name = action.info.path().segments().last().unwrap();
             abi.actions.push(ABIAction {
                 name: String::from(*name),
                 ty: String::from(*name),
