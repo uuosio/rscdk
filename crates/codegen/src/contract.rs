@@ -1343,7 +1343,10 @@ impl Contract {
         for (_, tp) in abi_types {
             structs_code.push(
                 quote!{
-                    info.structs.push(#tp::type_info());
+                    let struct_info = #tp::type_info();
+                    if !info.structs.contains(&struct_info) {
+                        info.structs.push(struct_info);
+                    }
                 }
             );
         }
@@ -1354,7 +1357,10 @@ impl Contract {
                 let struct_name_ident = proc_macro2::Ident::new(&action.action_name.str(), proc_macro2::Span::call_site());
                 structs_code.push(
                     quote!{
-                        info.structs.push(#struct_name_ident::type_info());
+                        let struct_info = #struct_name_ident::type_info();
+                        if !info.structs.contains(&struct_info) {
+                            info.structs.push(struct_info);
+                        }    
                     }
                 );
             });
@@ -1365,7 +1371,10 @@ impl Contract {
                 let struct_name_ident = &table.item.ident;
                 structs_code.push(
                     quote!{
-                        info.structs.push(#struct_name_ident::type_info());
+                        let struct_info = #struct_name_ident::type_info();
+                        if !info.structs.contains(&struct_info) {
+                            info.structs.push(struct_info);
+                        }
                     }
                 );
             });
