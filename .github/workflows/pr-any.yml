@@ -30,7 +30,7 @@ jobs:
       - name: Install latest stable rustc
         uses: actions-rs/toolchain@v1
         with:
-            toolchain: stable
+            toolchain: 1.66.0
             override: true
             components: rustfmt, clippy, rust-src
       - uses: actions/checkout@v2
@@ -52,7 +52,7 @@ jobs:
       - name: Install latest stable rustc
         uses: actions-rs/toolchain@v1
         with:
-            toolchain: stable
+            toolchain: 1.66.0
             override: true
             components: rustfmt, clippy, rust-src, llvm-tools-preview
       - name: Cache grcov
@@ -120,7 +120,7 @@ jobs:
       - name: Install latest stable rustc
         uses: actions-rs/toolchain@v1
         with:
-            toolchain: stable
+            toolchain: 1.66.0
             override: true
             components: rustfmt, clippy, rust-src
       - uses: actions/checkout@v2
