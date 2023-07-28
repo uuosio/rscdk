@@ -515,7 +515,7 @@ pub struct Uint256 {
 impl Uint256 {
     ///
     pub fn new(lo: u128, hi: u128) -> Self {
-        Self { data: [lo, hi] }
+        Self { data: [hi, lo] }
     }
 
     ///
@@ -532,26 +532,26 @@ impl Packer for Uint256 {
 
     ///
     fn pack(&self, enc: &mut Encoder) -> usize {
-        self.data[0].pack(enc);
         self.data[1].pack(enc);
+        self.data[0].pack(enc);
         self.size()
     }
 
     ///
     fn unpack(&mut self, data: &[u8]) -> usize {
         let mut dec = Decoder::new(data);
-        dec.unpack(&mut self.data[0]);
         dec.unpack(&mut self.data[1]);
+        dec.unpack(&mut self.data[0]);
         return dec.get_pos();
     }
 }
 
 impl Printable for Uint256 {
     fn print(&self) {
-        if self.data[1] == 0 {
-            printui128(self.data[0]);
+        if self.data[0] == 0 {
+            printui128(self.data[1]);
         } else {
-            crate::vmapi::print::printhex(self.data.as_ptr() as *mut u8, 32);
+            crate::vmapi::print::printhex(self.swap().data.as_ptr() as *mut u8, 32);
         }
     }
 }
